@@ -3,11 +3,8 @@
 import {
   createPersonInput,
   linkPersonToMemberInput,
-  memberRoleSchema,
-  organizationNameSchema,
   redeemMemberInviteInput,
   redeemOrganizationCreateInput,
-  tokenCodeSchema,
   unlinkPersonInput,
   updateMemberRoleInput,
 } from "@asignaciones/shared";
@@ -161,5 +158,3 @@ export async function createPersonAction(
     return { personId: person.id };
   });
 }
-
-export { memberRoleSchema, organizationNameSchema, tokenCodeSchema };
