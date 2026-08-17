@@ -1,0 +1,22 @@
+{
+  "name": "asignaciones",
+  "version": "0.1.0",
+  "private": true,
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "bun run --filter @asignaciones/web dev",
+    "dev:mobile": "bun run --filter @asignaciones/mobile start",
+    "build": "bun run --filter @asignaciones/web build",
+    "lint": "biome check .",
+    "lint:fix": "biome check --write .",
+    "format": "biome format --write .",
+    "db:generate": "bun run --filter @asignaciones/web db:generate",
+    "db:push": "bun run --filter @asignaciones/web db:push"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "^2.0.0"
+  }
+}
