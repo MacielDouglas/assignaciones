@@ -2,7 +2,12 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   reactCompiler: true,
-  serverExternalPackages: ["@prisma/client", "better-auth"],
+  serverExternalPackages: [
+    "@prisma/adapter-pg",
+    "@prisma/client",
+    "better-auth",
+    "pg",
+  ],
   transpilePackages: ["@asignaciones/shared"],
 };
 

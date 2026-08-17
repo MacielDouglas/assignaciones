@@ -25,6 +25,9 @@ expo-env.d.ts
 *.db
 *.sqlite
 
+# Prisma generated client
+apps/web/src/generated/
+
 # Logs
 logs/
 *.log
