@@ -30,6 +30,12 @@ export const auth = betterAuth({
       ? ["http://localhost:8081", "exp://", "exp://**"]
       : []),
   ],
+  advanced: {
+    ipAddress: {
+      ipAddressHeaders: ["x-forwarded-for", "x-vercel-forwarded-for"],
+      trustedProxies: ["76.76.21.0/24", "13.248.128.0/17", "15.197.128.0/17"],
+    },
+  },
   session: {
     cookieCache: {
       enabled: true,
