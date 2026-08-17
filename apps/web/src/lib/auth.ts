@@ -6,8 +6,14 @@ import { prisma } from "@/lib/db";
 
 const appScheme = "asignaciones://";
 
+function resolveBaseURL() {
+  const url = process.env.BETTER_AUTH_URL;
+  if (url && !/^https?:\/\/localhost(:\d+)?$/.test(url)) return url;
+  return undefined;
+}
+
 export const auth = betterAuth({
-  baseURL: process.env.BETTER_AUTH_URL,
+  baseURL: resolveBaseURL(),
   database: prismaAdapter(prisma, { provider: "postgresql" }),
   plugins: [expo()],
   emailAndPassword: {
@@ -25,7 +31,7 @@ export const auth = betterAuth({
   },
   trustedOrigins: [
     appScheme,
-    process.env.BETTER_AUTH_URL ?? "",
+    resolveBaseURL() ?? "",
     ...(process.env.NODE_ENV === "development"
       ? ["http://localhost:8081", "exp://", "exp://**"]
       : []),
