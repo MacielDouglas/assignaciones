@@ -26,6 +26,9 @@ export default function ProtectedLayout() {
   return (
     <Stack screenOptions={{ headerShown: false }}>
       <Stack.Screen name="dashboard" />
+      <Stack.Screen name="onboarding" />
+      <Stack.Screen name="members" />
+      <Stack.Screen name="people" />
     </Stack>
   );
 }

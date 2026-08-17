@@ -1,5 +1,7 @@
+import { memberRoleLabels } from "@asignaciones/shared";
 import Link from "next/link";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -17,9 +19,16 @@ type HeaderProps = {
     email?: string | null;
     image?: string | null;
   } | null;
+  org?: {
+    name: string;
+    role?: string;
+    isSubUser?: boolean;
+  } | null;
 };
 
-export function Header({ user }: HeaderProps) {
+export function Header({ user, org }: HeaderProps) {
+  const canManage = org?.role === "OWNER" || org?.role === "ADMIN";
+
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/80 backdrop-blur">
       <div className="mx-auto flex h-14 w-full max-w-6xl items-center justify-between px-4 sm:px-6 lg:px-8">
@@ -31,6 +40,47 @@ export function Header({ user }: HeaderProps) {
         </Link>
 
         <nav className="flex items-center gap-2">
+          {org ? (
+            <>
+              <span className="hidden sm:block">
+                {org.isSubUser ? (
+                  <Badge
+                    variant="secondary"
+                    className="text-xs"
+                  >
+                    Sub-user
+                  </Badge>
+                ) : (
+                  <Badge
+                    variant="secondary"
+                    className="text-xs"
+                  >
+                    {org.name} ·{" "}
+                    {org.role ? memberRoleLabels[org.role as "OWNER" | "ADMIN" | "MEMBER"] : ""}
+                  </Badge>
+                )}
+              </span>
+              {canManage ? (
+                <>
+                  <Button
+                    asChild
+                    variant="ghost"
+                    size="sm"
+                  >
+                    <Link href="/members">Membros</Link>
+                  </Button>
+                  <Button
+                    asChild
+                    variant="ghost"
+                    size="sm"
+                  >
+                    <Link href="/people">Pessoas</Link>
+                  </Button>
+                </>
+              ) : null}
+            </>
+          ) : null}
+
           {user ? (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
