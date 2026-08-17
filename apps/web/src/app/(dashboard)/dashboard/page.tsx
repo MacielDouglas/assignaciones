@@ -71,8 +71,16 @@ export default async function DashboardPage() {
               Quem usar este token pode criar uma nova organização e se torna o owner dela.
             </CardDescription>
           </CardHeader>
-          <CardContent>
+          <CardContent className="flex flex-col gap-4">
             <GenerateOrgTokenForm />
+            <Button
+              asChild
+              size="sm"
+              variant="outline"
+              className="w-fit"
+            >
+              <Link href="/tokens">Ver tokens gerados</Link>
+            </Button>
           </CardContent>
         </Card>
 

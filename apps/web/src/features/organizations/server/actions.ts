@@ -16,7 +16,12 @@ import { requireActor } from "./access";
 import { OrgError } from "./errors";
 import { linkPersonToMember, unlinkPersonFromMember, updateMemberRole } from "./members";
 import { createPerson } from "./people";
-import { createMemberInviteToken, createOrganizationCreateToken, redeemToken } from "./tokens";
+import {
+  createMemberInviteToken,
+  createOrganizationCreateToken,
+  deleteToken,
+  redeemToken,
+} from "./tokens";
 
 export type ActionState<T = unknown> = { ok: true; data: T } | { ok: false; error: string };
 
@@ -138,6 +143,22 @@ export async function unlinkPersonFromMemberAction(
     revalidatePath("/members");
     revalidatePath("/people");
     return { memberId: input.memberId };
+  });
+}
+
+export async function deleteTokenAction(
+  _prev: ActionState,
+  formData: FormData,
+): Promise<ActionState<{ tokenId: string }>> {
+  return run(async () => {
+    const actor = await actorFromRequest();
+    const tokenId = formData.get("tokenId");
+    if (typeof tokenId !== "string" || !tokenId) {
+      throw new OrgError("Token inválido", "TOKEN_NOT_FOUND");
+    }
+    await deleteToken(actor, tokenId);
+    revalidatePath("/tokens");
+    return { tokenId };
   });
 }
 

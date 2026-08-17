@@ -7,6 +7,7 @@ import {
   type ActionState,
   createMemberInviteAction,
   createOrganizationTokenAction,
+  deleteTokenAction,
 } from "@/features/organizations/server/actions";
 import { CopyCode } from "./copy-code";
 
@@ -75,6 +76,33 @@ export function GenerateOrgTokenForm() {
         24 horas e uso único.
       </p>
     </div>
+  );
+}
+
+export function DeleteTokenButton({ tokenId }: { tokenId: string }) {
+  const [state, formAction, pending] = useActionState<ActionState<{ tokenId: string }>, FormData>(
+    deleteTokenAction,
+    { ok: false, error: "" },
+  );
+
+  return (
+    <form action={formAction}>
+      <input
+        type="hidden"
+        name="tokenId"
+        value={tokenId}
+      />
+      <Button
+        type="submit"
+        size="sm"
+        variant="outline"
+        disabled={pending}
+        className="text-destructive hover:text-destructive"
+      >
+        {pending ? "Apagando..." : "Apagar"}
+      </Button>
+      {!state.ok && state.error ? <p className="text-xs text-destructive">{state.error}</p> : null}
+    </form>
   );
 }
 

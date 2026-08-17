@@ -27,6 +27,59 @@ export type TokenResult = {
   expiresAt: Date;
 };
 
+export type TokenListEntry = {
+  id: string;
+  type: "ORGANIZATION_CREATE" | "MEMBER_INVITE";
+  createdAt: Date;
+  expiresAt: Date;
+  usedAt: Date | null;
+  usedBy: { name: string | null; email: string | null } | null;
+  organization: { id: string; name: string } | null;
+};
+
+export async function listCreatedTokens(actor: Actor): Promise<TokenListEntry[]> {
+  if (!actor.isSubUser) {
+    throw new OrgError("Apenas o sub-user pode ver os tokens gerados", "FORBIDDEN");
+  }
+
+  const tokens = await prisma.inviteToken.findMany({
+    where: { createdById: actor.userId },
+    include: {
+      usedBy: { select: { name: true, email: true } },
+      organization: { select: { id: true, name: true } },
+    },
+    orderBy: { createdAt: "desc" },
+  });
+
+  return tokens.map((token) => ({
+    id: token.id,
+    type: token.type,
+    createdAt: token.createdAt,
+    expiresAt: token.expiresAt,
+    usedAt: token.usedAt,
+    usedBy: token.usedBy,
+    organization: token.organization,
+  }));
+}
+
+export async function deleteToken(actor: Actor, tokenId: string): Promise<void> {
+  if (!actor.isSubUser) {
+    throw new OrgError("Apenas o sub-user pode apagar tokens", "FORBIDDEN");
+  }
+
+  const token = await prisma.inviteToken.findFirst({
+    where: { id: tokenId, createdById: actor.userId },
+  });
+  if (!token) {
+    throw new OrgError("Token não encontrado", "TOKEN_NOT_FOUND");
+  }
+  if (token.usedAt) {
+    throw new OrgError("Tokens usados não podem ser apagados", "TOKEN_USED");
+  }
+
+  await prisma.inviteToken.delete({ where: { id: token.id } });
+}
+
 export async function createOrganizationCreateToken(actor: Actor): Promise<TokenResult> {
   if (!actor.isSubUser) {
     throw new OrgError("Apenas o sub-user pode criar tokens de organização", "FORBIDDEN");
@@ -130,6 +183,10 @@ export async function redeemToken(
       });
       await tx.organizationMember.create({
         data: { organizationId: org.id, userId: actor.userId, role: "OWNER", personId: person.id },
+      });
+      await tx.inviteToken.update({
+        where: { id: token.id },
+        data: { organizationId: org.id },
       });
       return { organizationId: org.id, role: "OWNER" as const };
     }

@@ -11,7 +11,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { signOutAction } from "@/features/auth/server/actions";
+import { SignOutButton } from "@/features/auth/components/sign-out-button";
 
 type HeaderProps = {
   user?: {
@@ -111,16 +111,9 @@ export function Header({ user, org }: HeaderProps) {
                   <Link href="/dashboard">Painel</Link>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
-                <form action={signOutAction}>
-                  <DropdownMenuItem asChild>
-                    <button
-                      type="submit"
-                      className="w-full cursor-pointer text-destructive focus:text-destructive"
-                    >
-                      Sair
-                    </button>
-                  </DropdownMenuItem>
-                </form>
+                <DropdownMenuItem asChild>
+                  <SignOutButton />
+                </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
           ) : (
