@@ -2,7 +2,7 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   reactCompiler: true,
-  serverExternalPackages: ["@prisma/adapter-pg", "@prisma/client", "better-auth", "pg"],
+  serverExternalPackages: ["@prisma/adapter-neon", "@prisma/client", "better-auth", "pg"],
   images: {
     remotePatterns: [
       {

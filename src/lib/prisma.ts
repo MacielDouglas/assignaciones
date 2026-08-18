@@ -1,18 +1,18 @@
-import { PrismaPg } from "@prisma/adapter-pg";
+import { PrismaNeon } from "@prisma/adapter-neon";
 import { PrismaClient } from "@/generated/prisma/client";
 
 const connectionString = process.env.DATABASE_URL;
 
 if (!connectionString) {
-  throw new Error("[prisma] Variable de entorno DATABASE_URL no definida.");
+  throw new Error("[prisma] Variável de ambiente DATABASE_URL não definida.");
 }
 
-const globalForPrisma = global as unknown as { prisma: PrismaClient };
+const globalForPrisma = globalThis as unknown as { prisma?: PrismaClient };
 
 export const prisma =
   globalForPrisma.prisma ??
   new PrismaClient({
-    adapter: new PrismaPg({ connectionString }),
+    adapter: new PrismaNeon({ connectionString }),
   });
 
 if (process.env.NODE_ENV !== "production") {
