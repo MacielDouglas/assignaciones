@@ -45,6 +45,9 @@ coverage/
 .vscode/
 .idea/
 
+# Agentes locais (config e skills do agente, não fazem parte do produto)
+.opencode/
+
 # TypeScript
 *.tsbuildinfo
 next-env.d.ts

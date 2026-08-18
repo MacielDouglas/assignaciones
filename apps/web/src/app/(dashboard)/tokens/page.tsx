@@ -30,7 +30,14 @@ function formatDateTime(date: Date): string {
 
 function TokenStatusBadge({ token }: { token: TokenListEntry }) {
   if (token.usedAt) {
-    return <Badge className="w-fit bg-emerald-600 text-white">Usado</Badge>;
+    return (
+      <Badge
+        variant="outline"
+        className="w-fit"
+      >
+        Usado
+      </Badge>
+    );
   }
   if (token.expiresAt < new Date()) {
     return (

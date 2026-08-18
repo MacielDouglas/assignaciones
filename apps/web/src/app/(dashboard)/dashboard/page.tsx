@@ -27,12 +27,10 @@ function StatsCards() {
     <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
       {stats.map((stat) => (
         <Card key={stat.title}>
-          <CardHeader>
-            <CardTitle className="text-lg">{stat.title}</CardTitle>
-            <CardDescription>{stat.description}</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <p className="font-heading text-3xl font-bold">0</p>
+          <CardContent className="flex flex-col gap-1.5">
+            <p className="font-heading text-4xl font-bold tracking-tight">0</p>
+            <p className="text-sm font-medium">{stat.title}</p>
+            <p className="text-xs text-muted-foreground">{stat.description}</p>
           </CardContent>
         </Card>
       ))}

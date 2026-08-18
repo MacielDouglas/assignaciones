@@ -1,0 +1,297 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-08-17T00:00:00.000Z",
+  "title": "Design System: Asignaciones",
+  "extensions": {
+    "colorMeta": {
+      "tinta": {
+        "role": "primary",
+        "displayName": "Tinta",
+        "canonical": "oklch(0.205 0 0)",
+        "tonalRamp": [
+          "oklch(0.15 0 0)",
+          "oklch(0.19 0 0)",
+          "oklch(0.23 0 0)",
+          "oklch(0.31 0 0)",
+          "oklch(0.43 0 0)",
+          "oklch(0.56 0 0)",
+          "oklch(0.71 0 0)",
+          "oklch(0.92 0 0)"
+        ]
+      },
+      "tinta-clara": {
+        "role": "primary",
+        "displayName": "Tinta Clara (primário do tema escuro)",
+        "canonical": "oklch(0.922 0 0)",
+        "tonalRamp": [
+          "oklch(0.15 0 0)",
+          "oklch(0.19 0 0)",
+          "oklch(0.23 0 0)",
+          "oklch(0.31 0 0)",
+          "oklch(0.43 0 0)",
+          "oklch(0.56 0 0)",
+          "oklch(0.71 0 0)",
+          "oklch(0.92 0 0)"
+        ]
+      },
+      "pagina": {
+        "role": "neutral",
+        "displayName": "Página",
+        "canonical": "oklch(1 0 0)",
+        "tonalRamp": [
+          "oklch(0.145 0 0)",
+          "oklch(0.21 0 0)",
+          "oklch(0.27 0 0)",
+          "oklch(0.38 0 0)",
+          "oklch(0.52 0 0)",
+          "oklch(0.66 0 0)",
+          "oklch(0.83 0 0)",
+          "oklch(1 0 0)"
+        ]
+      },
+      "letra": {
+        "role": "neutral",
+        "displayName": "Letra",
+        "canonical": "oklch(0.145 0 0)",
+        "tonalRamp": [
+          "oklch(0.145 0 0)",
+          "oklch(0.21 0 0)",
+          "oklch(0.27 0 0)",
+          "oklch(0.38 0 0)",
+          "oklch(0.52 0 0)",
+          "oklch(0.66 0 0)",
+          "oklch(0.83 0 0)",
+          "oklch(0.985 0 0)"
+        ]
+      },
+      "cartao": {
+        "role": "neutral",
+        "displayName": "Cartão",
+        "canonical": "oklch(1 0 0)",
+        "tonalRamp": [
+          "oklch(0.145 0 0)",
+          "oklch(0.205 0 0)",
+          "oklch(0.27 0 0)",
+          "oklch(0.38 0 0)",
+          "oklch(0.52 0 0)",
+          "oklch(0.66 0 0)",
+          "oklch(0.83 0 0)",
+          "oklch(1 0 0)"
+        ]
+      },
+      "cinza-palido": {
+        "role": "neutral",
+        "displayName": "Cinza Pálido",
+        "canonical": "oklch(0.97 0 0)",
+        "tonalRamp": [
+          "oklch(0.145 0 0)",
+          "oklch(0.21 0 0)",
+          "oklch(0.27 0 0)",
+          "oklch(0.38 0 0)",
+          "oklch(0.52 0 0)",
+          "oklch(0.66 0 0)",
+          "oklch(0.83 0 0)",
+          "oklch(0.97 0 0)"
+        ]
+      },
+      "cinza-medio": {
+        "role": "neutral",
+        "displayName": "Cinza Médio",
+        "canonical": "oklch(0.556 0 0)",
+        "tonalRamp": [
+          "oklch(0.145 0 0)",
+          "oklch(0.21 0 0)",
+          "oklch(0.27 0 0)",
+          "oklch(0.38 0 0)",
+          "oklch(0.45 0 0)",
+          "oklch(0.556 0 0)",
+          "oklch(0.66 0 0)",
+          "oklch(0.83 0 0)"
+        ]
+      },
+      "linha-fina": {
+        "role": "neutral",
+        "displayName": "Linha Fina",
+        "canonical": "oklch(0.922 0 0)",
+        "tonalRamp": [
+          "oklch(0.145 0 0)",
+          "oklch(0.27 0 0)",
+          "oklch(0.38 0 0)",
+          "oklch(0.52 0 0)",
+          "oklch(0.66 0 0)",
+          "oklch(0.83 0 0)",
+          "oklch(0.922 0 0)",
+          "oklch(1 0 0)"
+        ]
+      },
+      "aro": {
+        "role": "neutral",
+        "displayName": "Aro",
+        "canonical": "oklch(0.708 0 0)",
+        "tonalRamp": [
+          "oklch(0.145 0 0)",
+          "oklch(0.27 0 0)",
+          "oklch(0.38 0 0)",
+          "oklch(0.52 0 0)",
+          "oklch(0.66 0 0)",
+          "oklch(0.708 0 0)",
+          "oklch(0.83 0 0)",
+          "oklch(0.922 0 0)"
+        ]
+      },
+      "alerta": {
+        "role": "error",
+        "displayName": "Alerta (a única cor saturada)",
+        "canonical": "oklch(0.577 0.245 27.325)",
+        "tonalRamp": [
+          "oklch(0.3 0.2 27)",
+          "oklch(0.38 0.21 27)",
+          "oklch(0.46 0.23 27)",
+          "oklch(0.577 0.245 27.325)",
+          "oklch(0.66 0.23 27)",
+          "oklch(0.75 0.2 27)",
+          "oklch(0.84 0.15 27)",
+          "oklch(0.93 0.08 27)"
+        ]
+      }
+    },
+    "typographyMeta": {
+      "display": {
+        "displayName": "Display",
+        "purpose": "Apenas a mensagem principal do topo da página (hero, títulos de abertura)."
+      },
+      "title": {
+        "displayName": "Title",
+        "purpose": "Títulos de cartões, cabeçalhos de seção e nomes de tela."
+      },
+      "body": {
+        "displayName": "Body",
+        "purpose": "Texto corrente e descrições."
+      },
+      "label": {
+        "displayName": "Label",
+        "purpose": "Rótulos de controles, badges e metadados."
+      }
+    },
+    "shadows": [],
+    "motion": [
+      {
+        "name": "ease-standard",
+        "value": "cubic-bezier(0.4, 0, 0.2, 1)",
+        "purpose": "Transições de estado padrão (hover, foco, deslocamento de clique) em ~150ms via transition-all."
+      }
+    ],
+    "breakpoints": [
+      { "name": "sm", "value": "640px" },
+      { "name": "lg", "value": "1024px" }
+    ]
+  },
+  "components": [
+    {
+      "name": "Botão Primário",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "A ação principal da tela: fundo Tinta, texto Página.",
+      "html": "<button class=\"ds-btn-primary\">Começar agora</button>",
+      "css": ".ds-btn-primary { display: inline-flex; align-items: center; justify-content: center; height: 32px; padding: 10px 12px; border: 1px solid transparent; border-radius: 8px; background: var(--primary); color: var(--primary-foreground); font-family: Geist, system-ui, sans-serif; font-size: 14px; font-weight: 500; white-space: nowrap; cursor: pointer; transition: background-color 0.15s, transform 0.15s; } .ds-btn-primary:hover { background: oklch(0.205 0 0 / 80%); } .ds-btn-primary:active { transform: translateY(1px); } .ds-btn-primary:focus-visible { outline: none; border-color: var(--ring); box-shadow: 0 0 0 3px oklch(0.708 0 0 / 50%); } .ds-btn-primary:disabled { opacity: 0.5; pointer-events: none; }"
+    },
+    {
+      "name": "Botão Outline",
+      "kind": "button",
+      "refersTo": "button-outline",
+      "description": "Ação secundária: borda fina, fundo página, hover em Cinza Pálido.",
+      "html": "<button class=\"ds-btn-outline\">Ver painel</button>",
+      "css": ".ds-btn-outline { display: inline-flex; align-items: center; justify-content: center; height: 32px; padding: 10px 12px; border: 1px solid var(--border); border-radius: 8px; background: var(--background); color: var(--foreground); font-family: Geist, system-ui, sans-serif; font-size: 14px; font-weight: 500; white-space: nowrap; cursor: pointer; transition: background-color 0.15s, color 0.15s; } .ds-btn-outline:hover { background: var(--muted); } .ds-btn-outline:active { transform: translateY(1px); } .ds-btn-outline:focus-visible { outline: none; border-color: var(--ring); box-shadow: 0 0 0 3px oklch(0.708 0 0 / 50%); } .ds-btn-outline:disabled { opacity: 0.5; pointer-events: none; }"
+    },
+    {
+      "name": "Botão Ghost",
+      "kind": "button",
+      "refersTo": "button-ghost",
+      "description": "Ação leve inline: sem borda, hover em Cinza Pálido.",
+      "html": "<button class=\"ds-btn-ghost\">Voltar</button>",
+      "css": ".ds-btn-ghost { display: inline-flex; align-items: center; justify-content: center; height: 32px; padding: 10px 12px; border: 1px solid transparent; border-radius: 8px; background: transparent; color: var(--foreground); font-family: Geist, system-ui, sans-serif; font-size: 14px; font-weight: 500; white-space: nowrap; cursor: pointer; transition: background-color 0.15s, color 0.15s; } .ds-btn-ghost:hover { background: var(--muted); } .ds-btn-ghost:active { transform: translateY(1px); } .ds-btn-ghost:focus-visible { outline: none; border-color: var(--ring); box-shadow: 0 0 0 3px oklch(0.708 0 0 / 50%); } .ds-btn-ghost:disabled { opacity: 0.5; pointer-events: none; }"
+    },
+    {
+      "name": "Cartão",
+      "kind": "card",
+      "refersTo": "card",
+      "description": "Superfície de conteúdo: fundo Cartão, anel sutil de 1px, cantos de 14px.",
+      "html": "<div class=\"ds-card\"><div class=\"ds-card-title\">Atribuições</div><div class=\"ds-card-desc\">Suas tarefas e responsabilidades</div></div>",
+      "css": ".ds-card { display: flex; flex-direction: column; gap: 4px; padding: 16px; border-radius: 14px; background: var(--card); color: var(--card-foreground); box-shadow: inset 0 0 0 1px oklch(0.145 0 0 / 10%); font-family: Geist, system-ui, sans-serif; font-size: 14px; } .ds-card-title { font-size: 18px; font-weight: 600; line-height: 1.3; } .ds-card-desc { color: var(--muted-foreground); }"
+    },
+    {
+      "name": "Campo de Texto",
+      "kind": "input",
+      "refersTo": "input",
+      "description": "Input compacto de 32px, borda fina, foco com anel.",
+      "html": "<label class=\"ds-label\" for=\"ds-input\">Nome</label><input id=\"ds-input\" class=\"ds-input\" type=\"text\" placeholder=\"Nome da organização\" />",
+      "css": ".ds-label { display: block; margin-bottom: 4px; font-family: Geist, system-ui, sans-serif; font-size: 12px; font-weight: 500; color: var(--foreground); } .ds-input { width: 100%; height: 32px; min-width: 0; padding: 4px 10px; border: 1px solid var(--input); border-radius: 8px; background: transparent; color: var(--foreground); font-family: Geist, system-ui, sans-serif; font-size: 14px; transition: border-color 0.15s, box-shadow 0.15s; } .ds-input::placeholder { color: var(--muted-foreground); } .ds-input:focus { outline: none; border-color: var(--ring); box-shadow: 0 0 0 3px oklch(0.708 0 0 / 50%); } .ds-input:disabled { opacity: 0.5; background: oklch(0.922 0 0 / 50%); pointer-events: none; } .ds-input[aria-invalid='true'] { border-color: var(--destructive); box-shadow: 0 0 0 3px oklch(0.577 0.245 27.325 / 20%); }"
+    },
+    {
+      "name": "Badge",
+      "kind": "chip",
+      "refersTo": "badge",
+      "description": "Pílula de 20px para rótulos e papéis (Owner, Admin, Member).",
+      "html": "<span class=\"ds-badge\">Owner</span>",
+      "css": ".ds-badge { display: inline-flex; align-items: center; justify-content: center; height: 20px; padding: 2px 8px; border: 1px solid transparent; border-radius: 26px; background: var(--primary); color: var(--primary-foreground); font-family: Geist, system-ui, sans-serif; font-size: 12px; font-weight: 500; white-space: nowrap; }"
+    },
+    {
+      "name": "Avatar (iniciais)",
+      "kind": "custom",
+      "refersTo": null,
+      "description": "Iniciais do nome em círculo sobre Cinza Pálido — a identidade de pessoas no quadro.",
+      "html": "<div class=\"ds-avatar\" aria-label=\"Maria Silva\">MS</div>",
+      "css": ".ds-avatar { display: inline-flex; align-items: center; justify-content: center; width: 40px; height: 40px; border-radius: 50%; background: var(--muted); color: var(--foreground); font-family: Geist, system-ui, sans-serif; font-size: 14px; font-weight: 600; }"
+    }
+  ],
+  "narrative": {
+    "northStar": "O Quadro de Designações",
+    "overview": "Cada tarefa e cada reunião visível como um cartão num quadro bem posto: ordem calma, tinta forte sobre página limpa, nada competindo pela atenção. O sistema é deliberadamente restrito e funcional — a única cor saturada do sistema inteiro é o vermelho de alerta, e ele só aparece quando algo exige ação. A estrutura de layout segue a gramática de um portal corporativo moderno: seções nomeadas, hero em destaque e grades de cartões que se reorganizam de 1 coluna (370px) a 3 colunas (full HD), espelhada no app nativo com tokens hex equivalentes e alvos de toque de 48px.",
+    "keyCharacteristics": [
+      "Monocromático por construção: um acento apenas, e ele é neutro; o vermelho só existe para alertas",
+      "Flat por padrão: profundidade vem de bordas e anéis (rings), nunca de sombras",
+      "Densidade compacta no web (controles de 32px de altura), generosa no nativo (48px)",
+      "Cantos moderadamente arredondados: 6–14px em superfícies, pílula apenas em badges",
+      "Tipografia Geist (web) / System (nativo), sem serifas, sem variação decorativa",
+      "Tema claro e escuro completos, invertendo o par tinta/página"
+    ],
+    "rules": [
+      {
+        "name": "A Regra do Alerta Único",
+        "body": "O vermelho destructive é a única cor saturada do sistema. Ele existe para erros, exclusões e estados que exigem atenção imediata — e só para isso. Nenhum decorativo, gradiente ou destaque de marca pode usar cor.",
+        "section": "colors"
+      },
+      {
+        "name": "A Regra da Tinta Invertida",
+        "body": "Em qualquer lugar onde o fundo escurece, o primário clareia: a relação tinta/página é um par que se inverte junto, nunca uma cor fixa sobre fundos variáveis.",
+        "section": "colors"
+      },
+      {
+        "name": "A Regra do Título de Cartão",
+        "body": "Títulos dentro de cartões usam Title 600 — nunca Display. Display é privilégio do topo da página; rebaixar para cartões faz a hierarquia desmoronar.",
+        "section": "typography"
+      },
+      {
+        "name": "A Regra Flat-Por-Definição",
+        "body": "Superfícies são planas em repouso. Sombras não existem em nenhum estado; interação se sinaliza por mudança de cor de fundo (hover:bg-muted), anel de foco e deslocamento de 1px no clique (active:translate-y-px).",
+        "section": "elevation"
+      }
+    ],
+    "dos": [
+      "Do manter a página, os cartões e os controles dentro da escala de cinza; o vermelho é reservado a alertas.",
+      "Do usar anéis e bordas para profundidade — sombras não fazem parte do sistema.",
+      "Do usar a escala de raios (6–18px) e a pílula só para badges.",
+      "Do pensar em 1 coluna antes de 3: o layout nasce no móvel e cresce para desktop.",
+      "Do usar Tinta para ações primárias e Cinza Pálido para hovers — nunca inverter os papéis.",
+      "Do espelhar estados completos (hover, foco, disabled, erro) em cada controle novo."
+    ],
+    "donts": [
+      "Don't introduzir um segundo acento de cor, gradientes ou imagens com cor de marca no produto.",
+      "Don't usar Display fora do topo da página — cartões usam Title.",
+      "Don't adicionar sombras projetadas a cartões, modais ou menus.",
+      "Don't criar controles com altura menor que 32px no web ou 48px no nativo.",
+      "Don't misturar tipografia: Geist (web) e System (nativo) são as únicas famílias.",
+      "Don't ignorar o tema escuro — cada cor nova precisa do par invertido."
+    ]
+  }
+}

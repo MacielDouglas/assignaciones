@@ -8,6 +8,7 @@ import { Card } from "@/components/ui/card";
 import { ThemedText } from "@/components/ui/themed-text";
 import { ThemedView } from "@/components/ui/themed-view";
 import { Spacing } from "@/constants/theme";
+import { useTheme } from "@/hooks/use-theme";
 import {
   createInviteToken,
   linkPersonToMember,
@@ -70,6 +71,7 @@ function InviteCard({ organizationId }: { organizationId: string }) {
 
 export default function MembersScreen() {
   const insets = useSafeAreaInsets();
+  const colors = useTheme();
   const params = useLocalSearchParams<{ org?: string }>();
   const orgId = params.org;
 
@@ -167,7 +169,10 @@ export default function MembersScreen() {
     <ThemedView style={[styles.screen, { paddingTop: insets.top + Spacing.lg }]}>
       {!members ? (
         <View style={styles.centered}>
-          <ActivityIndicator size="large" />
+          <ActivityIndicator
+            size="large"
+            color={colors.primary}
+          />
         </View>
       ) : error ? (
         <View style={styles.centered}>

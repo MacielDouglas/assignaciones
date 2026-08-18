@@ -8,6 +8,7 @@ import { Card } from "@/components/ui/card";
 import { ThemedText } from "@/components/ui/themed-text";
 import { ThemedView } from "@/components/ui/themed-view";
 import { Spacing } from "@/constants/theme";
+import { useTheme } from "@/hooks/use-theme";
 import { authClient } from "@/lib/auth-client";
 import {
   type ContextResponse,
@@ -163,19 +164,27 @@ function MemberView({
       ) : null}
 
       <Card>
-        <ThemedText variant="heading">Atribuições</ThemedText>
-        <ThemedText variant="muted">Suas tarefas e responsabilidades</ThemedText>
-        <ThemedText variant="title">0</ThemedText>
-      </Card>
-      <Card>
-        <ThemedText variant="heading">Pendentes</ThemedText>
-        <ThemedText variant="muted">Tarefas aguardando execução</ThemedText>
-        <ThemedText variant="title">0</ThemedText>
-      </Card>
-      <Card>
-        <ThemedText variant="heading">Concluídas</ThemedText>
-        <ThemedText variant="muted">Atribuições finalizadas</ThemedText>
-        <ThemedText variant="title">0</ThemedText>
+        <View style={styles.statsRow}>
+          {[
+            { title: "Atribuições", description: "Suas tarefas e responsabilidades" },
+            { title: "Pendentes", description: "Aguardando execução" },
+            { title: "Concluídas", description: "Finalizadas" },
+          ].map((stat) => (
+            <View
+              key={stat.title}
+              style={styles.stat}
+            >
+              <ThemedText
+                variant="title"
+                style={styles.statNumber}
+              >
+                0
+              </ThemedText>
+              <ThemedText variant="heading">{stat.title}</ThemedText>
+              <ThemedText variant="muted">{stat.description}</ThemedText>
+            </View>
+          ))}
+        </View>
       </Card>
 
       <Button
@@ -190,6 +199,7 @@ function MemberView({
 
 export default function DashboardScreen() {
   const insets = useSafeAreaInsets();
+  const colors = useTheme();
   const [context, setContext] = useState<ContextResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -238,7 +248,10 @@ export default function DashboardScreen() {
     return (
       <ThemedView style={[styles.screen, { paddingTop: insets.top + Spacing.lg }]}>
         <View style={styles.centered}>
-          <ActivityIndicator size="large" />
+          <ActivityIndicator
+            size="large"
+            color={colors.primary}
+          />
         </View>
       </ThemedView>
     );
@@ -309,5 +322,17 @@ const styles = StyleSheet.create({
   },
   signOut: {
     marginTop: Spacing.md,
+  },
+  statsRow: {
+    flexDirection: "row",
+    gap: Spacing.md,
+  },
+  stat: {
+    flex: 1,
+    gap: Spacing.xs,
+  },
+  statNumber: {
+    fontSize: 30,
+    lineHeight: 34,
   },
 });

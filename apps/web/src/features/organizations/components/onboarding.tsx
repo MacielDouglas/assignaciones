@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useActionState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -115,25 +116,29 @@ export function Onboarding() {
       </section>
 
       <section className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-        <div className="flex flex-col gap-3 rounded-lg border p-4">
-          <div className="flex flex-col gap-1">
-            <h2 className="font-heading text-base font-semibold">Criar uma organização</h2>
-            <p className="text-sm text-muted-foreground">
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">Criar uma organização</CardTitle>
+            <CardDescription>
               Use o token fornecido pelo sub-user para criar uma nova organização.
-            </p>
-          </div>
-          <CreateOrgForm />
-        </div>
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <CreateOrgForm />
+          </CardContent>
+        </Card>
 
-        <div className="flex flex-col gap-3 rounded-lg border p-4">
-          <div className="flex flex-col gap-1">
-            <h2 className="font-heading text-base font-semibold">Entrar em uma organização</h2>
-            <p className="text-sm text-muted-foreground">
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">Entrar em uma organização</CardTitle>
+            <CardDescription>
               Use o token de convite enviado pelo owner da organização.
-            </p>
-          </div>
-          <JoinOrgForm />
-        </div>
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <JoinOrgForm />
+          </CardContent>
+        </Card>
       </section>
     </div>
   );

@@ -9,6 +9,7 @@ import { TextInput } from "@/components/ui/text-input";
 import { ThemedText } from "@/components/ui/themed-text";
 import { ThemedView } from "@/components/ui/themed-view";
 import { Spacing } from "@/constants/theme";
+import { useTheme } from "@/hooks/use-theme";
 import { createPerson, listPeople, type Person } from "@/lib/organizations";
 
 function CreatePersonCard({ organizationId }: { organizationId: string }) {
@@ -79,6 +80,7 @@ function CreatePersonCard({ organizationId }: { organizationId: string }) {
 
 export default function PeopleScreen() {
   const insets = useSafeAreaInsets();
+  const colors = useTheme();
   const params = useLocalSearchParams<{ org?: string }>();
   const orgId = params.org;
 
@@ -107,7 +109,10 @@ export default function PeopleScreen() {
     <ThemedView style={[styles.screen, { paddingTop: insets.top + Spacing.lg }]}>
       {!people ? (
         <View style={styles.centered}>
-          <ActivityIndicator size="large" />
+          <ActivityIndicator
+            size="large"
+            color={colors.primary}
+          />
         </View>
       ) : error ? (
         <View style={styles.centered}>

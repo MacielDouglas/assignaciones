@@ -24,7 +24,7 @@ export function CopyCode({ code }: { code: string }) {
       aria-label="Copiar token"
       title="Copiar token"
     >
-      {copied ? <Check className="size-4 text-emerald-500" /> : <Copy className="size-4" />}
+      {copied ? <Check className="size-4 text-foreground" /> : <Copy className="size-4" />}
     </button>
   );
 }
