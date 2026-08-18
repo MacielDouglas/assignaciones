@@ -1,0 +1,262 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-08-18T00:00:00.000Z",
+  "title": "Design System: Asignaciones",
+  "extensions": {
+    "colorMeta": {
+      "background": {
+        "role": "neutral",
+        "displayName": "Branco Puro",
+        "canonical": "oklch(1 0 0)",
+        "tonalRamp": [
+          "oklch(0.15 0 0)",
+          "oklch(0.25 0 0)",
+          "oklch(0.38 0 0)",
+          "oklch(0.52 0 0)",
+          "oklch(0.66 0 0)",
+          "oklch(0.80 0 0)",
+          "oklch(0.92 0 0)",
+          "oklch(1 0 0)"
+        ]
+      },
+      "foreground": {
+        "role": "neutral",
+        "displayName": "Texto Escuro",
+        "canonical": "oklch(0.145 0 0)",
+        "tonalRamp": [
+          "oklch(0.145 0 0)",
+          "oklch(0.22 0 0)",
+          "oklch(0.31 0 0)",
+          "oklch(0.40 0 0)",
+          "oklch(0.49 0 0)",
+          "oklch(0.58 0 0)",
+          "oklch(0.68 0 0)",
+          "oklch(0.80 0 0)"
+        ]
+      },
+      "primary": {
+        "role": "primary",
+        "displayName": "Preto Profundo",
+        "canonical": "oklch(0.205 0 0)",
+        "tonalRamp": [
+          "oklch(0.205 0 0)",
+          "oklch(0.28 0 0)",
+          "oklch(0.36 0 0)",
+          "oklch(0.45 0 0)",
+          "oklch(0.54 0 0)",
+          "oklch(0.64 0 0)",
+          "oklch(0.75 0 0)",
+          "oklch(0.87 0 0)"
+        ]
+      },
+      "primary-foreground": {
+        "role": "neutral",
+        "displayName": "Branco de Ação",
+        "canonical": "oklch(0.985 0 0)",
+        "tonalRamp": [
+          "oklch(0.30 0 0)",
+          "oklch(0.42 0 0)",
+          "oklch(0.55 0 0)",
+          "oklch(0.68 0 0)",
+          "oklch(0.80 0 0)",
+          "oklch(0.90 0 0)",
+          "oklch(0.95 0 0)",
+          "oklch(0.985 0 0)"
+        ]
+      },
+      "muted": {
+        "role": "neutral",
+        "displayName": "Cinza Silencioso",
+        "canonical": "oklch(0.97 0 0)",
+        "tonalRamp": [
+          "oklch(0.20 0 0)",
+          "oklch(0.32 0 0)",
+          "oklch(0.45 0 0)",
+          "oklch(0.58 0 0)",
+          "oklch(0.71 0 0)",
+          "oklch(0.83 0 0)",
+          "oklch(0.91 0 0)",
+          "oklch(0.97 0 0)"
+        ]
+      },
+      "muted-foreground": {
+        "role": "neutral",
+        "displayName": "Texto Suave",
+        "canonical": "oklch(0.556 0 0)",
+        "tonalRamp": [
+          "oklch(0.556 0 0)",
+          "oklch(0.60 0 0)",
+          "oklch(0.66 0 0)",
+          "oklch(0.72 0 0)",
+          "oklch(0.78 0 0)",
+          "oklch(0.84 0 0)",
+          "oklch(0.90 0 0)",
+          "oklch(0.96 0 0)"
+        ]
+      },
+      "border": {
+        "role": "neutral",
+        "displayName": "Linha Hairline",
+        "canonical": "oklch(0.922 0 0)",
+        "tonalRamp": [
+          "oklch(0.30 0 0)",
+          "oklch(0.42 0 0)",
+          "oklch(0.55 0 0)",
+          "oklch(0.68 0 0)",
+          "oklch(0.80 0 0)",
+          "oklch(0.88 0 0)",
+          "oklch(0.92 0 0)",
+          "oklch(0.95 0 0)"
+        ]
+      },
+      "destructive": {
+        "role": "tertiary",
+        "displayName": "Vermelho de Alerta",
+        "canonical": "oklch(0.577 0.245 27.325)",
+        "tonalRamp": [
+          "oklch(0.20 0.10 27)",
+          "oklch(0.30 0.14 27)",
+          "oklch(0.40 0.18 27)",
+          "oklch(0.50 0.22 27)",
+          "oklch(0.577 0.245 27.325)",
+          "oklch(0.68 0.19 27)",
+          "oklch(0.80 0.12 27)",
+          "oklch(0.92 0.05 27)"
+        ]
+      }
+    },
+    "typographyMeta": {
+      "display": {
+        "displayName": "Display",
+        "purpose": "Título principal de tela — uma única frase forte."
+      },
+      "title": { "displayName": "Title", "purpose": "Títulos de card e de seção." },
+      "body": { "displayName": "Body", "purpose": "Textos de leitura e descrições." },
+      "label": { "displayName": "Label", "purpose": "Legendais legais, microtextos e metadados." }
+    },
+    "shadows": [],
+    "motion": [
+      {
+        "name": "transition-standard",
+        "value": "transition-all 150ms ease",
+        "purpose": "Transições de estado (hover, focus, active)."
+      },
+      {
+        "name": "press-down",
+        "value": "translateY(1px) on :active",
+        "purpose": "Resposta tátil sutil ao pressionar."
+      }
+    ],
+    "breakpoints": [
+      { "name": "sm", "value": "640px" },
+      { "name": "md", "value": "768px" },
+      { "name": "lg", "value": "1024px" }
+    ]
+  },
+  "components": [
+    {
+      "name": "Botão Primário",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "Ação dominante da tela — pílula preta estilo Apple.",
+      "html": "<button class=\"ds-btn-primary\">Entrar</button>",
+      "css": ".ds-btn-primary { display: inline-flex; align-items: center; justify-content: center; height: 44px; padding: 0 22px; border: none; border-radius: 9999px; background: #111; color: #fff; font-family: Inter, system-ui, sans-serif; font-size: 14px; font-weight: 500; transition: opacity 150ms ease, transform 150ms ease; } .ds-btn-primary:hover { opacity: 0.8; } .ds-btn-primary:active { transform: translateY(1px); } .ds-btn-primary:focus-visible { outline: none; box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.2); }"
+    },
+    {
+      "name": "Botão Outline",
+      "kind": "button",
+      "refersTo": "button-outline",
+      "description": "Alternativa calma — pílula com borda hairline (ex.: Continuar com o Google).",
+      "html": "<button class=\"ds-btn-outline\">Continuar com o Google</button>",
+      "css": ".ds-btn-outline { display: inline-flex; align-items: center; justify-content: center; gap: 12px; height: 44px; padding: 0 22px; border-radius: 9999px; background: #fff; color: #111; border: 1px solid rgba(0, 0, 0, 0.12); font-family: Inter, system-ui, sans-serif; font-size: 14px; font-weight: 500; transition: background 150ms ease, transform 150ms ease; } .ds-btn-outline:hover { background: rgba(0, 0, 0, 0.04); } .ds-btn-outline:active { transform: translateY(1px); } .ds-btn-outline:focus-visible { outline: none; box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.2); }"
+    },
+    {
+      "name": "Botão Secundário",
+      "kind": "button",
+      "refersTo": "button-secondary",
+      "description": "Ação discreta — pílula em Cinza Silencioso (ex.: Sair).",
+      "html": "<button class=\"ds-btn-secondary\">Sair</button>",
+      "css": ".ds-btn-secondary { display: inline-flex; align-items: center; justify-content: center; height: 44px; padding: 0 22px; border: none; border-radius: 9999px; background: #f5f5f5; color: #1a1a1a; font-family: Inter, system-ui, sans-serif; font-size: 14px; font-weight: 500; transition: opacity 150ms ease, transform 150ms ease; } .ds-btn-secondary:hover { opacity: 0.8; } .ds-btn-secondary:active { transform: translateY(1px); } .ds-btn-secondary:focus-visible { outline: none; box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.2); }"
+    },
+    {
+      "name": "Card",
+      "kind": "card",
+      "refersTo": "card",
+      "description": "Superfície de conteúdo — cantos suaves, contorno hairline, sem sombra.",
+      "html": "<div class=\"ds-card\"><div class=\"ds-card-title\">Painel</div><div class=\"ds-card-desc\">Você está autenticado.</div></div>",
+      "css": ".ds-card { background: #fff; border-radius: 12px; padding: 16px; border: 1px solid rgba(0, 0, 0, 0.1); font-family: Inter, system-ui, sans-serif; display: flex; flex-direction: column; gap: 16px; } .ds-card-title { font-size: 20px; font-weight: 600; letter-spacing: -0.01em; color: #111; } .ds-card-desc { font-size: 14px; line-height: 1.5; color: #666; }"
+    },
+    {
+      "name": "Badge",
+      "kind": "chip",
+      "refersTo": "badge-secondary",
+      "description": "Anotação discreta no quadro — pílula cinza (ex.: Conectado com Google).",
+      "html": "<span class=\"ds-badge\">Conectado com Google</span>",
+      "css": ".ds-badge { display: inline-flex; align-items: center; height: 20px; padding: 0 8px; border-radius: 9999px; background: #f5f5f5; color: #666; font-family: Inter, system-ui, sans-serif; font-size: 12px; font-weight: 500; white-space: nowrap; }"
+    },
+    {
+      "name": "Avatar",
+      "kind": "custom",
+      "refersTo": "card",
+      "description": "Círculo perfeito com anel interno de contraste sobre fotos de perfil.",
+      "html": "<div class=\"ds-avatar\">JM</div>",
+      "css": ".ds-avatar { display: flex; align-items: center; justify-content: center; width: 48px; height: 48px; border-radius: 50%; background: #f5f5f5; color: #666; font-family: Inter, system-ui, sans-serif; font-size: 14px; font-weight: 500; box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.12); }"
+    },
+    {
+      "name": "Tile de Ícone",
+      "kind": "custom",
+      "refersTo": "button-secondary",
+      "description": "Emblema da marca — quadrado com cantos suaves, preto a 10% (ex.: calendário).",
+      "html": "<div class=\"ds-icon-tile\"><svg viewBox=\"0 0 24 24\" width=\"28\" height=\"28\" fill=\"none\" stroke=\"#111\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M8 2v4\"/><path d=\"M16 2v4\"/><rect width=\"18\" height=\"18\" x=\"3\" y=\"4\" rx=\"2\"/><path d=\"M3 10h18\"/></svg></div>",
+      "css": ".ds-icon-tile { display: flex; align-items: center; justify-content: center; width: 56px; height: 56px; border-radius: 16px; background: rgba(17, 17, 17, 0.1); }"
+    }
+  ],
+  "narrative": {
+    "northStar": "O Quadro de Avisos da Congregação",
+    "overview": "O Asignaciones é o quadro de avisos da congregação: um lugar onde todos sabem onde olhar e encontram a resposta sem esforço. O sistema é inspirado na serenidade e na clareza dos grandes sites de produto — layout espaçoso, tipografia display confiante, textos curtos e diretos — aplicados a um público não técnico que usa o celular em qualquer contexto, inclusive na rua ou no salão. A paleta é estritamente acromática: preto profundo sobre branco puro, com cinzas silenciosos como única gradação. A hierarquia é feita por peso e tamanho tipográfico, nunca por cor. Botões em pílula, superfícies planas definidas por linhas hairline, e um espaçamento generoso que dá ar para respirar. Nada é decorativo; tudo é leitura.",
+    "keyCharacteristics": [
+      "Fundo branco puro com texto quase-preto — contraste máximo, dignidade serena",
+      "Uma única escala tipográfica (Inter) com pesos fortes nos títulos",
+      "Botões em formato pílula, refinados e restritos",
+      "Superfícies planas; profundidade por linhas hairline e camadas tonais, nunca por sombra",
+      "Espaçamento generoso e textos curtos em PT-BR, sem jargão",
+      "Mobile-first: uma coluna, conteúdo centralizado, toque confortável"
+    ],
+    "rules": [
+      {
+        "name": "A Regra do Silêncio Cromático",
+        "body": "Nenhuma cor decorativa em qualquer tela. Uma cor cromática só pode aparecer carregando significado — e hoje isso é exclusivamente o vermelho de erro.",
+        "section": "colors"
+      },
+      {
+        "name": "A Regra do Peso, Não da Cor",
+        "body": "A hierarquia tipográfica é feita exclusivamente por peso, tamanho e espaçamento. Textos em cinza indicam hierarquia secundária, não desativação.",
+        "section": "typography"
+      },
+      {
+        "name": "A Regra do Flat Silencioso",
+        "body": "Superfícies são planas em repouso e na interação. Se um elemento precisa se destacar, ganha contorno — nunca sombra.",
+        "section": "elevation"
+      },
+      {
+        "name": "A Regra da Pílula e do Cartão",
+        "body": "O que é tocável é pílula; o que contém conteúdo é cartão com cantos suaves. As duas formas nunca se misturam no mesmo elemento.",
+        "section": "shapes"
+      }
+    ],
+    "dos": [
+      "Usar o Display para uma única frase forte por tela — títulos longos quebram a serenidade",
+      "Escrever em PT-BR, curto e direto, sem jargão técnico",
+      "Deixar espaço: se a tela parece vazia demais, está certa",
+      "Usar cinza para reduzir hierarquia em vez de diminuir o tamanho",
+      "Manter as duas famílias de formas: pílula para tocar, cantos suaves para conter"
+    ],
+    "donts": [
+      "Usar qualquer cor decorativa — uma cor cromática só com significado (erro)",
+      "Usar sombras difusas ou elevação simulada em superfícies",
+      "Misturar muitas escalas tipográficas em uma tela",
+      "Usar emojis, ícones coloridos ou branding festivo",
+      "Lotar telas estreitas de informações — uma ação principal por tela"
+    ]
+  }
+}

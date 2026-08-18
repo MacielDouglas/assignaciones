@@ -44,6 +44,13 @@ yarn-error.log*
 # agentes locais (config e skills do agente, não fazem parte do produto)
 .opencode/
 
+# impeccable — estado de execução do live mode (config e design ficam rastreados)
+.impeccable/live/annotations/
+.impeccable/live/sessions/
+.impeccable/live/inject-journal.json
+.impeccable/live/roots.json
+.impeccable/live/server.json
+
 # vercel
 .vercel
 
