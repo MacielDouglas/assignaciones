@@ -18,6 +18,11 @@ enum InviteTokenType {
   MEMBER_INVITE
 }
 
+enum Sex {
+  MALE
+  FEMALE
+}
+
 model User {
   id            String    @id @default(cuid())
   name          String?
@@ -64,8 +69,43 @@ model OrganizationMember {
 model Person {
   id             String   @id @default(cuid())
   name           String
-  email          String?
-  phone          String?
+  sex            Sex      @default(MALE)
+  family         String?
+  isHeadOfFamily Boolean  @default(false)
+  isYoung        Boolean  @default(false)
+  isStudent      Boolean  @default(true)
+  isBaptized     Boolean  @default(true)
+  isActive       Boolean  @default(true)
+  hasCleaning    Boolean  @default(true)
+
+  // Campos de estudante (apenas quando isStudent = true)
+  startingConversation Boolean @default(false)
+  cultivatingInterest  Boolean @default(false)
+  makingDisciples      Boolean @default(false)
+  explainingBeliefs    Boolean @default(false)
+
+  // Campos masculino + estudante
+  hasBestMinistrySpeech Boolean @default(false)
+  hasBibleReading       Boolean @default(true)
+
+  // Campos masculino + batizado
+  hasServicePrivileges Boolean @default(false)
+  hasPrayer            Boolean @default(false)
+
+  // Campos masculino + batizado + privilégios de serviço
+  isElder                     Boolean @default(false)
+  hasWhatWouldYouSay          Boolean @default(false)
+  hasNVMCChairman             Boolean @default(false)
+  hasTreasuresSpeech          Boolean @default(false)
+  hasSpiritualGems            Boolean @default(false)
+  hasChristianLifeParts       Boolean @default(false)
+  hasCongregationBibleStudy   Boolean @default(false)
+  isBibleStudyReader          Boolean @default(false)
+  hasPublicMeetingChairman    Boolean @default(false)
+  hasPublicTalk               Boolean @default(false)
+  hasWatchtowerStudyConductor Boolean @default(false)
+  isWatchtowerStudyReader     Boolean @default(false)
+
   organizationId String
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt

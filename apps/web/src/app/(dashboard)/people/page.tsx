@@ -1,3 +1,4 @@
+import { sexLabels } from "@asignaciones/shared";
 import type { Metadata } from "next";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
@@ -95,7 +96,8 @@ export default async function PeoplePage({
                     <div className="flex min-w-0 flex-col gap-0.5">
                       <span className="truncate text-sm font-medium">{person.name}</span>
                       <span className="truncate text-xs text-muted-foreground">
-                        {[person.email, person.phone].filter(Boolean).join(" · ") || "Sem contato"}
+                        {sexLabels[person.sex]}
+                        {person.family ? ` · Família ${person.family}` : ""}
                       </span>
                       {person.member ? (
                         <Badge

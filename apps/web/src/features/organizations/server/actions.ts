@@ -46,6 +46,48 @@ async function actorFromRequest() {
   return requireActor(await headers());
 }
 
+function checkbox(formData: FormData, key: string, fallback = false): boolean {
+  const value = formData.get(key);
+  if (value === null) {
+    return fallback;
+  }
+  return value === "on" || value === "true";
+}
+
+function personFormData(formData: FormData) {
+  return {
+    name: formData.get("name"),
+    sex: formData.get("sex"),
+    family: formData.get("family") || undefined,
+    isHeadOfFamily: checkbox(formData, "isHeadOfFamily"),
+    isYoung: checkbox(formData, "isYoung"),
+    isStudent: checkbox(formData, "isStudent", true),
+    isBaptized: checkbox(formData, "isBaptized", true),
+    isActive: checkbox(formData, "isActive", true),
+    hasCleaning: checkbox(formData, "hasCleaning", true),
+    startingConversation: checkbox(formData, "startingConversation"),
+    cultivatingInterest: checkbox(formData, "cultivatingInterest"),
+    makingDisciples: checkbox(formData, "makingDisciples"),
+    explainingBeliefs: checkbox(formData, "explainingBeliefs"),
+    hasBestMinistrySpeech: checkbox(formData, "hasBestMinistrySpeech"),
+    hasBibleReading: checkbox(formData, "hasBibleReading", true),
+    hasServicePrivileges: checkbox(formData, "hasServicePrivileges"),
+    hasPrayer: checkbox(formData, "hasPrayer"),
+    isElder: checkbox(formData, "isElder"),
+    hasWhatWouldYouSay: checkbox(formData, "hasWhatWouldYouSay"),
+    hasNVMCChairman: checkbox(formData, "hasNVMCChairman"),
+    hasTreasuresSpeech: checkbox(formData, "hasTreasuresSpeech"),
+    hasSpiritualGems: checkbox(formData, "hasSpiritualGems"),
+    hasChristianLifeParts: checkbox(formData, "hasChristianLifeParts"),
+    hasCongregationBibleStudy: checkbox(formData, "hasCongregationBibleStudy"),
+    isBibleStudyReader: checkbox(formData, "isBibleStudyReader"),
+    hasPublicMeetingChairman: checkbox(formData, "hasPublicMeetingChairman"),
+    hasPublicTalk: checkbox(formData, "hasPublicTalk"),
+    hasWatchtowerStudyConductor: checkbox(formData, "hasWatchtowerStudyConductor"),
+    isWatchtowerStudyReader: checkbox(formData, "isWatchtowerStudyReader"),
+  };
+}
+
 export async function createOrganizationTokenAction(): Promise<
   ActionState<{ code: string; expiresAt: string }>
 > {
@@ -173,9 +215,7 @@ export async function createPersonAction(
     const actor = await actorFromRequest();
     const input = createPersonInput.parse({
       organizationId: formData.get("organizationId"),
-      name: formData.get("name"),
-      email: formData.get("email") || undefined,
-      phone: formData.get("phone") || undefined,
+      ...personFormData(formData),
     });
     const ctx = await getOrgContext(actor, input.organizationId);
     const person = await createPerson(ctx, input);
@@ -193,9 +233,7 @@ export async function updatePersonAction(
     const input = updatePersonInput.parse({
       organizationId: formData.get("organizationId"),
       personId: formData.get("personId"),
-      name: formData.get("name"),
-      email: formData.get("email") || undefined,
-      phone: formData.get("phone") || undefined,
+      ...personFormData(formData),
     });
     const ctx = await getOrgContext(actor, input.organizationId);
     await updatePerson(ctx, input);

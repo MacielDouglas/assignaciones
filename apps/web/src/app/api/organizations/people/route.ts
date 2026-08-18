@@ -15,12 +15,90 @@ function orgIdFrom(request: NextRequest): string | undefined {
   return request.nextUrl.searchParams.get("orgId") ?? undefined;
 }
 
-function personPayload(body: Record<string, unknown>, extra: Record<string, unknown> = {}) {
-  return {
-    ...extra,
+const BOOLEAN_FIELDS = [
+  "isHeadOfFamily",
+  "isYoung",
+  "isStudent",
+  "isBaptized",
+  "isActive",
+  "hasCleaning",
+  "startingConversation",
+  "cultivatingInterest",
+  "makingDisciples",
+  "explainingBeliefs",
+  "hasBestMinistrySpeech",
+  "hasBibleReading",
+  "hasServicePrivileges",
+  "hasPrayer",
+  "isElder",
+  "hasWhatWouldYouSay",
+  "hasNVMCChairman",
+  "hasTreasuresSpeech",
+  "hasSpiritualGems",
+  "hasChristianLifeParts",
+  "hasCongregationBibleStudy",
+  "isBibleStudyReader",
+  "hasPublicMeetingChairman",
+  "hasPublicTalk",
+  "hasWatchtowerStudyConductor",
+  "isWatchtowerStudyReader",
+] as const;
+
+function personPayload(body: Record<string, unknown>) {
+  const payload: Record<string, unknown> = {
     name: typeof body.name === "string" ? body.name : undefined,
-    email: typeof body.email === "string" ? body.email : undefined,
-    phone: typeof body.phone === "string" ? body.phone : undefined,
+    sex: body.sex,
+    family: typeof body.family === "string" ? body.family : undefined,
+  };
+  for (const field of BOOLEAN_FIELDS) {
+    payload[field] = typeof body[field] === "boolean" ? body[field] : undefined;
+  }
+  return payload;
+}
+
+function serializePerson(person: Awaited<ReturnType<typeof listPeople>>[number]) {
+  return {
+    id: person.id,
+    organizationId: person.organizationId,
+    name: person.name,
+    sex: person.sex,
+    family: person.family,
+    isHeadOfFamily: person.isHeadOfFamily,
+    isYoung: person.isYoung,
+    isStudent: person.isStudent,
+    isBaptized: person.isBaptized,
+    isActive: person.isActive,
+    hasCleaning: person.hasCleaning,
+    startingConversation: person.startingConversation,
+    cultivatingInterest: person.cultivatingInterest,
+    makingDisciples: person.makingDisciples,
+    explainingBeliefs: person.explainingBeliefs,
+    hasBestMinistrySpeech: person.hasBestMinistrySpeech,
+    hasBibleReading: person.hasBibleReading,
+    hasServicePrivileges: person.hasServicePrivileges,
+    hasPrayer: person.hasPrayer,
+    isElder: person.isElder,
+    hasWhatWouldYouSay: person.hasWhatWouldYouSay,
+    hasNVMCChairman: person.hasNVMCChairman,
+    hasTreasuresSpeech: person.hasTreasuresSpeech,
+    hasSpiritualGems: person.hasSpiritualGems,
+    hasChristianLifeParts: person.hasChristianLifeParts,
+    hasCongregationBibleStudy: person.hasCongregationBibleStudy,
+    isBibleStudyReader: person.isBibleStudyReader,
+    hasPublicMeetingChairman: person.hasPublicMeetingChairman,
+    hasPublicTalk: person.hasPublicTalk,
+    hasWatchtowerStudyConductor: person.hasWatchtowerStudyConductor,
+    isWatchtowerStudyReader: person.isWatchtowerStudyReader,
+    member: person.member
+      ? {
+          id: person.member.id,
+          user: {
+            id: person.member.user.id,
+            name: person.member.user.name,
+            email: person.member.user.email,
+          },
+        }
+      : null,
   };
 }
 
@@ -35,23 +113,7 @@ export async function GET(request: NextRequest) {
     const people = await listPeople(ctx);
     return {
       organizationId: ctx.organization.id,
-      people: people.map((person) => ({
-        id: person.id,
-        organizationId: person.organizationId,
-        name: person.name,
-        email: person.email,
-        phone: person.phone,
-        member: person.member
-          ? {
-              id: person.member.id,
-              user: {
-                id: person.member.user.id,
-                name: person.member.user.name,
-                email: person.member.user.email,
-              },
-            }
-          : null,
-      })),
+      people: people.map(serializePerson),
     };
   });
 }

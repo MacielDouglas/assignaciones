@@ -45,13 +45,50 @@ export type Member = {
   user: { id: string; name: string | null; email: string | null; image: string | null };
 };
 
+export type PersonSex = "MALE" | "FEMALE";
+
+export const personSexLabels: Record<PersonSex, string> = {
+  MALE: "Masculino",
+  FEMALE: "Feminino",
+};
+
 export type Person = {
   id: string;
   organizationId: string;
   name: string;
-  email: string | null;
-  phone: string | null;
+  sex: PersonSex;
+  family: string | null;
+  isHeadOfFamily: boolean;
+  isYoung: boolean;
+  isStudent: boolean;
+  isBaptized: boolean;
+  isActive: boolean;
+  hasCleaning: boolean;
+  startingConversation: boolean;
+  cultivatingInterest: boolean;
+  makingDisciples: boolean;
+  explainingBeliefs: boolean;
+  hasBestMinistrySpeech: boolean;
+  hasBibleReading: boolean;
+  hasServicePrivileges: boolean;
+  hasPrayer: boolean;
+  isElder: boolean;
+  hasWhatWouldYouSay: boolean;
+  hasNVMCChairman: boolean;
+  hasTreasuresSpeech: boolean;
+  hasSpiritualGems: boolean;
+  hasChristianLifeParts: boolean;
+  hasCongregationBibleStudy: boolean;
+  isBibleStudyReader: boolean;
+  hasPublicMeetingChairman: boolean;
+  hasPublicTalk: boolean;
+  hasWatchtowerStudyConductor: boolean;
+  isWatchtowerStudyReader: boolean;
   member: { id: string; user: { id: string; name: string | null; email: string | null } } | null;
+};
+
+export type PersonFields = Omit<Person, "id" | "organizationId" | "member" | "sex"> & {
+  sex: PersonSex | null;
 };
 
 export function getContext(): Promise<ContextResponse> {
@@ -113,25 +150,14 @@ export function listPeople(orgId?: string) {
   );
 }
 
-export function createPerson(input: {
-  organizationId: string;
-  name: string;
-  email?: string;
-  phone?: string;
-}) {
+export function createPerson(input: PersonFields & { organizationId: string }) {
   return apiFetch<{ personId: string }>("/api/organizations/people", {
     method: "POST",
     body: JSON.stringify(input),
   });
 }
 
-export function updatePerson(input: {
-  organizationId: string;
-  personId: string;
-  name: string;
-  email?: string;
-  phone?: string;
-}) {
+export function updatePerson(input: PersonFields & { organizationId: string; personId: string }) {
   return apiFetch<{ personId: string }>("/api/organizations/people", {
     method: "PATCH",
     body: JSON.stringify(input),

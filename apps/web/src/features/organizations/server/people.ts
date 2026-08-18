@@ -24,6 +24,27 @@ function requireSameOrganization(ctx: OrgContext, organizationId: string): void 
   }
 }
 
+async function assertFamilyAvailable(
+  organizationId: string,
+  family: string | undefined,
+  excludePersonId?: string,
+): Promise<void> {
+  if (!family) {
+    return;
+  }
+  const existing = await prisma.person.findFirst({
+    where: {
+      organizationId,
+      family: { equals: family, mode: "insensitive" },
+      NOT: excludePersonId ? { id: excludePersonId } : undefined,
+    },
+    select: { id: true },
+  });
+  if (existing) {
+    throw new OrgError("Já existe uma família com este nome na organização", "FAMILY_TAKEN");
+  }
+}
+
 export async function listPeople(ctx: OrgContext) {
   requireManage(ctx, "ver");
 
@@ -37,7 +58,7 @@ export async function listPeople(ctx: OrgContext) {
         },
       },
     },
-    orderBy: { name: "asc" },
+    orderBy: [{ family: "asc" }, { name: "asc" }],
   });
 }
 
@@ -45,13 +66,40 @@ export async function createPerson(ctx: OrgContext, raw: CreatePersonInput) {
   requireManage(ctx, "criar");
   const input = createPersonInput.parse(raw);
   requireSameOrganization(ctx, input.organizationId);
+  await assertFamilyAvailable(ctx.organization.id, input.family);
 
   return prisma.person.create({
     data: {
       organizationId: ctx.organization.id,
       name: input.name,
-      email: input.email ?? null,
-      phone: input.phone ?? null,
+      sex: input.sex,
+      family: input.family ?? null,
+      isHeadOfFamily: input.isHeadOfFamily,
+      isYoung: input.isYoung,
+      isStudent: input.isStudent,
+      isBaptized: input.isBaptized,
+      isActive: input.isActive,
+      hasCleaning: input.hasCleaning,
+      startingConversation: input.startingConversation,
+      cultivatingInterest: input.cultivatingInterest,
+      makingDisciples: input.makingDisciples,
+      explainingBeliefs: input.explainingBeliefs,
+      hasBestMinistrySpeech: input.hasBestMinistrySpeech,
+      hasBibleReading: input.hasBibleReading,
+      hasServicePrivileges: input.hasServicePrivileges,
+      hasPrayer: input.hasPrayer,
+      isElder: input.isElder,
+      hasWhatWouldYouSay: input.hasWhatWouldYouSay,
+      hasNVMCChairman: input.hasNVMCChairman,
+      hasTreasuresSpeech: input.hasTreasuresSpeech,
+      hasSpiritualGems: input.hasSpiritualGems,
+      hasChristianLifeParts: input.hasChristianLifeParts,
+      hasCongregationBibleStudy: input.hasCongregationBibleStudy,
+      isBibleStudyReader: input.isBibleStudyReader,
+      hasPublicMeetingChairman: input.hasPublicMeetingChairman,
+      hasPublicTalk: input.hasPublicTalk,
+      hasWatchtowerStudyConductor: input.hasWatchtowerStudyConductor,
+      isWatchtowerStudyReader: input.isWatchtowerStudyReader,
     },
   });
 }
@@ -60,6 +108,7 @@ export async function updatePerson(ctx: OrgContext, raw: UpdatePersonInput) {
   requireManage(ctx, "editar");
   const input = updatePersonInput.parse(raw);
   requireSameOrganization(ctx, input.organizationId);
+  await assertFamilyAvailable(ctx.organization.id, input.family, input.personId);
 
   const existing = await prisma.person.findFirst({
     where: { id: input.personId, organizationId: ctx.organization.id },
@@ -73,8 +122,34 @@ export async function updatePerson(ctx: OrgContext, raw: UpdatePersonInput) {
     where: { id: input.personId },
     data: {
       name: input.name,
-      email: input.email ?? null,
-      phone: input.phone ?? null,
+      sex: input.sex,
+      family: input.family ?? null,
+      isHeadOfFamily: input.isHeadOfFamily,
+      isYoung: input.isYoung,
+      isStudent: input.isStudent,
+      isBaptized: input.isBaptized,
+      isActive: input.isActive,
+      hasCleaning: input.hasCleaning,
+      startingConversation: input.startingConversation,
+      cultivatingInterest: input.cultivatingInterest,
+      makingDisciples: input.makingDisciples,
+      explainingBeliefs: input.explainingBeliefs,
+      hasBestMinistrySpeech: input.hasBestMinistrySpeech,
+      hasBibleReading: input.hasBibleReading,
+      hasServicePrivileges: input.hasServicePrivileges,
+      hasPrayer: input.hasPrayer,
+      isElder: input.isElder,
+      hasWhatWouldYouSay: input.hasWhatWouldYouSay,
+      hasNVMCChairman: input.hasNVMCChairman,
+      hasTreasuresSpeech: input.hasTreasuresSpeech,
+      hasSpiritualGems: input.hasSpiritualGems,
+      hasChristianLifeParts: input.hasChristianLifeParts,
+      hasCongregationBibleStudy: input.hasCongregationBibleStudy,
+      isBibleStudyReader: input.isBibleStudyReader,
+      hasPublicMeetingChairman: input.hasPublicMeetingChairman,
+      hasPublicTalk: input.hasPublicTalk,
+      hasWatchtowerStudyConductor: input.hasWatchtowerStudyConductor,
+      isWatchtowerStudyReader: input.isWatchtowerStudyReader,
     },
   });
 }
