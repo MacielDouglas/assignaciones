@@ -1,4 +1,4 @@
-import { createHash, randomInt } from "node:crypto";
+import { createCipheriv, createDecipheriv, createHash, randomBytes, randomInt } from "node:crypto";
 
 import { prisma } from "@/lib/db";
 
@@ -9,6 +9,32 @@ import { OrgError } from "./errors";
 const TOKEN_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
 const TOKEN_LENGTH = 8;
 const TOKEN_TTL_MS = 24 * 60 * 60 * 1000;
+
+function encryptionKey(): Buffer {
+  const secret = process.env.BETTER_AUTH_SECRET;
+  if (!secret) {
+    throw new OrgError("Segredo de autenticação não configurado", "CONFIG_ERROR");
+  }
+  return createHash("sha256").update(secret).digest();
+}
+
+export function encryptTokenCode(code: string): string {
+  const iv = randomBytes(12);
+  const cipher = createCipheriv("aes-256-gcm", encryptionKey(), iv);
+  const encrypted = Buffer.concat([cipher.update(code, "utf8"), cipher.final()]);
+  const tag = cipher.getAuthTag();
+  return `${iv.toString("base64")}.${tag.toString("base64")}.${encrypted.toString("base64")}`;
+}
+
+export function decryptTokenCode(payload: string): string {
+  const [ivB64, tagB64, dataB64] = payload.split(".");
+  const decipher = createDecipheriv("aes-256-gcm", encryptionKey(), Buffer.from(ivB64, "base64"));
+  decipher.setAuthTag(Buffer.from(tagB64, "base64"));
+  return Buffer.concat([
+    decipher.update(Buffer.from(dataB64, "base64")),
+    decipher.final(),
+  ]).toString("utf8");
+}
 
 export function generateTokenCode(): string {
   let code = "";
@@ -29,6 +55,7 @@ export type TokenResult = {
 
 export type TokenListEntry = {
   id: string;
+  code: string | null;
   type: "ORGANIZATION_CREATE" | "MEMBER_INVITE";
   createdAt: Date;
   expiresAt: Date;
@@ -53,6 +80,7 @@ export async function listCreatedTokens(actor: Actor): Promise<TokenListEntry[]>
 
   return tokens.map((token) => ({
     id: token.id,
+    code: token.codeEncrypted ? decryptTokenCode(token.codeEncrypted) : null,
     type: token.type,
     createdAt: token.createdAt,
     expiresAt: token.expiresAt,
@@ -91,6 +119,7 @@ export async function createOrganizationCreateToken(actor: Actor): Promise<Token
   await prisma.inviteToken.create({
     data: {
       codeHash: hashTokenCode(code),
+      codeEncrypted: encryptTokenCode(code),
       type: "ORGANIZATION_CREATE",
       createdById: actor.userId,
       expiresAt,
@@ -115,6 +144,7 @@ export async function createMemberInviteToken(
   await prisma.inviteToken.create({
     data: {
       codeHash: hashTokenCode(code),
+      codeEncrypted: encryptTokenCode(code),
       type: "MEMBER_INVITE",
       organizationId: ctx.organization.id,
       createdById: actor.userId,

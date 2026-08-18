@@ -3,6 +3,7 @@ import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { CopyCode } from "@/features/organizations/components/copy-code";
 import { DeleteTokenButton } from "@/features/organizations/components/token-forms";
 import { getActorFromHeaders } from "@/features/organizations/server/access";
 import { listCreatedTokens, type TokenListEntry } from "@/features/organizations/server/tokens";
@@ -59,6 +60,16 @@ function TokenRow({ token }: { token: TokenListEntry }) {
           <span className="text-sm font-medium">{typeLabels[token.type]}</span>
           <TokenStatusBadge token={token} />
         </div>
+        {token.code ? (
+          <div className="flex w-fit items-center gap-2 rounded-lg border bg-muted/40 px-3 py-1.5">
+            <span className="font-mono text-lg font-bold tracking-widest">{token.code}</span>
+            <CopyCode code={token.code} />
+          </div>
+        ) : (
+          <span className="text-xs text-muted-foreground">
+            Código não recuperável (token gerado antes desta versão)
+          </span>
+        )}
         <span className="text-xs text-muted-foreground">
           Criado em {formatDateTime(token.createdAt)} · Expira em {formatDateTime(token.expiresAt)}
         </span>

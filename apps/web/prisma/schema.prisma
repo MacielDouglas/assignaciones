@@ -79,6 +79,7 @@ model Person {
 model InviteToken {
   id             String          @id @default(cuid())
   codeHash       String          @unique
+  codeEncrypted  String?
   type           InviteTokenType
   organizationId String?
   createdById    String
