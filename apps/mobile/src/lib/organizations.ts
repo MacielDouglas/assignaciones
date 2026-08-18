@@ -124,3 +124,23 @@ export function createPerson(input: {
     body: JSON.stringify(input),
   });
 }
+
+export function updatePerson(input: {
+  organizationId: string;
+  personId: string;
+  name: string;
+  email?: string;
+  phone?: string;
+}) {
+  return apiFetch<{ personId: string }>("/api/organizations/people", {
+    method: "PATCH",
+    body: JSON.stringify(input),
+  });
+}
+
+export function deletePerson(organizationId: string, personId: string) {
+  return apiFetch<{ personId: string }>("/api/organizations/people", {
+    method: "DELETE",
+    body: JSON.stringify({ organizationId, personId }),
+  });
+}

@@ -56,7 +56,7 @@ export default async function MembersPage({
 
   const [members, people] = await Promise.all([
     listMembers(actor, ctx.organization.id),
-    listPeople(actor, ctx.organization.id),
+    listPeople(ctx),
   ]);
 
   const unlinkedPeople = people.filter((person) => !person.member);

@@ -78,16 +78,26 @@ export async function listCreatedTokens(actor: Actor): Promise<TokenListEntry[]>
     orderBy: { createdAt: "desc" },
   });
 
-  return tokens.map((token) => ({
-    id: token.id,
-    code: token.codeEncrypted ? decryptTokenCode(token.codeEncrypted) : null,
-    type: token.type,
-    createdAt: token.createdAt,
-    expiresAt: token.expiresAt,
-    usedAt: token.usedAt,
-    usedBy: token.usedBy,
-    organization: token.organization,
-  }));
+  return tokens.map((token) => {
+    let code: string | null = null;
+    if (token.codeEncrypted) {
+      try {
+        code = decryptTokenCode(token.codeEncrypted);
+      } catch {
+        code = null;
+      }
+    }
+    return {
+      id: token.id,
+      code,
+      type: token.type,
+      createdAt: token.createdAt,
+      expiresAt: token.expiresAt,
+      usedAt: token.usedAt,
+      usedBy: token.usedBy,
+      organization: token.organization,
+    };
+  });
 }
 
 export async function deleteToken(actor: Actor, tokenId: string): Promise<void> {

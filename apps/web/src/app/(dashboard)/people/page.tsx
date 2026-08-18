@@ -4,6 +4,11 @@ import { redirect } from "next/navigation";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { CreatePersonForm } from "@/features/organizations/components/create-person-form";
+import {
+  DeletePersonButton,
+  EditPersonSheet,
+  PersonAvatar,
+} from "@/features/organizations/components/person-forms";
 import { getActorFromHeaders } from "@/features/organizations/server/access";
 import { getOrgContext } from "@/features/organizations/server/context";
 import { OrgError } from "@/features/organizations/server/errors";
@@ -46,7 +51,7 @@ export default async function PeoplePage({
     );
   }
 
-  const people = await listPeople(actor, ctx.organization.id);
+  const people = await listPeople(ctx);
 
   return (
     <div className="flex flex-col gap-6">
@@ -83,30 +88,41 @@ export default async function PeoplePage({
               {people.map((person) => (
                 <div
                   key={person.id}
-                  className="flex flex-col gap-1 py-3 first:pt-0 last:pb-0 sm:flex-row sm:items-center sm:justify-between"
+                  className="flex flex-col gap-3 py-3 first:pt-0 last:pb-0 sm:flex-row sm:items-center sm:justify-between"
                 >
-                  <div className="flex min-w-0 flex-col gap-0.5">
-                    <span className="truncate text-sm font-medium">{person.name}</span>
-                    <span className="truncate text-xs text-muted-foreground">
-                      {[person.email, person.phone].filter(Boolean).join(" · ") || "Sem contato"}
-                    </span>
+                  <div className="flex min-w-0 items-start gap-3">
+                    <PersonAvatar name={person.name} />
+                    <div className="flex min-w-0 flex-col gap-0.5">
+                      <span className="truncate text-sm font-medium">{person.name}</span>
+                      <span className="truncate text-xs text-muted-foreground">
+                        {[person.email, person.phone].filter(Boolean).join(" · ") || "Sem contato"}
+                      </span>
+                      {person.member ? (
+                        <Badge
+                          variant="outline"
+                          className="mt-1 w-fit text-xs"
+                        >
+                          Vinculada a {person.member.user.name ?? "um usuário"}
+                        </Badge>
+                      ) : (
+                        <Badge
+                          variant="secondary"
+                          className="mt-1 w-fit text-xs"
+                        >
+                          Sem usuário vinculado
+                        </Badge>
+                      )}
+                    </div>
                   </div>
-                  <div className="flex items-center gap-2">
-                    {person.member ? (
-                      <Badge
-                        variant="outline"
-                        className="text-xs"
-                      >
-                        Vinculada a {person.member.user.name ?? "um usuário"}
-                      </Badge>
-                    ) : (
-                      <Badge
-                        variant="secondary"
-                        className="text-xs"
-                      >
-                        Sem usuário vinculado
-                      </Badge>
-                    )}
+                  <div className="flex shrink-0 items-center gap-1.5">
+                    <EditPersonSheet
+                      organizationId={ctx.organization.id}
+                      person={person}
+                    />
+                    <DeletePersonButton
+                      organizationId={ctx.organization.id}
+                      personId={person.id}
+                    />
                   </div>
                 </div>
               ))}

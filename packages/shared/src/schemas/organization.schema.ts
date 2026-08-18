@@ -55,6 +55,19 @@ export const createPersonInput = z.object({
   phone: optionalPhoneSchema,
 });
 
+export const updatePersonInput = z.object({
+  organizationId: z.string().min(1, "Organização inválida"),
+  personId: z.string().min(1, "Pessoa inválida"),
+  name: personNameSchema,
+  email: optionalEmailSchema,
+  phone: optionalPhoneSchema,
+});
+
+export const deletePersonInput = z.object({
+  organizationId: z.string().min(1, "Organização inválida"),
+  personId: z.string().min(1, "Pessoa inválida"),
+});
+
 export const updateMemberRoleInput = z.object({
   memberId: z.string().min(1, "Membro inválido"),
   role: memberRoleSchema,
@@ -72,6 +85,8 @@ export const unlinkPersonInput = z.object({
 export type RedeemOrganizationCreateInput = z.infer<typeof redeemOrganizationCreateInput>;
 export type RedeemMemberInviteInput = z.infer<typeof redeemMemberInviteInput>;
 export type CreatePersonInput = z.infer<typeof createPersonInput>;
+export type UpdatePersonInput = z.infer<typeof updatePersonInput>;
+export type DeletePersonInput = z.infer<typeof deletePersonInput>;
 export type UpdateMemberRoleInput = z.infer<typeof updateMemberRoleInput>;
 export type LinkPersonToMemberInput = z.infer<typeof linkPersonToMemberInput>;
 export type UnlinkPersonInput = z.infer<typeof unlinkPersonInput>;

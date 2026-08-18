@@ -2,20 +2,23 @@
 
 import {
   createPersonInput,
+  deletePersonInput,
   linkPersonToMemberInput,
   redeemMemberInviteInput,
   redeemOrganizationCreateInput,
   unlinkPersonInput,
   updateMemberRoleInput,
+  updatePersonInput,
 } from "@asignaciones/shared";
 import { revalidatePath } from "next/cache";
 import { headers } from "next/headers";
 import { ZodError } from "zod";
 
 import { requireActor } from "./access";
+import { getOrgContext } from "./context";
 import { OrgError } from "./errors";
 import { linkPersonToMember, unlinkPersonFromMember, updateMemberRole } from "./members";
-import { createPerson } from "./people";
+import { createPerson, deletePerson, updatePerson } from "./people";
 import {
   createMemberInviteToken,
   createOrganizationCreateToken,
@@ -174,8 +177,46 @@ export async function createPersonAction(
       email: formData.get("email") || undefined,
       phone: formData.get("phone") || undefined,
     });
-    const person = await createPerson(actor, input);
+    const ctx = await getOrgContext(actor, input.organizationId);
+    const person = await createPerson(ctx, input);
     revalidatePath("/people");
     return { personId: person.id };
+  });
+}
+
+export async function updatePersonAction(
+  _prev: ActionState,
+  formData: FormData,
+): Promise<ActionState<{ personId: string }>> {
+  return run(async () => {
+    const actor = await actorFromRequest();
+    const input = updatePersonInput.parse({
+      organizationId: formData.get("organizationId"),
+      personId: formData.get("personId"),
+      name: formData.get("name"),
+      email: formData.get("email") || undefined,
+      phone: formData.get("phone") || undefined,
+    });
+    const ctx = await getOrgContext(actor, input.organizationId);
+    await updatePerson(ctx, input);
+    revalidatePath("/people");
+    return { personId: input.personId };
+  });
+}
+
+export async function deletePersonAction(
+  _prev: ActionState,
+  formData: FormData,
+): Promise<ActionState<{ personId: string }>> {
+  return run(async () => {
+    const actor = await actorFromRequest();
+    const input = deletePersonInput.parse({
+      organizationId: formData.get("organizationId"),
+      personId: formData.get("personId"),
+    });
+    const ctx = await getOrgContext(actor, input.organizationId);
+    await deletePerson(ctx, input);
+    revalidatePath("/people");
+    return { personId: input.personId };
   });
 }
