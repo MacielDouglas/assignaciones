@@ -1,36 +1,50 @@
 import { betterAuth } from "better-auth";
 import { prismaAdapter } from "better-auth/adapters/prisma";
-import { db } from "@/lib/db";
+import { nextCookies } from "better-auth/next-js";
+import { prisma } from "./prisma";
 
-function requireEnv(name: string) {
-  const value = process.env[name];
-  if (!value) {
-    throw new Error(`Variável de ambiente ${name} não definida`);
-  }
-  return value;
+const googleClientId = process.env.GOOGLE_CLIENT_ID;
+const googleClientSecret = process.env.GOOGLE_CLIENT_SECRET;
+
+if (!googleClientId || !googleClientSecret) {
+  throw new Error("[auth] Faltan variables de entorno: GOOGLE_CLIENT_ID y/o GOOGLE_CLIENT_SECRET");
 }
 
 export const auth = betterAuth({
-  baseURL: process.env.BETTER_AUTH_URL,
-  database: prismaAdapter(db, {
+  database: prismaAdapter(prisma, {
     provider: "postgresql",
   }),
+
+  session: {
+    expiresIn: 60 * 60, // 1 hora
+    disableSessionRefresh: true,
+  },
+
+  trustedOrigins: process.env.NEXT_PUBLIC_URL ? [process.env.NEXT_PUBLIC_URL] : [],
+
   socialProviders: {
     google: {
-      clientId: requireEnv("GOOGLE_CLIENT_ID"),
-      clientSecret: requireEnv("GOOGLE_CLIENT_SECRET"),
+      clientId: googleClientId,
+      clientSecret: googleClientSecret,
     },
   },
-  session: {
-    cookieCache: {
-      enabled: true,
-      maxAge: 5 * 60,
+
+  user: {
+    additionalFields: {
+      theme: {
+        type: "string",
+        required: false,
+        defaultValue: "system",
+        input: true,
+      },
+      isSuperUser: {
+        type: "boolean",
+        required: false,
+        defaultValue: false,
+        input: false,
+      },
     },
   },
-  advanced: {
-    ipAddress: {
-      ipAddressHeaders: ["x-forwarded-for"],
-      disableIpTracking: true,
-    },
-  },
+
+  plugins: [nextCookies()], // sempre por último
 });
