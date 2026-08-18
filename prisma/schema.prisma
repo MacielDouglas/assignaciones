@@ -7,6 +7,22 @@ datasource db {
   provider = "postgresql"
 }
 
+enum MemberRole {
+  OWNER
+  ADMIN
+  MEMBER
+}
+
+enum InviteTokenType {
+  ORGANIZATION_CREATE
+  MEMBER_INVITE
+}
+
+enum Sex {
+  MALE
+  FEMALE
+}
+
 model User {
   id            String    @id @default(cuid())
   name          String?
@@ -16,8 +32,129 @@ model User {
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
-  sessions     Session[]
-  accounts     Account[]
+  sessions       Session[]
+  accounts       Account[]
+  memberships    OrganizationMember[]
+  createdTokens  InviteToken[] @relation("InviteTokenCreatedBy")
+  redeemedTokens InviteToken[] @relation("InviteTokenUsedBy")
+}
+
+model Organization {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  members      OrganizationMember[]
+  families     Family[]
+  persons      Person[]
+  inviteTokens InviteToken[]
+}
+
+model OrganizationMember {
+  id             String     @id @default(cuid())
+  organizationId String
+  userId         String     @unique
+  role           MemberRole @default(MEMBER)
+  personId       String?    @unique
+  createdAt      DateTime   @default(now())
+  updatedAt      DateTime   @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  person       Person?      @relation(fields: [personId], references: [id], onDelete: SetNull)
+
+  @@index([organizationId])
+}
+
+model Family {
+  id             String   @id @default(cuid())
+  name           String
+  organizationId String
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  persons       Person[]
+
+  @@unique([organizationId, name])
+  @@index([organizationId])
+}
+
+model Person {
+  id             String   @id @default(cuid())
+  nome           String
+  sexo           Sex      @default(MALE)
+  chefeFamilia   Boolean  @default(false)
+  familiaId      String
+  organizationId String
+  jovem          Boolean  @default(false)
+  estudante      Boolean  @default(true)
+  batizado       Boolean  @default(false)
+  ativo          Boolean  @default(true)
+  limpeza        Boolean  @default(true)
+  casado         Boolean  @default(false)
+  spouseId       String?  @unique
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  // Condicionais de estudante (apenas quando estudante = true)
+  iniciandoConversa    Boolean @default(false)
+  cultivandoInteresse  Boolean @default(false)
+  fazendoDiscipulos    Boolean @default(false)
+  explicandoCrencas    Boolean @default(false)
+
+  // Condicionais: sexo M + estudante (apenas quando ativos)
+  discursoFacaseuMelhor Boolean @default(false)
+  leituraBiblia         Boolean @default(true)
+
+  // Condicionais: sexo M + batizado
+  privilegiosServico Boolean @default(false)
+  oracao             Boolean @default(false)
+
+  // Condicionais: sexo M + batizado + privilégios de serviço
+  anciao                     Boolean @default(false)
+  oQueVoceDiria              Boolean @default(false)
+  presidenteNossaVida        Boolean @default(false)
+  discursoTesouros           Boolean @default(false)
+  joiasEspirituais           Boolean @default(false)
+  partesNossaVidaCrista      Boolean @default(false)
+  estudoBiblicoCongregacao   Boolean @default(false)
+  leitorEstudoBiblico        Boolean @default(false)
+  presidenteReuniaoPublica   Boolean @default(false)
+  discursoPublico            Boolean @default(false)
+  dirigenteEstudoSentinela   Boolean @default(false)
+  leitorEstudoSentinela      Boolean @default(false)
+
+  familia Family           @relation(fields: [familiaId], references: [id], onDelete: Cascade)
+  spouse  Person?          @relation("Marriage", fields: [spouseId], references: [id], onDelete: SetNull)
+  marriedTo Person?        @relation("Marriage")
+  member  OrganizationMember?
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  inviteToken InviteToken?
+
+  @@index([familiaId])
+  @@index([organizationId])
+}
+
+model InviteToken {
+  id             String          @id @default(cuid())
+  codeHash       String          @unique
+  type           InviteTokenType
+  organizationId String?
+  createdById    String
+  personId       String?          @unique
+  usedById       String?
+  usedAt         DateTime?
+  expiresAt      DateTime
+  createdAt      DateTime        @default(now())
+
+  organization Organization? @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  createdBy    User          @relation("InviteTokenCreatedBy", fields: [createdById], references: [id], onDelete: Cascade)
+  usedBy       User?         @relation("InviteTokenUsedBy", fields: [usedById], references: [id], onDelete: SetNull)
+  person       Person?       @relation(fields: [personId], references: [id], onDelete: SetNull)
+
+  @@index([organizationId])
 }
 
 model Session {

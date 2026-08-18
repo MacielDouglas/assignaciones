@@ -20,7 +20,7 @@ export const auth = betterAuth({
     disableSessionRefresh: true,
   },
 
-  trustedOrigins: process.env.NEXT_PUBLIC_URL ? [process.env.NEXT_PUBLIC_URL] : [],
+  trustedOrigins: process.env.NEXT_PUBLIC_APP_URL ? [process.env.NEXT_PUBLIC_APP_URL] : [],
 
   socialProviders: {
     google: {
