@@ -827,6 +827,12 @@ function WatchtowerEditor({
   onCancel: () => void;
   onSave: () => void;
 }) {
+  const articleColors = [
+    ...new Set(
+      draft.articles.map((article) => article.color).filter((c): c is string => Boolean(c)),
+    ),
+  ];
+
   function updateArticle(articleIndex: number, article: WatchtowerArticle) {
     const next = structuredClone(draft);
     next.articles[articleIndex] = article;
@@ -901,6 +907,7 @@ function WatchtowerEditor({
                   <WatchtowerArticleCard
                     key={article.title || `article-${articleIndex}`}
                     article={article}
+                    colorOptions={articleColors}
                     onChange={(nextArticle) => updateArticle(articleIndex, nextArticle)}
                     onRemove={() => removeArticle(articleIndex)}
                   />
@@ -929,14 +936,14 @@ function WatchtowerEditor({
   );
 }
 
-const ARTICLE_COLOR_OPTIONS = ["#143368", "#d65a00", "#4b2e83", "#5c7a00", "#b8860b"];
-
 function WatchtowerArticleCard({
   article,
+  colorOptions,
   onChange,
   onRemove,
 }: {
   article: WatchtowerArticle;
+  colorOptions: string[];
   onChange: (article: WatchtowerArticle) => void;
   onRemove: () => void;
 }) {
@@ -992,21 +999,23 @@ function WatchtowerArticleCard({
           </Field>
           <Field label="Cor">
             <div className="flex items-center gap-2">
-              <div className="flex flex-wrap gap-1.5">
-                {ARTICLE_COLOR_OPTIONS.map((color) => (
-                  <button
-                    key={color}
-                    type="button"
-                    onClick={() => onChange({ ...article, color })}
-                    className={cn(
-                      "size-7 rounded-full ring-1 ring-black/10 transition-transform outline-none focus-visible:ring-3 focus-visible:ring-ring/50",
-                      article.color === color && "scale-110 ring-2 ring-ring",
-                    )}
-                    style={{ backgroundColor: color }}
-                    aria-label={`Usar cor ${color}`}
-                  />
-                ))}
-              </div>
+              {colorOptions.length > 0 && (
+                <div className="flex flex-wrap gap-1.5">
+                  {colorOptions.map((color) => (
+                    <button
+                      key={color}
+                      type="button"
+                      onClick={() => onChange({ ...article, color })}
+                      className={cn(
+                        "size-7 rounded-full ring-1 ring-black/10 transition-transform outline-none focus-visible:ring-3 focus-visible:ring-ring/50",
+                        article.color === color && "scale-110 ring-2 ring-ring",
+                      )}
+                      style={{ backgroundColor: color }}
+                      aria-label={`Usar cor ${color}`}
+                    />
+                  ))}
+                </div>
+              )}
               <Input
                 className="w-24"
                 value={article.color ?? ""}

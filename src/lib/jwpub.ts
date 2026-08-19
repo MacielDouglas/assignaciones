@@ -154,13 +154,108 @@ export interface WatchtowerArticle {
   closingSong?: number;
 }
 
-const WATCHTOWER_COLORS: Record<string, string> = {
-  "blue-800": "#143368",
-  "orange-600": "#d65a00",
-  "purple-700": "#4b2e83",
-  "lime-700": "#5c7a00",
-  "gold-500": "#b8860b",
+const COLOR_HUES: Record<string, number> = {
+  red: 0,
+  rose: 350,
+  maroon: 350,
+  pink: 330,
+  orange: 25,
+  brown: 28,
+  bronze: 30,
+  amber: 40,
+  gold: 45,
+  yellow: 50,
+  olive: 80,
+  lime: 85,
+  green: 140,
+  emerald: 160,
+  teal: 175,
+  cyan: 190,
+  sky: 200,
+  blue: 218,
+  indigo: 240,
+  violet: 260,
+  purple: 270,
+  navy: 230,
+  gray: 220,
+  slate: 215,
+  silver: 220,
+  zinc: 220,
 };
+
+const COLOR_ANCHORS: Record<number, { lightness: number; saturation: number }> = {
+  50: { lightness: 96, saturation: 45 },
+  100: { lightness: 90, saturation: 55 },
+  200: { lightness: 82, saturation: 62 },
+  300: { lightness: 72, saturation: 66 },
+  400: { lightness: 62, saturation: 70 },
+  500: { lightness: 52, saturation: 72 },
+  600: { lightness: 42, saturation: 72 },
+  700: { lightness: 33, saturation: 66 },
+  800: { lightness: 25, saturation: 58 },
+  900: { lightness: 17, saturation: 50 },
+  950: { lightness: 12, saturation: 45 },
+};
+
+function interpolateAnchor(shade: number, key: "lightness" | "saturation"): number {
+  const anchors = Object.entries(COLOR_ANCHORS)
+    .map(([shadeValue, values]) => [Number(shadeValue), values[key]] as const)
+    .sort((a, b) => a[0] - b[0]);
+  if (shade <= anchors[0][0]) return anchors[0][1];
+  if (shade >= anchors[anchors.length - 1][0]) return anchors[anchors.length - 1][1];
+  for (let i = 0; i < anchors.length - 1; i++) {
+    const [fromShade, fromValue] = anchors[i];
+    const [toShade, toValue] = anchors[i + 1];
+    if (shade >= fromShade && shade <= toShade) {
+      const t = (shade - fromShade) / (toShade - fromShade);
+      return Math.round(fromValue + (toValue - fromValue) * t);
+    }
+  }
+  return 50;
+}
+
+function hslToHex(hue: number, saturation: number, lightness: number): string {
+  const a = (saturation / 100) * Math.min(lightness / 100, 1 - lightness / 100);
+  const channel = (n: number): string => {
+    const k = (n + hue / 30) % 12;
+    const value = lightness / 100 - a * Math.max(-1, Math.min(k - 3, Math.min(9 - k, 1)));
+    return Math.round(255 * value)
+      .toString(16)
+      .padStart(2, "0");
+  };
+  return `#${channel(0)}${channel(8)}${channel(4)}`;
+}
+
+export function deriveWatchtowerColor(colorClass: string): string {
+  const match = colorClass.match(/^([a-z]+)(?:-(\d+|[a-z]+))?$/i);
+  if (!match) return "#6E6E73";
+  const name = match[1].toLowerCase();
+  const shadeToken = match[2]?.toLowerCase() ?? "600";
+
+  if (name === "white") return "#FFFFFF";
+  if (name === "black") return "#000000";
+
+  let shade = Number(shadeToken);
+  if (!Number.isFinite(shade)) {
+    if (shadeToken === "dark") shade = 800;
+    else if (shadeToken === "light") shade = 300;
+    else shade = 600;
+  }
+
+  const hue = COLOR_HUES[name] ?? hashString(name) % 360;
+  const isNeutral = !(name in COLOR_HUES);
+  const lightness = interpolateAnchor(shade, "lightness");
+  const saturation = isNeutral ? 8 : interpolateAnchor(shade, "saturation");
+  return hslToHex(hue, saturation, lightness);
+}
+
+function hashString(value: string): number {
+  let hash = 0;
+  for (let i = 0; i < value.length; i++) {
+    hash = (hash * 31 + value.charCodeAt(i)) | 0;
+  }
+  return Math.abs(hash);
+}
 
 export interface ParsedWorkbook {
   kind: "workbook";
@@ -539,7 +634,7 @@ function parseWatchtowerArticles(
     const dates = contextTtl ? stripTags(contextTtl) : undefined;
 
     const colorClass = html.match(/du-bgColor--([a-z0-9-]+)/)?.[1];
-    const color = colorClass ? WATCHTOWER_COLORS[colorClass] : undefined;
+    const color = colorClass ? deriveWatchtowerColor(colorClass) : undefined;
 
     const songs = [...html.matchAll(/<strong>CANCIÓN\s*(\d+)<\/strong>/gi)].map((m) =>
       Number(m[1]),
