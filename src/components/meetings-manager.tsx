@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import {
   ArrowUpFromLine,
@@ -273,7 +273,7 @@ function WorkbookList({
   if (rows.length === 0) {
     return (
       <Card className="overflow-hidden rounded-2xl border">
-        <CardContent className="flex flex-col items-center gap-4 px-6 py-16 text-center sm:py-20">
+        <CardContent className="flex flex-col items-center gap-4 px-5 py-10 sm:px-6 text-center sm:py-20">
           <div className="bg-muted flex size-14 items-center justify-center rounded-2xl">
             <CalendarDays className="text-muted-foreground size-6" aria-hidden="true" />
           </div>
@@ -379,11 +379,11 @@ function MeetingsEditor({
     >
       <DialogContent
         showCloseButton={false}
-        className="max-h-[90vh] max-w-3xl gap-0 overflow-hidden p-0 sm:max-w-3xl"
+        className="flex h-dvh max-h-dvh max-w-3xl flex-col gap-0 overflow-hidden rounded-t-none border-x-0 border-b-0 p-0 sm:h-auto sm:max-h-[85vh] sm:rounded-2xl sm:border-x sm:border-b"
       >
-        <header className="flex items-start justify-between gap-4 border-b px-6 py-5">
+        <header className="flex items-start justify-between gap-4 border-b px-4 py-4 sm:px-6 sm:py-5">
           <div className="min-w-0 space-y-1">
-            <DialogTitle className="text-xl font-semibold tracking-tight">
+            <DialogTitle className="text-lg font-semibold tracking-tight sm:text-xl">
               Editar apostila
             </DialogTitle>
             <DialogDescription className="text-muted-foreground truncate text-sm">
@@ -393,7 +393,6 @@ function MeetingsEditor({
           <Button
             variant="ghost"
             size="icon"
-            className="rounded-full"
             onClick={onCancel}
             disabled={saving}
             aria-label="Fechar"
@@ -402,44 +401,39 @@ function MeetingsEditor({
           </Button>
         </header>
 
-        <div className="max-h-[calc(90vh-10rem)] overflow-y-auto px-6 py-6">
-          <div className="space-y-10">
+        <div className="min-h-0 flex-1 overflow-y-auto px-4 py-5 sm:px-6">
+          <div className="space-y-9">
             <section className="space-y-4">
               <h3 className="text-muted-foreground text-xs font-medium tracking-widest uppercase">
                 Identificação
               </h3>
-              <div className="grid gap-4 sm:grid-cols-2">
+              <div className="grid gap-3.5 sm:grid-cols-2 sm:gap-4">
                 <Field label="Nome" className="sm:col-span-2">
                   <Input
-                    className="h-9"
                     value={draft.name}
                     onChange={(event) => onChange({ ...draft, name: event.target.value })}
                   />
                 </Field>
                 <Field label="Título curto">
                   <Input
-                    className="h-9"
                     value={draft.shortTitle ?? ""}
                     onChange={(event) => onChange({ ...draft, shortTitle: event.target.value })}
                   />
                 </Field>
                 <Field label="Título de exibição">
                   <Input
-                    className="h-9"
                     value={draft.displayTitle ?? ""}
                     onChange={(event) => onChange({ ...draft, displayTitle: event.target.value })}
                   />
                 </Field>
                 <Field label="Título de referência">
                   <Input
-                    className="h-9"
                     value={draft.referenceTitle ?? ""}
                     onChange={(event) => onChange({ ...draft, referenceTitle: event.target.value })}
                   />
                 </Field>
                 <Field label="Código de idioma">
                   <Input
-                    className="h-9"
                     value={draft.languageCode ?? ""}
                     onChange={(event) => onChange({ ...draft, languageCode: event.target.value })}
                   />
@@ -451,10 +445,9 @@ function MeetingsEditor({
               <h3 className="text-muted-foreground text-xs font-medium tracking-widest uppercase">
                 Capa
               </h3>
-              <div className="grid gap-4 sm:grid-cols-2">
+              <div className="grid gap-3.5 sm:grid-cols-2 sm:gap-4">
                 <Field label="Volume">
                   <Input
-                    className="h-9"
                     value={content.coverInformation?.volume ?? ""}
                     onChange={(event) =>
                       update((c) => {
@@ -468,7 +461,6 @@ function MeetingsEditor({
                 </Field>
                 <Field label="Imagem da capa">
                   <Input
-                    className="h-9"
                     value={content.coverInformation?.coverImage ?? ""}
                     onChange={(event) =>
                       update((c) => {
@@ -512,10 +504,9 @@ function MeetingsEditor({
                 <h3 className="text-muted-foreground text-xs font-medium tracking-widest uppercase">
                   Informações adicionais
                 </h3>
-                <div className="grid gap-4 sm:grid-cols-2">
+                <div className="grid gap-3.5 sm:grid-cols-2 sm:gap-4">
                   <Field label="Semana">
                     <Input
-                      className="h-9"
                       value={content.additionalInformation.week}
                       onChange={(event) =>
                         update((c) => {
@@ -527,7 +518,6 @@ function MeetingsEditor({
                   </Field>
                   <Field label="Título">
                     <Input
-                      className="h-9"
                       value={content.additionalInformation.title}
                       onChange={(event) =>
                         update((c) => {
@@ -539,7 +529,6 @@ function MeetingsEditor({
                   </Field>
                   <Field label="Duração">
                     <Input
-                      className="h-9"
                       value={content.additionalInformation.duration}
                       onChange={(event) =>
                         update((c) => {
@@ -551,7 +540,6 @@ function MeetingsEditor({
                   </Field>
                   <Field label="Vídeo">
                     <Input
-                      className="h-9"
                       value={content.additionalInformation.video ?? ""}
                       onChange={(event) =>
                         update((c) => {
@@ -579,11 +567,16 @@ function MeetingsEditor({
           </div>
         </div>
 
-        <footer className="flex justify-end gap-2 border-t bg-background px-6 py-4">
-          <Button variant="outline" className="rounded-full" onClick={onCancel} disabled={saving}>
+        <footer className="flex flex-col-reverse gap-2.5 border-t bg-background px-4 py-4 pb-[max(1rem,env(safe-area-inset-bottom))] sm:flex-row sm:justify-end sm:gap-2 sm:px-6 sm:pb-4">
+          <Button
+            variant="outline"
+            className="w-full sm:w-auto"
+            onClick={onCancel}
+            disabled={saving}
+          >
             Cancelar
           </Button>
-          <Button className="rounded-full" onClick={onSave} disabled={saving}>
+          <Button className="w-full sm:w-auto" onClick={onSave} disabled={saving}>
             {saving && <Loader2 className="animate-spin" aria-hidden="true" />}
             Salvar
           </Button>
@@ -640,7 +633,7 @@ function WeekCard({
         </div>
         <Button
           variant="ghost"
-          size="icon-sm"
+          size="icon"
           type="button"
           className="text-destructive rounded-full hover:text-destructive"
           onClick={(event) => {
@@ -654,27 +647,24 @@ function WeekCard({
       </summary>
 
       <div className="space-y-5 border-t px-4 py-4 sm:px-5 sm:py-5">
-        <div className="grid gap-4 sm:grid-cols-2">
+        <div className="grid gap-3.5 sm:grid-cols-2 sm:gap-4">
           <Field label="Semana">
             <Input
-              className="h-9"
               value={week.week}
               onChange={(event) => onChange({ ...week, week: event.target.value })}
             />
           </Field>
           <Field label="Leitura da Bíblia">
             <Input
-              className="h-9"
               value={week.BibleReading}
               onChange={(event) => onChange({ ...week, BibleReading: event.target.value })}
             />
           </Field>
         </div>
 
-        <div className="grid gap-4 sm:grid-cols-2">
+        <div className="grid gap-3.5 sm:grid-cols-2 sm:gap-4">
           <Field label="Cântico inicial">
             <Input
-              className="h-9"
               value={week.meeting.openingSong ?? ""}
               onChange={(event) =>
                 onChange({
@@ -768,10 +758,9 @@ function WeekCard({
           </Field>
         )}
 
-        <div className="grid gap-4 sm:grid-cols-2">
+        <div className="grid gap-3.5 sm:grid-cols-2 sm:gap-4">
           <Field label="Cântico final">
             <Input
-              className="h-9"
               value={week.meeting.closingSong ?? ""}
               onChange={(event) =>
                 onChange({
@@ -823,14 +812,14 @@ function PartEditor({
           {part.number ?? "–"}
         </span>
         <Input
-          className="h-9 flex-1"
+          className="flex-1"
           value={part.title}
           onChange={(event) => onChange({ ...part, title: event.target.value })}
           aria-label="Título da parte"
         />
         <Button
           variant="ghost"
-          size="icon-sm"
+          size="icon"
           type="button"
           className="text-destructive rounded-full hover:text-destructive"
           onClick={onRemove}
@@ -840,11 +829,10 @@ function PartEditor({
         </Button>
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-3">
+      <div className="grid gap-3.5 sm:grid-cols-3 sm:gap-4">
         {part.duration !== undefined && (
           <Field label="Duração">
             <Input
-              className="h-9"
               value={part.duration}
               onChange={(event) => onChange({ ...part, duration: event.target.value })}
             />
@@ -853,7 +841,6 @@ function PartEditor({
         {part.format !== undefined && (
           <Field label="Formato">
             <Input
-              className="h-9"
               value={part.format}
               onChange={(event) => onChange({ ...part, format: event.target.value })}
             />
@@ -862,7 +849,6 @@ function PartEditor({
         {part.territory !== undefined && (
           <Field label="Território">
             <Input
-              className="h-9"
               value={part.territory}
               onChange={(event) => onChange({ ...part, territory: event.target.value })}
             />
@@ -936,7 +922,7 @@ function StringList({
             />
             <Button
               variant="ghost"
-              size="icon-sm"
+              size="icon"
               type="button"
               className="text-destructive rounded-full hover:text-destructive"
               onClick={() => onChange(values.filter((_, i) => i !== index))}
@@ -951,7 +937,7 @@ function StringList({
         variant="outline"
         size="sm"
         type="button"
-        className="rounded-full"
+        className="w-full sm:w-auto"
         onClick={() => onChange([...values, ""])}
       >
         <Plus aria-hidden="true" />

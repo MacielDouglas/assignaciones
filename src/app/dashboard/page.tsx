@@ -1,4 +1,4 @@
-import { Building2, CalendarDays, KeyRound, UserRound, Users } from "lucide-react";
+﻿import { Building2, CalendarDays, KeyRound, UserRound, Users } from "lucide-react";
 import { headers } from "next/headers";
 import Link from "next/link";
 import { redirect } from "next/navigation";
@@ -67,7 +67,7 @@ export default async function DashboardPage() {
   const role = membership?.role;
 
   return (
-    <main className="mx-auto w-full max-w-2xl flex-1 space-y-6 px-6 py-8">
+    <main className="mx-auto w-full max-w-2xl flex-1 space-y-6 px-5 py-10 sm:px-6">
       <header className="flex items-center justify-between gap-4">
         <div className="flex min-w-0 items-center gap-4">
           <Avatar className="size-12">
@@ -143,7 +143,7 @@ export default async function DashboardPage() {
         <Link href="/dashboard/pessoas" className="block">
           <Card className="h-full transition-colors hover:bg-muted/40">
             <CardContent className="flex items-center gap-3">
-              <div className="bg-primary/10 text-primary flex size-10 items-center justify-center rounded-xl">
+              <div className="bg-primary/10 text-primary flex size-11 items-center justify-center rounded-xl">
                 <Users className="size-5" aria-hidden="true" />
               </div>
               <div>
@@ -157,7 +157,7 @@ export default async function DashboardPage() {
         <Link href="/dashboard/reunioes" className="block">
           <Card className="h-full transition-colors hover:bg-muted/40">
             <CardContent className="flex items-center gap-3">
-              <div className="bg-primary/10 text-primary flex size-10 items-center justify-center rounded-xl">
+              <div className="bg-primary/10 text-primary flex size-11 items-center justify-center rounded-xl">
                 <CalendarDays className="size-5" aria-hidden="true" />
               </div>
               <div>
@@ -172,7 +172,7 @@ export default async function DashboardPage() {
           <Link href="/dashboard/membros" className="block">
             <Card className="h-full transition-colors hover:bg-muted/40">
               <CardContent className="flex items-center gap-3">
-                <div className="bg-primary/10 text-primary flex size-10 items-center justify-center rounded-xl">
+                <div className="bg-primary/10 text-primary flex size-11 items-center justify-center rounded-xl">
                   <UserRound className="size-5" aria-hidden="true" />
                 </div>
                 <div>
@@ -188,7 +188,7 @@ export default async function DashboardPage() {
           <Link href="/dashboard/tokens" className="block">
             <Card className="h-full transition-colors hover:bg-muted/40">
               <CardContent className="flex items-center gap-3">
-                <div className="bg-primary/10 text-primary flex size-10 items-center justify-center rounded-xl">
+                <div className="bg-primary/10 text-primary flex size-11 items-center justify-center rounded-xl">
                   <KeyRound className="size-5" aria-hidden="true" />
                 </div>
                 <div>

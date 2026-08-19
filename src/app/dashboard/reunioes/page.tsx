@@ -1,4 +1,4 @@
-import { ArrowLeft } from "lucide-react";
+﻿import { ArrowLeft } from "lucide-react";
 import { headers } from "next/headers";
 import Link from "next/link";
 import { redirect } from "next/navigation";
@@ -75,7 +75,7 @@ export default async function MeetingsPage() {
   });
 
   return (
-    <main className="mx-auto w-full max-w-2xl flex-1 px-6 py-12 sm:py-16">
+    <main className="mx-auto w-full max-w-2xl flex-1 px-5 py-10 sm:px-6 sm:py-16">
       <div className="space-y-8">
         <header className="space-y-6">
           <Button

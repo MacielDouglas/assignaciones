@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { Pencil, Plus, Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
@@ -621,7 +621,7 @@ export function PeopleManager({
                     <div className="flex shrink-0 gap-1">
                       <Button
                         variant="ghost"
-                        size="icon-sm"
+                        size="icon"
                         aria-label={`Editar ${person.nome}`}
                         onClick={() => {
                           setForm(toForm(person));
@@ -632,7 +632,7 @@ export function PeopleManager({
                       </Button>
                       <Button
                         variant="ghost"
-                        size="icon-sm"
+                        size="icon"
                         aria-label={`Excluir ${person.nome}`}
                         disabled={deletingId === person.id}
                         onClick={() => handleDelete(person)}

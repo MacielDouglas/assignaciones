@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { Copy, KeyRound, RefreshCw, Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
@@ -352,7 +352,7 @@ export function TokensManager({
                     {token.status !== "USED" && (
                       <Button
                         variant="ghost"
-                        size="icon-sm"
+                        size="icon"
                         aria-label="Renovar token"
                         onClick={() => renewToken(token.id)}
                       >
@@ -361,7 +361,7 @@ export function TokensManager({
                     )}
                     <Button
                       variant="ghost"
-                      size="icon-sm"
+                      size="icon"
                       aria-label="Remover token"
                       onClick={() => removeToken(token.id)}
                     >

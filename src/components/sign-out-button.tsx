@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
@@ -19,7 +19,7 @@ export function SignOutButton() {
   };
 
   return (
-    <Button type="button" variant="outline" size="sm" onClick={handleSignOut}>
+    <Button type="button" variant="outline" onClick={handleSignOut}>
       Sair
     </Button>
   );

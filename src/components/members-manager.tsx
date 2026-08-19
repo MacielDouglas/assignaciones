@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
@@ -82,7 +82,7 @@ export function MembersManager({
       ) : (
         members.map((member) => (
           <Card key={member.id}>
-            <CardContent className="flex items-center justify-between gap-3">
+            <CardContent className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-3">
               <div className="min-w-0 space-y-0.5">
                 <p className="truncate text-sm font-medium">
                   {member.user.name ?? member.user.email ?? "Usuário"}
@@ -93,14 +93,14 @@ export function MembersManager({
                   {member.user.email ? ` · ${member.user.email}` : ""}
                 </p>
               </div>
-              <div className="flex shrink-0 items-center gap-2">
+              <div className="flex items-center gap-2">
                 <Badge variant="secondary">{ROLE_LABEL[member.role]}</Badge>
                 <Select
                   value={member.role}
                   onValueChange={(value) => changeRole(member, value as MemberRole)}
                   disabled={savingId === member.id}
                 >
-                  <SelectTrigger className="w-32" size="sm">
+                  <SelectTrigger className="min-w-0 flex-1 sm:w-32 sm:flex-none">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
