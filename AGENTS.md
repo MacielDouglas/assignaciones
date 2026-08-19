@@ -8,6 +8,12 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 
 <!-- END:nextjs-agent-rules -->
 
+# Regras do agente
+
+1. Sempre responda em português do Brasil.
+2. Nunca acesse `C:` nem arquivos `.env` (secrets e chaves não devem ser lidos nem commitados).
+3. Para acessar ou criar arquivos temporários, use a pasta `D:\temp`.
+
 # Estrutura por features (DDD)
 
 O domínio e a UI vivem em `src/features/<feature>/`, com a feature nomeada por domínio (auth, dashboard, people, members, tokens, meetings):
