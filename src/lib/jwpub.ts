@@ -547,6 +547,8 @@ function parseWatchtowerArticles(
     const openingSong = songs[0];
     const closingSong = songs.length > 1 ? songs[songs.length - 1] : undefined;
 
+    if (!title || !openingSong || !closingSong) continue;
+
     articles.push({
       title,
       dates,
