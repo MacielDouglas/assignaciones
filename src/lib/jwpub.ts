@@ -132,7 +132,6 @@ export interface WorkbookWeek {
 export interface WorkbookContent {
   name: string;
   weeks: WorkbookWeek[];
-  articles?: WatchtowerArticle[];
   coverInformation?: {
     coverImage?: string;
     volume?: string;
@@ -150,14 +149,21 @@ export interface WorkbookContent {
 export interface WatchtowerArticle {
   title: string;
   dates?: string;
-  song?: string;
-  themeScripture?: string;
-  theme?: string;
-  paragraphs: string[];
-  questions: string[];
+  color?: string;
+  openingSong?: number;
+  closingSong?: number;
 }
 
+const WATCHTOWER_COLORS: Record<string, string> = {
+  "blue-800": "#143368",
+  "orange-600": "#d65a00",
+  "purple-700": "#4b2e83",
+  "lime-700": "#5c7a00",
+  "gold-500": "#b8860b",
+};
+
 export interface ParsedWorkbook {
+  kind: "workbook";
   symbol: string;
   name: string;
   shortTitle: string;
@@ -167,6 +173,20 @@ export interface ParsedWorkbook {
   fileName: string;
   content: WorkbookContent;
 }
+
+export interface ParsedWatchtower {
+  kind: "watchtower";
+  symbol: string;
+  name: string;
+  shortTitle: string;
+  displayTitle: string;
+  referenceTitle: string;
+  languageCode: string;
+  fileName: string;
+  articles: WatchtowerArticle[];
+}
+
+export type ParsedPublication = ParsedWorkbook | ParsedWatchtower;
 
 type PartSection =
   | "TREASURES FROM GODS WORD"
@@ -518,43 +538,21 @@ function parseWatchtowerArticles(
     )?.[1];
     const dates = contextTtl ? stripTags(contextTtl) : undefined;
 
-    const song = html.match(/CANCIÓN\s*\d+/i)?.[0];
+    const colorClass = html.match(/du-bgColor--([a-z0-9-]+)/)?.[1];
+    const color = colorClass ? WATCHTOWER_COLORS[colorClass] : undefined;
 
-    const themeScrp = html.match(/class="themeScrp"[^>]*>([\s\S]*?)<\/p>/)?.[1];
-    const themeScripture = themeScrp ? stripTags(themeScrp) : undefined;
-
-    const temaIndex = html.indexOf("<strong>TEMA</strong>");
-    let theme: string | undefined;
-    if (temaIndex !== -1) {
-      const pubRefs = html.slice(temaIndex).match(/<p\b[^>]*class="pubRefs"[^>]*>([\s\S]*?)<\/p>/g);
-      const themeBox = pubRefs?.[0];
-      if (themeBox) theme = stripTags(themeBox) || undefined;
-    }
-
-    const body =
-      html
-        .match(/<div class="bodyTxt">([\s\S]*?)$/)?.[1]
-        ?.split('<div class="groupFootnote"')[0]
-        .split("<aside")[0] ?? "";
-    const paragraphs: string[] = [];
-    const questions: string[] = [];
-    for (const p of body.matchAll(/<p\b[^>]*>([\s\S]*?)<\/p>/g)) {
-      const text = stripTags(p[1]);
-      if (!text) continue;
-      const classes = p[0].match(/class="([^"]*)"/)?.[1] ?? "";
-      if (/\bqu\b/.test(classes)) questions.push(text);
-      else if (/\bpubRefs\b/.test(classes)) continue;
-      else paragraphs.push(text);
-    }
+    const songs = [...html.matchAll(/<strong>CANCIÓN\s*(\d+)<\/strong>/gi)].map((m) =>
+      Number(m[1]),
+    );
+    const openingSong = songs[0];
+    const closingSong = songs.length > 1 ? songs[songs.length - 1] : undefined;
 
     articles.push({
       title,
       dates,
-      song,
-      themeScripture,
-      theme,
-      paragraphs,
-      questions,
+      color,
+      openingSong,
+      closingSong,
     });
   }
   return articles;
@@ -586,7 +584,7 @@ function normalizeWorkbookReferences(content: WorkbookContent): void {
   walk(content);
 }
 
-export function parseWorkbook(buffer: Uint8Array): ParsedWorkbook {
+export function parsePublication(buffer: Uint8Array): ParsedPublication {
   const files = unzipSync(buffer);
   const manifestFile = files["manifest.json"];
   if (!manifestFile) throw new Error("Arquivo .jwpub inválido: manifest.json não encontrado");
@@ -654,14 +652,8 @@ export function parseWorkbook(buffer: Uint8Array): ParsedWorkbook {
 
       if (pub.PublicationType === "Watchtower" || pub.UndatedSymbol === "w") {
         const issueTitle = issue.Title?.trim();
-        const content: WorkbookContent = {
-          name: issueTitle || name,
-          weeks: [],
-          articles: parseWatchtowerArticles(db, seed, docs),
-          coverInformation: { symbol },
-        };
-        normalizeWorkbookReferences(content);
         return {
+          kind: "watchtower",
           symbol,
           name: issueTitle || name,
           shortTitle: manifest.publication?.shortTitle ?? "",
@@ -669,7 +661,7 @@ export function parseWorkbook(buffer: Uint8Array): ParsedWorkbook {
           referenceTitle: manifest.publication?.referenceTitle ?? "",
           languageCode,
           fileName: manifest.publication?.fileName ?? dbFile,
-          content,
+          articles: parseWatchtowerArticles(db, seed, docs),
         };
       }
 
@@ -736,6 +728,7 @@ export function parseWorkbook(buffer: Uint8Array): ParsedWorkbook {
       normalizeWorkbookReferences(content);
 
       return {
+        kind: "workbook",
         symbol,
         name,
         shortTitle: manifest.publication?.shortTitle ?? "",

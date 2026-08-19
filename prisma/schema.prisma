@@ -50,11 +50,12 @@ model Organization {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  members      OrganizationMember[]
-  families     Family[]
-  persons      Person[]
+  members          OrganizationMember[]
+  families         Family[]
+  persons          Person[]
   meetingWorkbooks MeetingWorkbook[]
-  inviteTokens InviteToken[]
+  watchtowers      Watchtower[]
+  inviteTokens     InviteToken[]
 }
 
 model OrganizationMember {
@@ -107,6 +108,38 @@ model MeetingWorkbook {
 
   @@unique([organizationId, meetingType, symbol])
   @@index([organizationId, meetingType])
+}
+
+model Watchtower {
+  id             String   @id @default(cuid())
+  organizationId String
+  symbol         String
+  name           String
+  languageCode   String?
+  fileName       String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  organization Organization      @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  articles     WatchtowerArticle[]
+
+  @@unique([organizationId, symbol])
+  @@index([organizationId])
+}
+
+model WatchtowerArticle {
+  id           String @id @default(cuid())
+  watchtowerId String
+  title        String
+  dates        String?
+  color        String?
+  openingSong  Int?
+  closingSong  Int?
+  order        Int    @default(0)
+
+  watchtower Watchtower @relation(fields: [watchtowerId], references: [id], onDelete: Cascade)
+
+  @@index([watchtowerId])
 }
 
 model Person {

@@ -1,5 +1,5 @@
 import { getErrorMessage, jsonError, jsonOk } from "@/lib/api";
-import { parseWorkbook } from "@/lib/jwpub";
+import { parsePublication } from "@/lib/jwpub";
 import { requireOrganizationAccess } from "@/lib/organizations";
 import { prisma } from "@/lib/prisma";
 import { canManagePeople } from "@/lib/roles";
@@ -16,7 +16,7 @@ export async function POST(
 
     const membership = await requireOrganizationAccess(id, user.id, user.isSubUser);
     if (!membership || !canManagePeople(membership.role)) {
-      return jsonError(403, "Apenas owners e admins podem importar apostilas.");
+      return jsonError(403, "Apenas owners e admins podem importar arquivos.");
     }
 
     const formData = await request.formData().catch(() => null);
@@ -30,16 +30,48 @@ export async function POST(
     }
 
     const buffer = new Uint8Array(await file.arrayBuffer());
-    const workbook = parseWorkbook(buffer);
+    const parsed = parsePublication(buffer);
 
-    const meetingType = workbook.symbol.startsWith("w") ? "WEEKEND" : "MIDWEEK";
+    if (parsed.kind === "watchtower") {
+      const existing = await prisma.watchtower.findFirst({
+        where: { organizationId: id, symbol: parsed.symbol },
+        select: { id: true, name: true, updatedAt: true },
+      });
+      return jsonOk({
+        kind: "watchtower",
+        watchtower: {
+          symbol: parsed.symbol,
+          name: parsed.name,
+          languageCode: parsed.languageCode,
+          fileName: parsed.fileName,
+          articles: parsed.articles,
+        },
+        exists: existing !== null,
+        existing,
+      });
+    }
 
+    const meetingType = parsed.symbol.startsWith("mwb") ? "MIDWEEK" : "WEEKEND";
     const existing = await prisma.meetingWorkbook.findFirst({
-      where: { organizationId: id, symbol: workbook.symbol },
+      where: { organizationId: id, symbol: parsed.symbol },
       select: { id: true, name: true, updatedAt: true },
     });
-
-    return jsonOk({ workbook, meetingType, exists: existing !== null, existing });
+    return jsonOk({
+      kind: "workbook",
+      meetingType,
+      workbook: {
+        symbol: parsed.symbol,
+        name: parsed.name,
+        shortTitle: parsed.shortTitle,
+        displayTitle: parsed.displayTitle,
+        referenceTitle: parsed.referenceTitle,
+        languageCode: parsed.languageCode,
+        coverImageUrl: null,
+        content: parsed.content,
+      },
+      exists: existing !== null,
+      existing,
+    });
   } catch (error) {
     return jsonError(400, getErrorMessage(error));
   }

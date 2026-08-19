@@ -2,7 +2,11 @@ import { ArrowLeft } from "lucide-react";
 import { headers } from "next/headers";
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { MeetingsManager, type MeetingWorkbookRow } from "@/components/meetings-manager";
+import {
+  MeetingsManager,
+  type MeetingWorkbookRow,
+  type WatchtowerRow,
+} from "@/components/meetings-manager";
 import { Button } from "@/components/ui/button";
 import type { MemberRole } from "@/generated/prisma/enums";
 import { auth } from "@/lib/auth";
@@ -10,6 +14,7 @@ import type { WorkbookContent } from "@/lib/jwpub";
 import { pruneMeetings } from "@/lib/meetings";
 import { prisma } from "@/lib/prisma";
 import { canManagePeople, isSubUser } from "@/lib/roles";
+import { migrateLegacyWatchtowers, pruneWatchtowers } from "@/lib/watchtowers";
 import { workbookIssueKey } from "@/lib/workbook-meta";
 
 export default async function MeetingContentPage() {
@@ -49,20 +54,27 @@ export default async function MeetingContentPage() {
 
   const canEdit = subUser || canManagePeople(role);
 
-  await pruneMeetings(organizationId);
+  await Promise.all([
+    pruneMeetings(organizationId),
+    pruneWatchtowers(organizationId),
+    migrateLegacyWatchtowers(organizationId),
+  ]);
 
-  const [midweek, weekend] = await Promise.all([
+  const [midweek, watchtowers] = await Promise.all([
     prisma.meetingWorkbook.findMany({
       where: { organizationId, meetingType: "MIDWEEK" },
       orderBy: { updatedAt: "desc" },
     }),
-    prisma.meetingWorkbook.findMany({
-      where: { organizationId, meetingType: "WEEKEND" },
+    prisma.watchtower.findMany({
+      where: { organizationId },
+      include: { articles: { orderBy: { order: "asc" } } },
       orderBy: { updatedAt: "desc" },
     }),
   ]);
 
   const sortByIssue = (list: typeof midweek) =>
+    [...list].sort((a, b) => workbookIssueKey(b.symbol) - workbookIssueKey(a.symbol));
+  const sortWatchtowers = (list: typeof watchtowers) =>
     [...list].sort((a, b) => workbookIssueKey(b.symbol) - workbookIssueKey(a.symbol));
 
   const orgName = organizationNames?.find((org) => org.id === organizationId)?.name;
@@ -79,6 +91,22 @@ export default async function MeetingContentPage() {
     coverImageUrl: workbook.coverImageUrl,
     content: workbook.content as unknown as WorkbookContent,
     updatedAt: workbook.updatedAt.toISOString(),
+  });
+
+  const toWatchtowerRow = (watchtower: (typeof watchtowers)[number]): WatchtowerRow => ({
+    id: watchtower.id,
+    symbol: watchtower.symbol,
+    name: watchtower.name,
+    languageCode: watchtower.languageCode,
+    fileName: watchtower.fileName,
+    updatedAt: watchtower.updatedAt.toISOString(),
+    articles: watchtower.articles.map((article) => ({
+      title: article.title,
+      dates: article.dates ?? undefined,
+      color: article.color ?? undefined,
+      openingSong: article.openingSong ?? undefined,
+      closingSong: article.closingSong ?? undefined,
+    })),
   });
 
   return (
@@ -115,7 +143,7 @@ export default async function MeetingContentPage() {
         <MeetingsManager
           organizationId={organizationId}
           initialMidweek={sortByIssue(midweek).map(toRow)}
-          initialWeekend={sortByIssue(weekend).map(toRow)}
+          initialWatchtowers={sortWatchtowers(watchtowers).map(toWatchtowerRow)}
           canEdit={canEdit}
         />
       </div>

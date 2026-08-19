@@ -136,20 +136,9 @@ const workbookWeekSchema = z.object({
     .passthrough(),
 });
 
-const watchtowerArticleSchema = z.object({
-  title: z.string().trim().min(1, "Informe o título do artigo."),
-  dates: z.string().optional(),
-  song: z.string().optional(),
-  themeScripture: z.string().optional(),
-  theme: z.string().optional(),
-  paragraphs: z.array(z.string()).default([]),
-  questions: z.array(z.string()).default([]),
-});
-
 export const workbookContentSchema = z.object({
   name: z.string().trim().min(1, "Informe o nome da apostila."),
-  weeks: z.array(workbookWeekSchema).default([]),
-  articles: z.array(watchtowerArticleSchema).optional(),
+  weeks: z.array(workbookWeekSchema),
   coverInformation: z
     .object({
       coverImage: z.string().optional(),
@@ -179,6 +168,23 @@ export const meetingSaveSchema = z.object({
   coverImageUrl: z.string().optional(),
   content: workbookContentSchema,
 });
+
+export const watchtowerArticleSchema = z.object({
+  title: z.string().trim().min(1, "Informe o título do artigo."),
+  dates: z.string().optional(),
+  color: z.string().optional(),
+  openingSong: z.number().int().positive().optional(),
+  closingSong: z.number().int().positive().optional(),
+});
+
+export const watchtowerSaveSchema = z.object({
+  symbol: z.string().trim().min(1, "Informe o símbolo da Sentinela."),
+  name: z.string().trim().min(1, "Informe o nome da Sentinela."),
+  languageCode: z.string().optional(),
+  articles: z.array(watchtowerArticleSchema).default([]),
+});
+
+export type WatchtowerSaveInput = z.infer<typeof watchtowerSaveSchema>;
 
 export const meetingUpdateSchema = z
   .object({

@@ -47,7 +47,17 @@ export interface MeetingWorkbookRow {
   updatedAt: string;
 }
 
-type TabKey = "midweek" | "weekend";
+export interface WatchtowerRow {
+  id: string;
+  symbol: string;
+  name: string;
+  languageCode: string | null;
+  fileName: string | null;
+  updatedAt: string;
+  articles: WatchtowerArticle[];
+}
+
+type TabKey = "workbook" | "watchtower";
 
 interface EditorDraft {
   meetingType: "MIDWEEK" | "WEEKEND";
@@ -61,6 +71,23 @@ interface EditorDraft {
   content: WorkbookContent;
 }
 
+interface WatchtowerDraft {
+  symbol: string;
+  name: string;
+  languageCode?: string;
+  articles: WatchtowerArticle[];
+}
+
+interface PendingImport {
+  kind: "workbook";
+  draft: EditorDraft;
+}
+
+interface PendingWatchtowerImport {
+  kind: "watchtower";
+  draft: WatchtowerDraft;
+}
+
 const SECTION_LABELS: Record<string, string> = {
   "TREASURES FROM GODS WORD": "Tesoros de la Biblia",
   "APPLY YOURSELF TO THE FIELD MINISTRY": "Seamos mejores maestros",
@@ -70,36 +97,46 @@ const SECTION_LABELS: Record<string, string> = {
 interface MeetingsManagerProps {
   organizationId: string;
   initialMidweek: MeetingWorkbookRow[];
-  initialWeekend: MeetingWorkbookRow[];
+  initialWatchtowers: WatchtowerRow[];
   canEdit: boolean;
 }
 
 export function MeetingsManager({
   organizationId,
   initialMidweek,
-  initialWeekend,
+  initialWatchtowers,
   canEdit,
 }: MeetingsManagerProps) {
-  const [byType, setByType] = useState<
-    Record<MeetingWorkbookRow["meetingType"], MeetingWorkbookRow[]>
-  >({ MIDWEEK: initialMidweek, WEEKEND: initialWeekend });
-  const [tab, setTab] = useState<TabKey>("midweek");
+  const [workbooks, setWorkbooks] = useState<MeetingWorkbookRow[]>(initialMidweek);
+  const [watchtowers, setWatchtowers] = useState<WatchtowerRow[]>(initialWatchtowers);
+  const [tab, setTab] = useState<TabKey>("workbook");
   const [language, setLanguage] = useState<WorkbookLanguage>("es");
   const [draft, setDraft] = useState<EditorDraft | null>(null);
-  const [duplicate, setDuplicate] = useState<EditorDraft | null>(null);
+  const [wtDraft, setWtDraft] = useState<WatchtowerDraft | null>(null);
+  const [duplicate, setDuplicate] = useState<(PendingImport | PendingWatchtowerImport) | null>(
+    null,
+  );
   const [importing, setImporting] = useState(false);
   const [saving, setSaving] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  function upsertRow(row: MeetingWorkbookRow) {
-    setByType((prev) => {
-      const list = prev[row.meetingType]
+  function upsertWorkbookRow(row: MeetingWorkbookRow) {
+    setWorkbooks((prev) =>
+      prev
         .filter((item) => item.symbol !== row.symbol)
         .concat(row)
-        .sort((a, b) => workbookIssueKey(b.symbol) - workbookIssueKey(a.symbol));
-      return { ...prev, [row.meetingType]: list };
-    });
+        .sort((a, b) => workbookIssueKey(b.symbol) - workbookIssueKey(a.symbol)),
+    );
+  }
+
+  function upsertWatchtowerRow(row: WatchtowerRow) {
+    setWatchtowers((prev) =>
+      prev
+        .filter((item) => item.symbol !== row.symbol)
+        .concat(row)
+        .sort((a, b) => workbookIssueKey(b.symbol) - workbookIssueKey(a.symbol)),
+    );
   }
 
   function openEditor(row: MeetingWorkbookRow) {
@@ -113,6 +150,15 @@ export function MeetingsManager({
       languageCode: row.languageCode ?? undefined,
       coverImageUrl: row.coverImageUrl ?? undefined,
       content: row.content,
+    });
+  }
+
+  function openWatchtowerEditor(row: WatchtowerRow) {
+    setWtDraft({
+      symbol: row.symbol,
+      name: row.name,
+      languageCode: row.languageCode ?? undefined,
+      articles: row.articles.map((article) => ({ ...article })),
     });
   }
 
@@ -133,26 +179,37 @@ export function MeetingsManager({
             : `Erro ${response.status}.`;
         throw new ApiError(message, response.status);
       }
-      const { workbook, meetingType } = data as {
-        workbook: EditorDraft;
-        meetingType: "MIDWEEK" | "WEEKEND";
-        exists?: boolean;
-      };
-      const draftData: EditorDraft = {
-        meetingType,
-        symbol: workbook.symbol,
-        name: workbook.name,
-        shortTitle: workbook.shortTitle,
-        displayTitle: workbook.displayTitle,
-        referenceTitle: workbook.referenceTitle,
-        languageCode: workbook.languageCode,
-        coverImageUrl: workbook.coverImageUrl,
-        content: workbook.content,
-      };
+      const pending =
+        data.kind === "watchtower"
+          ? {
+              kind: "watchtower" as const,
+              draft: {
+                symbol: data.watchtower.symbol,
+                name: data.watchtower.name,
+                languageCode: data.watchtower.languageCode,
+                articles: data.watchtower.articles,
+              } satisfies WatchtowerDraft,
+            }
+          : {
+              kind: "workbook" as const,
+              draft: {
+                meetingType: data.meetingType as "MIDWEEK" | "WEEKEND",
+                symbol: data.workbook.symbol,
+                name: data.workbook.name,
+                shortTitle: data.workbook.shortTitle,
+                displayTitle: data.workbook.displayTitle,
+                referenceTitle: data.workbook.referenceTitle,
+                languageCode: data.workbook.languageCode,
+                coverImageUrl: data.workbook.coverImageUrl,
+                content: data.workbook.content,
+              } satisfies EditorDraft,
+            };
       if (data.exists) {
-        setDuplicate(draftData);
+        setDuplicate(pending);
+      } else if (pending.kind === "watchtower") {
+        setWtDraft(pending.draft);
       } else {
-        setDraft(draftData);
+        setDraft(pending.draft);
       }
     } catch (error) {
       toast.error(getErrorMessage(error));
@@ -162,14 +219,14 @@ export function MeetingsManager({
     }
   }
 
-  async function handleSave(nextDraft: EditorDraft) {
+  async function handleSaveWorkbook(nextDraft: EditorDraft) {
     setSaving(true);
     try {
       const { meeting } = await apiFetch<{ meeting: MeetingWorkbookRow }>(
         `/api/organizations/${organizationId}/meetings`,
         { method: "POST", body: JSON.stringify(nextDraft) },
       );
-      upsertRow(meeting);
+      upsertWorkbookRow(meeting);
       setDraft(null);
       toast.success("Apostila salva!");
     } catch (error) {
@@ -179,18 +236,48 @@ export function MeetingsManager({
     }
   }
 
-  async function handleDelete(row: MeetingWorkbookRow) {
+  async function handleSaveWatchtower(nextDraft: WatchtowerDraft) {
+    setSaving(true);
+    try {
+      const { watchtower } = await apiFetch<{ watchtower: WatchtowerRow }>(
+        `/api/organizations/${organizationId}/watchtowers`,
+        { method: "POST", body: JSON.stringify(nextDraft) },
+      );
+      upsertWatchtowerRow(watchtower);
+      setWtDraft(null);
+      toast.success("Sentinela salva!");
+    } catch (error) {
+      toast.error(getErrorMessage(error));
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function handleDeleteWorkbook(row: MeetingWorkbookRow) {
     if (!window.confirm(`Excluir a apostila "${row.name}"?`)) return;
     setDeletingId(row.id);
     try {
       await apiFetch(`/api/organizations/${organizationId}/meetings/${row.id}`, {
         method: "DELETE",
       });
-      setByType((prev) => ({
-        ...prev,
-        [row.meetingType]: prev[row.meetingType].filter((item) => item.id !== row.id),
-      }));
+      setWorkbooks((prev) => prev.filter((item) => item.id !== row.id));
       toast.success("Apostila excluída.");
+    } catch (error) {
+      toast.error(getErrorMessage(error));
+    } finally {
+      setDeletingId(null);
+    }
+  }
+
+  async function handleDeleteWatchtower(row: WatchtowerRow) {
+    if (!window.confirm(`Excluir a Sentinela "${row.name}"?`)) return;
+    setDeletingId(row.id);
+    try {
+      await apiFetch(`/api/organizations/${organizationId}/watchtowers/${row.id}`, {
+        method: "DELETE",
+      });
+      setWatchtowers((prev) => prev.filter((item) => item.id !== row.id));
+      toast.success("Sentinela excluída.");
     } catch (error) {
       toast.error(getErrorMessage(error));
     } finally {
@@ -213,8 +300,8 @@ export function MeetingsManager({
               </TabsList>
             </Tabs>
             <TabsList className="w-full sm:w-fit">
-              <TabsTrigger value="midweek">Apostila</TabsTrigger>
-              <TabsTrigger value="weekend">Sentinela</TabsTrigger>
+              <TabsTrigger value="workbook">Apostila</TabsTrigger>
+              <TabsTrigger value="watchtower">Sentinela</TabsTrigger>
             </TabsList>
           </div>
 
@@ -247,29 +334,39 @@ export function MeetingsManager({
           )}
         </div>
 
-        <TabsContent value="midweek" className="mt-6">
-          <WorkbookList
+        <TabsContent value="workbook" className="mt-6">
+          <ContentList
+            kind="workbook"
             language={language}
-            rows={byType.MIDWEEK}
+            rows={workbooks}
             canEdit={canEdit}
             onEdit={openEditor}
-            onDelete={handleDelete}
+            onDelete={handleDeleteWorkbook}
             deletingId={deletingId}
             onImport={() => fileInputRef.current?.click()}
             importing={importing}
+            itemCount={(row) => {
+              const weeks = row.content.weeks.length;
+              return `${weeks} ${weeks === 1 ? "semana" : "semanas"}`;
+            }}
           />
         </TabsContent>
 
-        <TabsContent value="weekend" className="mt-6">
-          <WorkbookList
+        <TabsContent value="watchtower" className="mt-6">
+          <ContentList
+            kind="watchtower"
             language={language}
-            rows={byType.WEEKEND}
+            rows={watchtowers}
             canEdit={canEdit}
-            onEdit={openEditor}
-            onDelete={handleDelete}
+            onEdit={openWatchtowerEditor}
+            onDelete={handleDeleteWatchtower}
             deletingId={deletingId}
             onImport={() => fileInputRef.current?.click()}
             importing={importing}
+            itemCount={(row) => {
+              const articles = row.articles.length;
+              return `${articles} ${articles === 1 ? "artículo" : "artículos"}`;
+            }}
           />
         </TabsContent>
       </Tabs>
@@ -280,7 +377,17 @@ export function MeetingsManager({
           saving={saving}
           onChange={setDraft}
           onCancel={() => setDraft(null)}
-          onSave={() => handleSave(draft)}
+          onSave={() => handleSaveWorkbook(draft)}
+        />
+      )}
+
+      {wtDraft && (
+        <WatchtowerEditor
+          draft={wtDraft}
+          saving={saving}
+          onChange={setWtDraft}
+          onCancel={() => setWtDraft(null)}
+          onSave={() => handleSaveWatchtower(wtDraft)}
         />
       )}
 
@@ -301,8 +408,9 @@ export function MeetingsManager({
                   Arquivo já importado
                 </DialogTitle>
                 <DialogDescription className="text-sm">
-                  O arquivo <span className="font-medium text-foreground">{duplicate.symbol}</span>{" "}
-                  já está no banco de dados. Deseja atualizar o conteúdo com este arquivo?
+                  O arquivo{" "}
+                  <span className="font-medium text-foreground">{duplicate.draft.symbol}</span> já
+                  está no banco de dados. Deseja atualizar o conteúdo com este arquivo?
                 </DialogDescription>
               </div>
             </div>
@@ -317,8 +425,10 @@ export function MeetingsManager({
               <Button
                 className="w-full sm:w-auto"
                 onClick={() => {
-                  setDraft(duplicate);
+                  const pending = duplicate;
                   setDuplicate(null);
+                  if (pending.kind === "watchtower") setWtDraft(pending.draft);
+                  else setDraft(pending.draft);
                 }}
               >
                 Atualizar
@@ -331,7 +441,9 @@ export function MeetingsManager({
   );
 }
 
-function WorkbookList({
+type ContentRow = MeetingWorkbookRow | WatchtowerRow;
+
+function ContentList<T extends ContentRow>({
   rows,
   language,
   canEdit,
@@ -340,18 +452,24 @@ function WorkbookList({
   deletingId,
   onImport,
   importing,
+  kind,
+  itemCount,
 }: {
-  rows: MeetingWorkbookRow[];
+  rows: T[];
   language: WorkbookLanguage;
   canEdit: boolean;
-  onEdit: (row: MeetingWorkbookRow) => void;
-  onDelete: (row: MeetingWorkbookRow) => void;
+  onEdit: (row: T) => void;
+  onDelete: (row: T) => void;
   deletingId: string | null;
   onImport: () => void;
   importing: boolean;
+  kind: TabKey;
+  itemCount: (row: T) => string;
 }) {
   const filtered = rows.filter((row) => workbookLanguage(row.symbol) === language);
   const languageLabel = language === "es" ? "espanhol" : "português";
+  const kindLabel = kind === "workbook" ? "apostila" : "sentinela";
+  const kindTitle = kind === "workbook" ? "Apostila" : "Sentinela";
 
   if (filtered.length === 0) {
     return (
@@ -362,12 +480,12 @@ function WorkbookList({
           </div>
           <div className="space-y-1.5">
             <p className="text-lg font-semibold tracking-tight">
-              Nenhuma apostila em {languageLabel}
+              Nenhuma {kindLabel} em {languageLabel}
             </p>
             <p className="text-muted-foreground mx-auto max-w-xs text-sm">
               {canEdit
                 ? `Importe o arquivo .jwpub em ${languageLabel} para começar a montar a escala.`
-                : "Entre em contato com um organizador para importar a apostila."}
+                : "Entre em contato com um organizador para importar o arquivo."}
             </p>
           </div>
           {canEdit && (
@@ -377,7 +495,7 @@ function WorkbookList({
               ) : (
                 <ArrowUpFromLine aria-hidden="true" />
               )}
-              Importar apostila
+              Importar {kindLabel}
             </Button>
           )}
         </CardContent>
@@ -389,9 +507,7 @@ function WorkbookList({
     <div className="divide-y divide-border overflow-hidden rounded-2xl border bg-card">
       {filtered.map((row) => {
         const range = workbookMonthRange(row.name, row.symbol);
-        const itemCount = row.content.articles
-          ? `${row.content.articles.length} ${row.content.articles.length === 1 ? "artículo" : "artículos"}`
-          : `${row.content.weeks.length} ${row.content.weeks.length === 1 ? "semana" : "semanas"}`;
+        const count = itemCount(row);
         return (
           <div key={row.id} className="flex items-center gap-3 px-5 py-4">
             <button
@@ -405,7 +521,7 @@ function WorkbookList({
               </p>
               <p className="text-muted-foreground mt-0.5 truncate text-xs">{row.name}</p>
               <p className="text-muted-foreground mt-1 flex flex-wrap items-center gap-x-2 text-xs">
-                <span className="tabular-nums">{itemCount}</span>
+                <span className="tabular-nums">{count}</span>
                 <span aria-hidden="true">·</span>
                 <span>atualizado em {new Date(row.updatedAt).toLocaleDateString("pt-BR")}</span>
               </p>
@@ -417,7 +533,7 @@ function WorkbookList({
                   size="icon"
                   className="rounded-full"
                   onClick={() => onEdit(row)}
-                  aria-label="Editar apostila"
+                  aria-label={`Editar ${kindTitle}`}
                 >
                   <Pencil />
                 </Button>
@@ -427,7 +543,7 @@ function WorkbookList({
                   className="text-destructive rounded-full hover:text-destructive"
                   onClick={() => onDelete(row)}
                   disabled={deletingId === row.id}
-                  aria-label="Excluir apostila"
+                  aria-label={`Excluir ${kindTitle}`}
                 >
                   {deletingId === row.id ? (
                     <Loader2 className="animate-spin" aria-hidden="true" />
@@ -479,7 +595,7 @@ function MeetingsEditor({
         <header className="flex items-start justify-between gap-4 border-b px-4 py-4 sm:px-6 sm:py-5">
           <div className="min-w-0 space-y-1">
             <DialogTitle className="text-lg font-semibold tracking-tight sm:text-xl">
-              {content.articles ? "Editar Sentinela" : "Editar apostila"}
+              Editar apostila
             </DialogTitle>
             <DialogDescription className="text-muted-foreground truncate text-sm">
               {draft.name} · {draft.symbol}
@@ -572,50 +688,26 @@ function MeetingsEditor({
 
             <section className="space-y-4">
               <h3 className="text-muted-foreground text-xs font-medium tracking-widest uppercase">
-                {content.articles
-                  ? `Artigos de estudo · ${content.articles.length}`
-                  : `Semanas · ${content.weeks.length}`}
+                Semanas · {content.weeks.length}
               </h3>
-              {content.articles ? (
-                <div className="space-y-3">
-                  {content.articles.map((article, articleIndex) => (
-                    <ArticleCard
-                      key={article.title || `article-${articleIndex}`}
-                      article={article}
-                      onChange={(nextArticle) =>
-                        update((c) => {
-                          const articles = c.articles;
-                          if (articles) articles[articleIndex] = nextArticle;
-                        })
-                      }
-                      onRemove={() =>
-                        update((c) => {
-                          c.articles?.splice(articleIndex, 1);
-                        })
-                      }
-                    />
-                  ))}
-                </div>
-              ) : (
-                <div className="space-y-3">
-                  {content.weeks.map((week, weekIndex) => (
-                    <WeekCard
-                      key={week.week || `week-${weekIndex}`}
-                      week={week}
-                      onChange={(nextWeek) =>
-                        update((c) => {
-                          c.weeks[weekIndex] = nextWeek;
-                        })
-                      }
-                      onRemove={() =>
-                        update((c) => {
-                          c.weeks.splice(weekIndex, 1);
-                        })
-                      }
-                    />
-                  ))}
-                </div>
-              )}
+              <div className="space-y-3">
+                {content.weeks.map((week, weekIndex) => (
+                  <WeekCard
+                    key={week.week || `week-${weekIndex}`}
+                    week={week}
+                    onChange={(nextWeek) =>
+                      update((c) => {
+                        c.weeks[weekIndex] = nextWeek;
+                      })
+                    }
+                    onRemove={() =>
+                      update((c) => {
+                        c.weeks.splice(weekIndex, 1);
+                      })
+                    }
+                  />
+                ))}
+              </div>
             </section>
 
             {content.additionalInformation && (
@@ -722,7 +814,124 @@ function Field({
   );
 }
 
-function ArticleCard({
+function WatchtowerEditor({
+  draft,
+  saving,
+  onChange,
+  onCancel,
+  onSave,
+}: {
+  draft: WatchtowerDraft;
+  saving: boolean;
+  onChange: (draft: WatchtowerDraft) => void;
+  onCancel: () => void;
+  onSave: () => void;
+}) {
+  function updateArticle(articleIndex: number, article: WatchtowerArticle) {
+    const next = structuredClone(draft);
+    next.articles[articleIndex] = article;
+    onChange(next);
+  }
+
+  function removeArticle(articleIndex: number) {
+    const next = structuredClone(draft);
+    next.articles.splice(articleIndex, 1);
+    onChange(next);
+  }
+
+  return (
+    <Dialog
+      open
+      onOpenChange={(open) => {
+        if (!open && !saving) onCancel();
+      }}
+    >
+      <DialogContent
+        showCloseButton={false}
+        className="flex h-dvh max-h-dvh max-w-3xl flex-col gap-0 overflow-hidden rounded-t-none border-x-0 border-b-0 p-0 sm:h-auto sm:max-h-[85vh] sm:rounded-2xl sm:border-x sm:border-b"
+      >
+        <header className="flex items-start justify-between gap-4 border-b px-4 py-4 sm:px-6 sm:py-5">
+          <div className="min-w-0 space-y-1">
+            <DialogTitle className="text-lg font-semibold tracking-tight sm:text-xl">
+              Editar Sentinela
+            </DialogTitle>
+            <DialogDescription className="text-muted-foreground truncate text-sm">
+              {draft.name} · {draft.symbol}
+            </DialogDescription>
+          </div>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={onCancel}
+            disabled={saving}
+            aria-label="Fechar"
+          >
+            <X />
+          </Button>
+        </header>
+
+        <div className="min-h-0 flex-1 overflow-y-auto px-4 py-5 sm:px-6">
+          <div className="space-y-9">
+            <section className="space-y-4">
+              <h3 className="text-muted-foreground text-xs font-medium tracking-widest uppercase">
+                Identificação
+              </h3>
+              <div className="grid gap-3.5 sm:grid-cols-2 sm:gap-4">
+                <Field label="Nome" className="sm:col-span-2">
+                  <Input
+                    value={draft.name}
+                    onChange={(event) => onChange({ ...draft, name: event.target.value })}
+                  />
+                </Field>
+                <Field label="Código de idioma">
+                  <Input
+                    value={draft.languageCode ?? ""}
+                    onChange={(event) => onChange({ ...draft, languageCode: event.target.value })}
+                  />
+                </Field>
+              </div>
+            </section>
+
+            <section className="space-y-4">
+              <h3 className="text-muted-foreground text-xs font-medium tracking-widest uppercase">
+                Artigos de estudo · {draft.articles.length}
+              </h3>
+              <div className="space-y-3">
+                {draft.articles.map((article, articleIndex) => (
+                  <WatchtowerArticleCard
+                    key={article.title || `article-${articleIndex}`}
+                    article={article}
+                    onChange={(nextArticle) => updateArticle(articleIndex, nextArticle)}
+                    onRemove={() => removeArticle(articleIndex)}
+                  />
+                ))}
+              </div>
+            </section>
+          </div>
+        </div>
+
+        <footer className="flex flex-col-reverse gap-2.5 border-t bg-background px-4 py-4 pb-[max(1rem,env(safe-area-inset-bottom))] sm:flex-row sm:justify-end sm:gap-2 sm:px-6 sm:pb-4">
+          <Button
+            variant="outline"
+            className="w-full sm:w-auto"
+            onClick={onCancel}
+            disabled={saving}
+          >
+            Cancelar
+          </Button>
+          <Button className="w-full sm:w-auto" onClick={onSave} disabled={saving}>
+            {saving && <Loader2 className="animate-spin" aria-hidden="true" />}
+            Salvar
+          </Button>
+        </footer>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+const ARTICLE_COLOR_OPTIONS = ["#143368", "#d65a00", "#4b2e83", "#5c7a00", "#b8860b"];
+
+function WatchtowerArticleCard({
   article,
   onChange,
   onRemove,
@@ -731,19 +940,32 @@ function ArticleCard({
   onChange: (article: WatchtowerArticle) => void;
   onRemove: () => void;
 }) {
+  const songInput = (value: number | undefined, set: (song: number | undefined) => void) => (
+    <Input
+      inputMode="numeric"
+      value={value ?? ""}
+      onChange={(event) => {
+        const digits = event.target.value.replace(/\D/g, "");
+        set(digits ? Number(digits) : undefined);
+      }}
+    />
+  );
+
   return (
     <details className="group overflow-hidden rounded-xl border bg-card" open>
       <summary className="flex cursor-pointer list-none items-center gap-3 px-4 py-3.5 [&::-webkit-details-marker]:hidden">
+        <span
+          className="size-3.5 shrink-0 rounded-full ring-1 ring-black/10"
+          style={{ backgroundColor: article.color ?? "#D2D2D7" }}
+          aria-hidden="true"
+        />
         <ChevronDown
           className="text-muted-foreground size-4 shrink-0 transition-transform group-open:rotate-180"
           aria-hidden="true"
         />
         <div className="min-w-0 flex-1">
           <p className="truncate text-sm font-medium">{article.title || "Artigo"}</p>
-          <p className="text-muted-foreground truncate text-xs">
-            {article.dates ?? "Sem datas"} · {article.paragraphs.length}{" "}
-            {article.paragraphs.length === 1 ? "parágrafo" : "parágrafos"}
-          </p>
+          <p className="text-muted-foreground truncate text-xs">{article.dates ?? "Sem datas"}</p>
         </div>
         <Button
           variant="ghost"
@@ -768,42 +990,44 @@ function ArticleCard({
               onChange={(event) => onChange({ ...article, title: event.target.value })}
             />
           </Field>
+          <Field label="Cor">
+            <div className="flex items-center gap-2">
+              <div className="flex flex-wrap gap-1.5">
+                {ARTICLE_COLOR_OPTIONS.map((color) => (
+                  <button
+                    key={color}
+                    type="button"
+                    onClick={() => onChange({ ...article, color })}
+                    className={cn(
+                      "size-7 rounded-full ring-1 ring-black/10 transition-transform outline-none focus-visible:ring-3 focus-visible:ring-ring/50",
+                      article.color === color && "scale-110 ring-2 ring-ring",
+                    )}
+                    style={{ backgroundColor: color }}
+                    aria-label={`Usar cor ${color}`}
+                  />
+                ))}
+              </div>
+              <Input
+                className="w-24"
+                value={article.color ?? ""}
+                onChange={(event) => onChange({ ...article, color: event.target.value })}
+                aria-label="Cor personalizada (hex)"
+              />
+            </div>
+          </Field>
           <Field label="Datas">
             <Input
               value={article.dates ?? ""}
               onChange={(event) => onChange({ ...article, dates: event.target.value })}
             />
           </Field>
-          <Field label="Canção">
-            <Input
-              value={article.song ?? ""}
-              onChange={(event) => onChange({ ...article, song: event.target.value })}
-            />
+          <Field label="Cántico inicial">
+            {songInput(article.openingSong, (song) => onChange({ ...article, openingSong: song }))}
           </Field>
-          <Field label="Escritura do tema" className="sm:col-span-2">
-            <Input
-              value={article.themeScripture ?? ""}
-              onChange={(event) => onChange({ ...article, themeScripture: event.target.value })}
-            />
-          </Field>
-          <Field label="Tema" className="sm:col-span-2">
-            <Textarea
-              rows={2}
-              value={article.theme ?? ""}
-              onChange={(event) => onChange({ ...article, theme: event.target.value })}
-            />
+          <Field label="Cántico final">
+            {songInput(article.closingSong, (song) => onChange({ ...article, closingSong: song }))}
           </Field>
         </div>
-        <StringList
-          label="Parágrafos"
-          values={article.paragraphs}
-          onChange={(paragraphs) => onChange({ ...article, paragraphs })}
-        />
-        <StringList
-          label="Perguntas"
-          values={article.questions}
-          onChange={(questions) => onChange({ ...article, questions })}
-        />
       </div>
     </details>
   );
