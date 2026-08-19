@@ -32,12 +32,14 @@ export async function POST(
     const buffer = new Uint8Array(await file.arrayBuffer());
     const workbook = parseWorkbook(buffer);
 
+    const meetingType = workbook.symbol.startsWith("w") ? "WEEKEND" : "MIDWEEK";
+
     const existing = await prisma.meetingWorkbook.findFirst({
       where: { organizationId: id, symbol: workbook.symbol },
       select: { id: true, name: true, updatedAt: true },
     });
 
-    return jsonOk({ workbook, exists: existing !== null, existing });
+    return jsonOk({ workbook, meetingType, exists: existing !== null, existing });
   } catch (error) {
     return jsonError(400, getErrorMessage(error));
   }

@@ -132,6 +132,7 @@ export interface WorkbookWeek {
 export interface WorkbookContent {
   name: string;
   weeks: WorkbookWeek[];
+  articles?: WatchtowerArticle[];
   coverInformation?: {
     coverImage?: string;
     volume?: string;
@@ -144,6 +145,16 @@ export interface WorkbookContent {
     content?: string;
     video?: string;
   };
+}
+
+export interface WatchtowerArticle {
+  title: string;
+  dates?: string;
+  song?: string;
+  themeScripture?: string;
+  theme?: string;
+  paragraphs: string[];
+  questions: string[];
 }
 
 export interface ParsedWorkbook {
@@ -486,6 +497,69 @@ function parseCover(html: string): { coverImage?: string } {
   return { coverImage: img?.trim() || undefined };
 }
 
+function parseWatchtowerArticles(
+  db: DatabaseSync,
+  seed: string,
+  docs: { DocumentId: number; Title: string; Subtitle: string | null }[],
+): WatchtowerArticle[] {
+  const articles: WatchtowerArticle[] = [];
+  for (const doc of docs) {
+    if (doc.DocumentId < 2) continue;
+    const row = db
+      .prepare("SELECT Content FROM Document WHERE DocumentId = ?")
+      .get(doc.DocumentId) as { Content: Uint8Array };
+    const html = decryptDocument(row.Content, seed);
+
+    const h1 = html.match(/<h1\b[^>]*>([\s\S]*?)<\/h1>/)?.[1];
+    const title = h1 ? stripTags(h1) : doc.Title;
+
+    const contextTtl = html.match(
+      /class="contextTtl[^"]*"[^>]*>[\s\S]*?<strong>([\s\S]*?)<\/strong>/,
+    )?.[1];
+    const dates = contextTtl ? stripTags(contextTtl) : undefined;
+
+    const song = html.match(/CANCIÓN\s*\d+/i)?.[0];
+
+    const themeScrp = html.match(/class="themeScrp"[^>]*>([\s\S]*?)<\/p>/)?.[1];
+    const themeScripture = themeScrp ? stripTags(themeScrp) : undefined;
+
+    const temaIndex = html.indexOf("<strong>TEMA</strong>");
+    let theme: string | undefined;
+    if (temaIndex !== -1) {
+      const pubRefs = html.slice(temaIndex).match(/<p\b[^>]*class="pubRefs"[^>]*>([\s\S]*?)<\/p>/g);
+      const themeBox = pubRefs?.[0];
+      if (themeBox) theme = stripTags(themeBox) || undefined;
+    }
+
+    const body =
+      html
+        .match(/<div class="bodyTxt">([\s\S]*?)$/)?.[1]
+        ?.split('<div class="groupFootnote"')[0]
+        .split("<aside")[0] ?? "";
+    const paragraphs: string[] = [];
+    const questions: string[] = [];
+    for (const p of body.matchAll(/<p\b[^>]*>([\s\S]*?)<\/p>/g)) {
+      const text = stripTags(p[1]);
+      if (!text) continue;
+      const classes = p[0].match(/class="([^"]*)"/)?.[1] ?? "";
+      if (/\bqu\b/.test(classes)) questions.push(text);
+      else if (/\bpubRefs\b/.test(classes)) continue;
+      else paragraphs.push(text);
+    }
+
+    articles.push({
+      title,
+      dates,
+      song,
+      themeScripture,
+      theme,
+      paragraphs,
+      questions,
+    });
+  }
+  return articles;
+}
+
 function normalizeWorkbookReferences(content: WorkbookContent): void {
   const walk = (obj: unknown): void => {
     if (!obj || typeof obj !== "object") return;
@@ -543,9 +617,12 @@ export function parseWorkbook(buffer: Uint8Array): ParsedWorkbook {
         Year: number;
         IssueTagNumber: number | string;
         IssueNumber: number;
+        PublicationType: string;
+        UndatedSymbol: string;
       };
       const issue = db.prepare("SELECT * FROM PublicationIssueProperty LIMIT 1").get() as {
         Symbol: string;
+        Title?: string;
       };
       const docs = db
         .prepare(
@@ -571,6 +648,30 @@ export function parseWorkbook(buffer: Uint8Array): ParsedWorkbook {
       const coverInfo = parseCover(coverHtml);
       const coverH1 = coverHtml.match(/<h1\b[^>]*>([\s\S]*?)<\/h1>/)?.[1];
       const name = coverH1 ? stripTags(coverH1) : (manifest.publication?.title ?? "");
+
+      const languageCode = getLanguageCodeFromFileName(dbFile);
+      const symbol = `${issue.Symbol}-${languageCode}`;
+
+      if (pub.PublicationType === "Watchtower" || pub.UndatedSymbol === "w") {
+        const issueTitle = issue.Title?.trim();
+        const content: WorkbookContent = {
+          name: issueTitle || name,
+          weeks: [],
+          articles: parseWatchtowerArticles(db, seed, docs),
+          coverInformation: { symbol },
+        };
+        normalizeWorkbookReferences(content);
+        return {
+          symbol,
+          name: issueTitle || name,
+          shortTitle: manifest.publication?.shortTitle ?? "",
+          displayTitle: manifest.publication?.displayTitle ?? "",
+          referenceTitle: manifest.publication?.referenceTitle ?? "",
+          languageCode,
+          fileName: manifest.publication?.fileName ?? dbFile,
+          content,
+        };
+      }
 
       const weeks: WorkbookWeek[] = [];
       let additionalInfo:
@@ -622,8 +723,6 @@ export function parseWorkbook(buffer: Uint8Array): ParsedWorkbook {
         }
       }
 
-      const languageCode = getLanguageCodeFromFileName(dbFile);
-      const symbol = `${issue.Symbol}-${languageCode}`;
       const content: WorkbookContent = {
         name,
         weeks,

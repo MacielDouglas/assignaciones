@@ -100,6 +100,25 @@ export async function pruneMeetings(organizationId: string) {
     select: { id: true, meetingType: true, symbol: true },
   });
 
+  const weekendMwb = rows.filter(
+    (row) => row.meetingType === "WEEKEND" && row.symbol.startsWith("mwb"),
+  );
+  if (weekendMwb.length > 0) {
+    const midweekSymbols = new Set(
+      rows.filter((row) => row.meetingType === "MIDWEEK").map((row) => row.symbol),
+    );
+    for (const row of weekendMwb) {
+      if (midweekSymbols.has(row.symbol)) {
+        await prisma.meetingWorkbook.delete({ where: { id: row.id } });
+      } else {
+        await prisma.meetingWorkbook.update({
+          where: { id: row.id },
+          data: { meetingType: "MIDWEEK" },
+        });
+      }
+    }
+  }
+
   const groups = new Map<string, { id: string; key: number }[]>();
   for (const row of rows) {
     const groupKey = `${row.meetingType}-${workbookLanguage(row.symbol)}`;

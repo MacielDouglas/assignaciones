@@ -24,7 +24,7 @@ import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { ApiError, apiFetch, getErrorMessage } from "@/lib/api-client";
-import type { WorkbookContent, WorkbookPart, WorkbookWeek } from "@/lib/jwpub";
+import type { WatchtowerArticle, WorkbookContent, WorkbookPart, WorkbookWeek } from "@/lib/jwpub";
 import { cn } from "@/lib/utils";
 import {
   type WorkbookLanguage,
@@ -133,9 +133,13 @@ export function MeetingsManager({
             : `Erro ${response.status}.`;
         throw new ApiError(message, response.status);
       }
-      const workbook = (data as { workbook: EditorDraft; exists?: boolean }).workbook;
+      const { workbook, meetingType } = data as {
+        workbook: EditorDraft;
+        meetingType: "MIDWEEK" | "WEEKEND";
+        exists?: boolean;
+      };
       const draftData: EditorDraft = {
-        meetingType: tab === "midweek" ? "MIDWEEK" : "WEEKEND",
+        meetingType,
         symbol: workbook.symbol,
         name: workbook.name,
         shortTitle: workbook.shortTitle,
@@ -209,8 +213,8 @@ export function MeetingsManager({
               </TabsList>
             </Tabs>
             <TabsList className="w-full sm:w-fit">
-              <TabsTrigger value="midweek">Meio de semana</TabsTrigger>
-              <TabsTrigger value="weekend">Fim de semana</TabsTrigger>
+              <TabsTrigger value="midweek">Apostila</TabsTrigger>
+              <TabsTrigger value="weekend">Sentinela</TabsTrigger>
             </TabsList>
           </div>
 
@@ -294,10 +298,10 @@ export function MeetingsManager({
               </div>
               <div className="min-w-0 space-y-1.5">
                 <DialogTitle className="text-lg font-semibold tracking-tight">
-                  Apostila já importada
+                  Arquivo já importado
                 </DialogTitle>
                 <DialogDescription className="text-sm">
-                  A apostila <span className="font-medium text-foreground">{duplicate.symbol}</span>{" "}
+                  O arquivo <span className="font-medium text-foreground">{duplicate.symbol}</span>{" "}
                   já está no banco de dados. Deseja atualizar o conteúdo com este arquivo?
                 </DialogDescription>
               </div>
@@ -384,7 +388,10 @@ function WorkbookList({
   return (
     <div className="divide-y divide-border overflow-hidden rounded-2xl border bg-card">
       {filtered.map((row) => {
-        const range = workbookMonthRange(row.name);
+        const range = workbookMonthRange(row.name, row.symbol);
+        const itemCount = row.content.articles
+          ? `${row.content.articles.length} ${row.content.articles.length === 1 ? "artículo" : "artículos"}`
+          : `${row.content.weeks.length} ${row.content.weeks.length === 1 ? "semana" : "semanas"}`;
         return (
           <div key={row.id} className="flex items-center gap-3 px-5 py-4">
             <button
@@ -398,7 +405,7 @@ function WorkbookList({
               </p>
               <p className="text-muted-foreground mt-0.5 truncate text-xs">{row.name}</p>
               <p className="text-muted-foreground mt-1 flex flex-wrap items-center gap-x-2 text-xs">
-                <span className="tabular-nums">{row.content.weeks.length} semanas</span>
+                <span className="tabular-nums">{itemCount}</span>
                 <span aria-hidden="true">·</span>
                 <span>atualizado em {new Date(row.updatedAt).toLocaleDateString("pt-BR")}</span>
               </p>
@@ -472,7 +479,7 @@ function MeetingsEditor({
         <header className="flex items-start justify-between gap-4 border-b px-4 py-4 sm:px-6 sm:py-5">
           <div className="min-w-0 space-y-1">
             <DialogTitle className="text-lg font-semibold tracking-tight sm:text-xl">
-              Editar apostila
+              {content.articles ? "Editar Sentinela" : "Editar apostila"}
             </DialogTitle>
             <DialogDescription className="text-muted-foreground truncate text-sm">
               {draft.name} · {draft.symbol}
@@ -565,26 +572,50 @@ function MeetingsEditor({
 
             <section className="space-y-4">
               <h3 className="text-muted-foreground text-xs font-medium tracking-widest uppercase">
-                Semanas · {content.weeks.length}
+                {content.articles
+                  ? `Artigos de estudo · ${content.articles.length}`
+                  : `Semanas · ${content.weeks.length}`}
               </h3>
-              <div className="space-y-3">
-                {content.weeks.map((week, weekIndex) => (
-                  <WeekCard
-                    key={week.week || `week-${weekIndex}`}
-                    week={week}
-                    onChange={(nextWeek) =>
-                      update((c) => {
-                        c.weeks[weekIndex] = nextWeek;
-                      })
-                    }
-                    onRemove={() =>
-                      update((c) => {
-                        c.weeks.splice(weekIndex, 1);
-                      })
-                    }
-                  />
-                ))}
-              </div>
+              {content.articles ? (
+                <div className="space-y-3">
+                  {content.articles.map((article, articleIndex) => (
+                    <ArticleCard
+                      key={article.title || `article-${articleIndex}`}
+                      article={article}
+                      onChange={(nextArticle) =>
+                        update((c) => {
+                          const articles = c.articles;
+                          if (articles) articles[articleIndex] = nextArticle;
+                        })
+                      }
+                      onRemove={() =>
+                        update((c) => {
+                          c.articles?.splice(articleIndex, 1);
+                        })
+                      }
+                    />
+                  ))}
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {content.weeks.map((week, weekIndex) => (
+                    <WeekCard
+                      key={week.week || `week-${weekIndex}`}
+                      week={week}
+                      onChange={(nextWeek) =>
+                        update((c) => {
+                          c.weeks[weekIndex] = nextWeek;
+                        })
+                      }
+                      onRemove={() =>
+                        update((c) => {
+                          c.weeks.splice(weekIndex, 1);
+                        })
+                      }
+                    />
+                  ))}
+                </div>
+              )}
             </section>
 
             {content.additionalInformation && (
@@ -688,6 +719,93 @@ function Field({
       <Label className="text-muted-foreground text-xs font-medium">{label}</Label>
       {children}
     </div>
+  );
+}
+
+function ArticleCard({
+  article,
+  onChange,
+  onRemove,
+}: {
+  article: WatchtowerArticle;
+  onChange: (article: WatchtowerArticle) => void;
+  onRemove: () => void;
+}) {
+  return (
+    <details className="group overflow-hidden rounded-xl border bg-card" open>
+      <summary className="flex cursor-pointer list-none items-center gap-3 px-4 py-3.5 [&::-webkit-details-marker]:hidden">
+        <ChevronDown
+          className="text-muted-foreground size-4 shrink-0 transition-transform group-open:rotate-180"
+          aria-hidden="true"
+        />
+        <div className="min-w-0 flex-1">
+          <p className="truncate text-sm font-medium">{article.title || "Artigo"}</p>
+          <p className="text-muted-foreground truncate text-xs">
+            {article.dates ?? "Sem datas"} · {article.paragraphs.length}{" "}
+            {article.paragraphs.length === 1 ? "parágrafo" : "parágrafos"}
+          </p>
+        </div>
+        <Button
+          variant="ghost"
+          size="icon"
+          type="button"
+          className="text-destructive rounded-full hover:text-destructive"
+          onClick={(event) => {
+            event.preventDefault();
+            onRemove();
+          }}
+          aria-label="Remover artigo"
+        >
+          <Trash2 />
+        </Button>
+      </summary>
+
+      <div className="space-y-5 border-t px-4 py-4 sm:px-5 sm:py-5">
+        <div className="grid gap-3.5 sm:grid-cols-2 sm:gap-4">
+          <Field label="Título" className="sm:col-span-2">
+            <Input
+              value={article.title}
+              onChange={(event) => onChange({ ...article, title: event.target.value })}
+            />
+          </Field>
+          <Field label="Datas">
+            <Input
+              value={article.dates ?? ""}
+              onChange={(event) => onChange({ ...article, dates: event.target.value })}
+            />
+          </Field>
+          <Field label="Canção">
+            <Input
+              value={article.song ?? ""}
+              onChange={(event) => onChange({ ...article, song: event.target.value })}
+            />
+          </Field>
+          <Field label="Escritura do tema" className="sm:col-span-2">
+            <Input
+              value={article.themeScripture ?? ""}
+              onChange={(event) => onChange({ ...article, themeScripture: event.target.value })}
+            />
+          </Field>
+          <Field label="Tema" className="sm:col-span-2">
+            <Textarea
+              rows={2}
+              value={article.theme ?? ""}
+              onChange={(event) => onChange({ ...article, theme: event.target.value })}
+            />
+          </Field>
+        </div>
+        <StringList
+          label="Parágrafos"
+          values={article.paragraphs}
+          onChange={(paragraphs) => onChange({ ...article, paragraphs })}
+        />
+        <StringList
+          label="Perguntas"
+          values={article.questions}
+          onChange={(questions) => onChange({ ...article, questions })}
+        />
+      </div>
+    </details>
   );
 }
 

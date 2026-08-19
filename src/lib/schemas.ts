@@ -136,9 +136,20 @@ const workbookWeekSchema = z.object({
     .passthrough(),
 });
 
+const watchtowerArticleSchema = z.object({
+  title: z.string().trim().min(1, "Informe o título do artigo."),
+  dates: z.string().optional(),
+  song: z.string().optional(),
+  themeScripture: z.string().optional(),
+  theme: z.string().optional(),
+  paragraphs: z.array(z.string()).default([]),
+  questions: z.array(z.string()).default([]),
+});
+
 export const workbookContentSchema = z.object({
   name: z.string().trim().min(1, "Informe o nome da apostila."),
-  weeks: z.array(workbookWeekSchema),
+  weeks: z.array(workbookWeekSchema).default([]),
+  articles: z.array(watchtowerArticleSchema).optional(),
   coverInformation: z
     .object({
       coverImage: z.string().optional(),
