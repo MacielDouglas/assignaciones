@@ -199,3 +199,32 @@ export const meetingUpdateSchema = z
 export type WorkbookContentInput = z.infer<typeof workbookContentSchema>;
 export type MeetingSaveInput = z.infer<typeof meetingSaveSchema>;
 export type MeetingUpdateInput = z.infer<typeof meetingUpdateSchema>;
+
+const catalogItemSchema = z.object({
+  number: z.number().int().positive("O número deve ser positivo."),
+  theme: z.string().trim().min(1, "Informe o tema.").max(300, "Tema muito longo."),
+});
+
+const uniqueNumbers = (items: { number: number }[]) =>
+  new Set(items.map((item) => item.number)).size === items.length;
+
+export const songsSaveSchema = z
+  .object({
+    items: z.array(catalogItemSchema).default([]),
+  })
+  .refine((data) => uniqueNumbers(data.items), {
+    message: "Números de cántico duplicados.",
+    path: ["items"],
+  });
+
+export const talksSaveSchema = z
+  .object({
+    items: z.array(catalogItemSchema).default([]),
+  })
+  .refine((data) => uniqueNumbers(data.items), {
+    message: "Números de discurso duplicados.",
+    path: ["items"],
+  });
+
+export type SongsSaveInput = z.infer<typeof songsSaveSchema>;
+export type TalksSaveInput = z.infer<typeof talksSaveSchema>;

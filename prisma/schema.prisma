@@ -55,6 +55,8 @@ model Organization {
   persons          Person[]
   meetingWorkbooks MeetingWorkbook[]
   watchtowers      Watchtower[]
+  songs            Song[]
+  talks            Talk[]
   inviteTokens     InviteToken[]
 }
 
@@ -140,6 +142,34 @@ model WatchtowerArticle {
   watchtower Watchtower @relation(fields: [watchtowerId], references: [id], onDelete: Cascade)
 
   @@index([watchtowerId])
+}
+
+model Song {
+  id             String   @id @default(cuid())
+  organizationId String
+  number         Int
+  theme          String
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@unique([organizationId, number])
+  @@index([organizationId])
+}
+
+model Talk {
+  id             String   @id @default(cuid())
+  organizationId String
+  number         Int
+  theme          String
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@unique([organizationId, number])
+  @@index([organizationId])
 }
 
 model Person {

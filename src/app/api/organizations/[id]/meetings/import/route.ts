@@ -51,6 +51,30 @@ export async function POST(
       });
     }
 
+    if (parsed.kind === "songs") {
+      const count = await prisma.song.count({ where: { organizationId: id } });
+      return jsonOk({
+        kind: "songs",
+        symbol: parsed.symbol,
+        name: parsed.name,
+        languageCode: parsed.languageCode,
+        songs: parsed.songs,
+        exists: count > 0,
+      });
+    }
+
+    if (parsed.kind === "talks") {
+      const count = await prisma.talk.count({ where: { organizationId: id } });
+      return jsonOk({
+        kind: "talks",
+        symbol: parsed.symbol,
+        name: parsed.name,
+        languageCode: parsed.languageCode,
+        talks: parsed.talks,
+        exists: count > 0,
+      });
+    }
+
     const meetingType = parsed.symbol.startsWith("mwb") ? "MIDWEEK" : "WEEKEND";
     const existing = await prisma.meetingWorkbook.findFirst({
       where: { organizationId: id, symbol: parsed.symbol },

@@ -3,6 +3,7 @@ import { headers } from "next/headers";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import {
+  type CatalogRow,
   MeetingsManager,
   type MeetingWorkbookRow,
   type WatchtowerRow,
@@ -60,7 +61,7 @@ export default async function MeetingContentPage() {
     migrateLegacyWatchtowers(organizationId),
   ]);
 
-  const [midweek, watchtowers] = await Promise.all([
+  const [midweek, watchtowers, songs, talks] = await Promise.all([
     prisma.meetingWorkbook.findMany({
       where: { organizationId, meetingType: "MIDWEEK" },
       orderBy: { updatedAt: "desc" },
@@ -69,6 +70,14 @@ export default async function MeetingContentPage() {
       where: { organizationId },
       include: { articles: { orderBy: { order: "asc" } } },
       orderBy: { updatedAt: "desc" },
+    }),
+    prisma.song.findMany({
+      where: { organizationId },
+      orderBy: { number: "asc" },
+    }),
+    prisma.talk.findMany({
+      where: { organizationId },
+      orderBy: { number: "asc" },
     }),
   ]);
 
@@ -109,6 +118,18 @@ export default async function MeetingContentPage() {
     })),
   });
 
+  const toCatalogRow = (row: {
+    id: string;
+    number: number;
+    theme: string;
+    updatedAt: Date;
+  }): CatalogRow => ({
+    id: row.id,
+    number: row.number,
+    theme: row.theme,
+    updatedAt: row.updatedAt.toISOString(),
+  });
+
   return (
     <main className="mx-auto w-full max-w-2xl flex-1 px-5 py-10 sm:px-6 sm:py-16">
       <div className="space-y-8">
@@ -144,6 +165,8 @@ export default async function MeetingContentPage() {
           organizationId={organizationId}
           initialMidweek={sortByIssue(midweek).map(toRow)}
           initialWatchtowers={sortWatchtowers(watchtowers).map(toWatchtowerRow)}
+          initialSongs={songs.map(toCatalogRow)}
+          initialTalks={talks.map(toCatalogRow)}
           canEdit={canEdit}
         />
       </div>

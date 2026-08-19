@@ -57,7 +57,19 @@ export interface WatchtowerRow {
   articles: WatchtowerArticle[];
 }
 
-type TabKey = "workbook" | "watchtower";
+export interface CatalogRow {
+  id: string;
+  number: number;
+  theme: string;
+  updatedAt: string;
+}
+
+interface CatalogItem {
+  number: number;
+  theme: string;
+}
+
+type TabKey = "workbook" | "watchtower" | "songs" | "talks";
 
 interface EditorDraft {
   meetingType: "MIDWEEK" | "WEEKEND";
@@ -88,6 +100,20 @@ interface PendingWatchtowerImport {
   draft: WatchtowerDraft;
 }
 
+interface PendingCatalogImport {
+  kind: "songs" | "talks";
+  symbol: string;
+  name: string;
+  items: CatalogItem[];
+}
+
+interface CatalogDraft {
+  kind: "songs" | "talks";
+  symbol: string;
+  name: string;
+  items: CatalogItem[];
+}
+
 const SECTION_LABELS: Record<string, string> = {
   "TREASURES FROM GODS WORD": "Tesoros de la Biblia",
   "APPLY YOURSELF TO THE FIELD MINISTRY": "Seamos mejores maestros",
@@ -98,6 +124,8 @@ interface MeetingsManagerProps {
   organizationId: string;
   initialMidweek: MeetingWorkbookRow[];
   initialWatchtowers: WatchtowerRow[];
+  initialSongs: CatalogRow[];
+  initialTalks: CatalogRow[];
   canEdit: boolean;
 }
 
@@ -105,17 +133,22 @@ export function MeetingsManager({
   organizationId,
   initialMidweek,
   initialWatchtowers,
+  initialSongs,
+  initialTalks,
   canEdit,
 }: MeetingsManagerProps) {
   const [workbooks, setWorkbooks] = useState<MeetingWorkbookRow[]>(initialMidweek);
   const [watchtowers, setWatchtowers] = useState<WatchtowerRow[]>(initialWatchtowers);
+  const [songs, setSongs] = useState<CatalogRow[]>(initialSongs);
+  const [talks, setTalks] = useState<CatalogRow[]>(initialTalks);
   const [tab, setTab] = useState<TabKey>("workbook");
   const [language, setLanguage] = useState<WorkbookLanguage>("es");
   const [draft, setDraft] = useState<EditorDraft | null>(null);
   const [wtDraft, setWtDraft] = useState<WatchtowerDraft | null>(null);
-  const [duplicate, setDuplicate] = useState<(PendingImport | PendingWatchtowerImport) | null>(
-    null,
-  );
+  const [catalogDraft, setCatalogDraft] = useState<CatalogDraft | null>(null);
+  const [duplicate, setDuplicate] = useState<
+    (PendingImport | PendingWatchtowerImport | PendingCatalogImport) | null
+  >(null);
   const [importing, setImporting] = useState(false);
   const [saving, setSaving] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
@@ -179,7 +212,7 @@ export function MeetingsManager({
             : `Erro ${response.status}.`;
         throw new ApiError(message, response.status);
       }
-      const pending =
+      const pending: PendingImport | PendingWatchtowerImport | PendingCatalogImport =
         data.kind === "watchtower"
           ? {
               kind: "watchtower" as const,
@@ -190,26 +223,40 @@ export function MeetingsManager({
                 articles: data.watchtower.articles,
               } satisfies WatchtowerDraft,
             }
-          : {
-              kind: "workbook" as const,
-              draft: {
-                meetingType: data.meetingType as "MIDWEEK" | "WEEKEND",
-                symbol: data.workbook.symbol,
-                name: data.workbook.name,
-                shortTitle: data.workbook.shortTitle,
-                displayTitle: data.workbook.displayTitle,
-                referenceTitle: data.workbook.referenceTitle,
-                languageCode: data.workbook.languageCode,
-                coverImageUrl: data.workbook.coverImageUrl,
-                content: data.workbook.content,
-              } satisfies EditorDraft,
-            };
+          : data.kind === "songs" || data.kind === "talks"
+            ? {
+                kind: data.kind,
+                symbol: data.symbol,
+                name: data.name,
+                items: (data.kind === "songs" ? data.songs : data.talks) as CatalogItem[],
+              }
+            : {
+                kind: "workbook" as const,
+                draft: {
+                  meetingType: data.meetingType as "MIDWEEK" | "WEEKEND",
+                  symbol: data.workbook.symbol,
+                  name: data.workbook.name,
+                  shortTitle: data.workbook.shortTitle,
+                  displayTitle: data.workbook.displayTitle,
+                  referenceTitle: data.workbook.referenceTitle,
+                  languageCode: data.workbook.languageCode,
+                  coverImageUrl: data.workbook.coverImageUrl,
+                  content: data.workbook.content,
+                } satisfies EditorDraft,
+              };
       if (data.exists) {
         setDuplicate(pending);
       } else if (pending.kind === "watchtower") {
         setWtDraft(pending.draft);
-      } else {
+      } else if (pending.kind === "workbook") {
         setDraft(pending.draft);
+      } else {
+        setCatalogDraft({
+          kind: pending.kind,
+          symbol: pending.symbol,
+          name: pending.name,
+          items: pending.items,
+        });
       }
     } catch (error) {
       toast.error(getErrorMessage(error));
@@ -285,6 +332,43 @@ export function MeetingsManager({
     }
   }
 
+  function mergeCatalogItems(existing: CatalogRow[], items: CatalogItem[]): CatalogItem[] {
+    const merged = new Map<number, CatalogItem>();
+    for (const item of items) merged.set(item.number, item);
+    for (const row of existing) {
+      if (!merged.has(row.number)) {
+        merged.set(row.number, { number: row.number, theme: row.theme });
+      }
+    }
+    return [...merged.values()].sort((a, b) => a.number - b.number);
+  }
+
+  async function handleSaveCatalog(nextDraft: CatalogDraft) {
+    setSaving(true);
+    try {
+      const endpoint =
+        nextDraft.kind === "songs"
+          ? `/api/organizations/${organizationId}/songs`
+          : `/api/organizations/${organizationId}/talks`;
+      const { songs, talks: savedTalks } = await apiFetch<{
+        songs?: CatalogRow[];
+        talks?: CatalogRow[];
+      }>(endpoint, { method: "POST", body: JSON.stringify({ items: nextDraft.items }) });
+      if (nextDraft.kind === "songs" && songs) {
+        setSongs(songs);
+        toast.success("Cánticos salvos!");
+      } else if (savedTalks) {
+        setTalks(savedTalks);
+        toast.success("Discursos salvos!");
+      }
+      setCatalogDraft(null);
+    } catch (error) {
+      toast.error(getErrorMessage(error));
+    } finally {
+      setSaving(false);
+    }
+  }
+
   return (
     <div className="space-y-6">
       <Tabs value={tab} onValueChange={(value) => setTab(value as TabKey)}>
@@ -302,6 +386,8 @@ export function MeetingsManager({
             <TabsList className="w-full sm:w-fit">
               <TabsTrigger value="workbook">Apostila</TabsTrigger>
               <TabsTrigger value="watchtower">Sentinela</TabsTrigger>
+              <TabsTrigger value="songs">Cánticos</TabsTrigger>
+              <TabsTrigger value="talks">Discursos</TabsTrigger>
             </TabsList>
           </div>
 
@@ -369,6 +455,42 @@ export function MeetingsManager({
             }}
           />
         </TabsContent>
+
+        <TabsContent value="songs" className="mt-6">
+          <CatalogList
+            kind="songs"
+            rows={songs}
+            canEdit={canEdit}
+            onEdit={() =>
+              setCatalogDraft({
+                kind: "songs",
+                symbol: songs[0]?.id ?? "sjj",
+                name: "Cánticos",
+                items: songs.map((row) => ({ number: row.number, theme: row.theme })),
+              })
+            }
+            onImport={() => fileInputRef.current?.click()}
+            importing={importing}
+          />
+        </TabsContent>
+
+        <TabsContent value="talks" className="mt-6">
+          <CatalogList
+            kind="talks"
+            rows={talks}
+            canEdit={canEdit}
+            onEdit={() =>
+              setCatalogDraft({
+                kind: "talks",
+                symbol: talks[0]?.id ?? "S-34",
+                name: "Discursos públicos",
+                items: talks.map((row) => ({ number: row.number, theme: row.theme })),
+              })
+            }
+            onImport={() => fileInputRef.current?.click()}
+            importing={importing}
+          />
+        </TabsContent>
       </Tabs>
 
       {draft && (
@@ -391,6 +513,16 @@ export function MeetingsManager({
         />
       )}
 
+      {catalogDraft && (
+        <CatalogEditor
+          draft={catalogDraft}
+          saving={saving}
+          onChange={setCatalogDraft}
+          onCancel={() => setCatalogDraft(null)}
+          onSave={() => handleSaveCatalog(catalogDraft)}
+        />
+      )}
+
       {duplicate && (
         <Dialog
           open
@@ -409,8 +541,16 @@ export function MeetingsManager({
                 </DialogTitle>
                 <DialogDescription className="text-sm">
                   O arquivo{" "}
-                  <span className="font-medium text-foreground">{duplicate.draft.symbol}</span> já
-                  está no banco de dados. Deseja atualizar o conteúdo com este arquivo?
+                  <span className="font-medium text-foreground">
+                    {"draft" in duplicate ? duplicate.draft.symbol : duplicate.symbol}
+                  </span>{" "}
+                  já está no banco de dados. Deseja atualizar{" "}
+                  {duplicate.kind === "songs"
+                    ? "a lista de cánticos"
+                    : duplicate.kind === "talks"
+                      ? "a lista de discursos"
+                      : "o conteúdo"}{" "}
+                  com este arquivo?
                 </DialogDescription>
               </div>
             </div>
@@ -428,7 +568,16 @@ export function MeetingsManager({
                   const pending = duplicate;
                   setDuplicate(null);
                   if (pending.kind === "watchtower") setWtDraft(pending.draft);
-                  else setDraft(pending.draft);
+                  else if (pending.kind === "workbook") setDraft(pending.draft);
+                  else {
+                    const existing = pending.kind === "songs" ? songs : talks;
+                    setCatalogDraft({
+                      kind: pending.kind,
+                      symbol: pending.symbol,
+                      name: pending.name,
+                      items: mergeCatalogItems(existing, pending.items),
+                    });
+                  }
                 }}
               >
                 Atualizar
@@ -557,6 +706,233 @@ function ContentList<T extends ContentRow>({
         );
       })}
     </div>
+  );
+}
+
+function CatalogList({
+  kind,
+  rows,
+  canEdit,
+  onEdit,
+  onImport,
+  importing,
+}: {
+  kind: "songs" | "talks";
+  rows: CatalogRow[];
+  canEdit: boolean;
+  onEdit: () => void;
+  onImport: () => void;
+  importing: boolean;
+}) {
+  const title = kind === "songs" ? "Cánticos da congregação" : "Discursos públicos";
+  const emptyLabel = kind === "songs" ? "Nenhum cántico importado" : "Nenhum discurso importado";
+  const unit = kind === "songs" ? "cántico" : "discurso";
+  const emptyHint = canEdit
+    ? `Importe o arquivo .jwpub (${kind === "songs" ? "sjj" : "S-34"}) para preencher a lista.`
+    : "Entre em contato com um organizador para importar o arquivo.";
+
+  if (rows.length === 0) {
+    return (
+      <Card className="overflow-hidden rounded-2xl border">
+        <CardContent className="flex flex-col items-center gap-4 px-5 py-10 text-center sm:px-6 sm:py-20">
+          <div className="bg-muted flex size-14 items-center justify-center rounded-2xl">
+            <CalendarDays className="text-muted-foreground size-6" aria-hidden="true" />
+          </div>
+          <div className="space-y-1.5">
+            <p className="text-lg font-semibold tracking-tight">{emptyLabel}</p>
+            <p className="text-muted-foreground mx-auto max-w-xs text-sm">{emptyHint}</p>
+          </div>
+          {canEdit && (
+            <Button className="mt-2 rounded-full" onClick={onImport} disabled={importing}>
+              {importing ? (
+                <Loader2 className="animate-spin" aria-hidden="true" />
+              ) : (
+                <ArrowUpFromLine aria-hidden="true" />
+              )}
+              Importar {unit}
+            </Button>
+          )}
+        </CardContent>
+      </Card>
+    );
+  }
+
+  const updatedAt = new Date(Math.max(...rows.map((row) => new Date(row.updatedAt).getTime())));
+
+  return (
+    <div className="flex items-center gap-3 rounded-2xl border bg-card px-5 py-4">
+      <button
+        type="button"
+        onClick={onEdit}
+        className="min-w-0 flex-1 cursor-pointer rounded-xl text-left outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
+      >
+        <p className="text-sm font-medium truncate">{title}</p>
+        <p className="text-muted-foreground mt-0.5 truncate text-xs">
+          {rows.length} {rows.length === 1 ? unit : `${unit}s`}
+        </p>
+        <p className="text-muted-foreground mt-1 text-xs">
+          atualizado em {updatedAt.toLocaleDateString("pt-BR")}
+        </p>
+      </button>
+      {canEdit && (
+        <div className="flex shrink-0 items-center gap-1">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="rounded-full"
+            onClick={onEdit}
+            aria-label={`Editar ${title}`}
+          >
+            <Pencil />
+          </Button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function CatalogEditor({
+  draft,
+  saving,
+  onChange,
+  onCancel,
+  onSave,
+}: {
+  draft: CatalogDraft;
+  saving: boolean;
+  onChange: (draft: CatalogDraft) => void;
+  onCancel: () => void;
+  onSave: () => void;
+}) {
+  const isSongs = draft.kind === "songs";
+  const title = isSongs ? "Editar cánticos" : "Editar discursos públicos";
+  const unit = isSongs ? "cántico" : "discurso";
+
+  function updateItem(index: number, item: CatalogItem) {
+    const next = structuredClone(draft);
+    next.items[index] = item;
+    onChange(next);
+  }
+
+  function removeItem(index: number) {
+    const next = structuredClone(draft);
+    next.items.splice(index, 1);
+    onChange(next);
+  }
+
+  function addItem() {
+    const next = structuredClone(draft);
+    const nextNumber = next.items.reduce((max, item) => Math.max(max, item.number), 0) + 1;
+    next.items.push({ number: nextNumber, theme: "" });
+    onChange(next);
+  }
+
+  return (
+    <Dialog
+      open
+      onOpenChange={(open) => {
+        if (!open && !saving) onCancel();
+      }}
+    >
+      <DialogContent
+        showCloseButton={false}
+        className="flex h-dvh max-h-dvh max-w-3xl flex-col gap-0 overflow-hidden rounded-t-none border-x-0 border-b-0 p-0 sm:h-auto sm:max-h-[85vh] sm:rounded-2xl sm:border-x sm:border-b"
+      >
+        <header className="flex items-start justify-between gap-4 border-b px-4 py-4 sm:px-6 sm:py-5">
+          <div className="min-w-0 space-y-1">
+            <DialogTitle className="text-lg font-semibold tracking-tight sm:text-xl">
+              {title}
+            </DialogTitle>
+            <DialogDescription className="text-muted-foreground truncate text-sm">
+              {draft.name} · {draft.symbol}
+            </DialogDescription>
+          </div>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={onCancel}
+            disabled={saving}
+            aria-label="Fechar"
+          >
+            <X />
+          </Button>
+        </header>
+
+        <div className="min-h-0 flex-1 overflow-y-auto px-4 py-5 sm:px-6">
+          <div className="space-y-9">
+            <section className="space-y-4">
+              <h3 className="text-muted-foreground text-xs font-medium tracking-widest uppercase">
+                Lista · {draft.items.length} {draft.items.length === 1 ? unit : `${unit}s`}
+              </h3>
+              <div className="space-y-3">
+                {draft.items.map((item, index) => (
+                  <div
+                    key={`${item.number}-${index}`}
+                    className="flex items-center gap-2.5 rounded-xl border p-3 sm:gap-3 sm:p-3.5"
+                  >
+                    <Input
+                      className="w-20 shrink-0 tabular-nums"
+                      inputMode="numeric"
+                      value={item.number || ""}
+                      onChange={(event) =>
+                        updateItem(index, {
+                          ...item,
+                          number: Number(event.target.value.replace(/\D/g, "")),
+                        })
+                      }
+                      aria-label="Número"
+                    />
+                    <Input
+                      className="min-w-0 flex-1"
+                      value={item.theme}
+                      onChange={(event) =>
+                        updateItem(index, { ...item, theme: event.target.value })
+                      }
+                      aria-label="Tema"
+                    />
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      type="button"
+                      className="text-destructive shrink-0 rounded-full hover:text-destructive"
+                      onClick={() => removeItem(index)}
+                      aria-label="Remover linha"
+                    >
+                      <Trash2 />
+                    </Button>
+                  </div>
+                ))}
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                type="button"
+                className="w-full sm:w-auto"
+                onClick={addItem}
+              >
+                <Plus aria-hidden="true" />
+                Adicionar {unit}
+              </Button>
+            </section>
+          </div>
+        </div>
+
+        <footer className="flex flex-col-reverse gap-2.5 border-t bg-background px-4 py-4 pb-[max(1rem,env(safe-area-inset-bottom))] sm:flex-row sm:justify-end sm:gap-2 sm:px-6 sm:pb-4">
+          <Button
+            variant="outline"
+            className="w-full sm:w-auto"
+            onClick={onCancel}
+            disabled={saving}
+          >
+            Cancelar
+          </Button>
+          <Button className="w-full sm:w-auto" onClick={onSave} disabled={saving}>
+            {saving && <Loader2 className="animate-spin" aria-hidden="true" />}
+            Salvar
+          </Button>
+        </footer>
+      </DialogContent>
+    </Dialog>
   );
 }
 

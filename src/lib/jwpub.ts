@@ -281,7 +281,35 @@ export interface ParsedWatchtower {
   articles: WatchtowerArticle[];
 }
 
-export type ParsedPublication = ParsedWorkbook | ParsedWatchtower;
+export interface SongItem {
+  number: number;
+  theme: string;
+}
+
+export interface ParsedSongs {
+  kind: "songs";
+  symbol: string;
+  name: string;
+  languageCode: string;
+  fileName: string;
+  songs: SongItem[];
+}
+
+export interface TalkItem {
+  number: number;
+  theme: string;
+}
+
+export interface ParsedTalks {
+  kind: "talks";
+  symbol: string;
+  name: string;
+  languageCode: string;
+  fileName: string;
+  talks: TalkItem[];
+}
+
+export type ParsedPublication = ParsedWorkbook | ParsedWatchtower | ParsedSongs | ParsedTalks;
 
 type PartSection =
   | "TREASURES FROM GODS WORD"
@@ -365,7 +393,7 @@ function decryptDocument(content: Uint8Array, seed: string): string {
 }
 
 function getLanguageCodeFromFileName(fileName: string): string {
-  const m = fileName.match(/_([A-Za-z0-9]{1,4})_\d{6}\.db$/);
+  const m = fileName.match(/_([A-Za-z0-9]{1,4})(?:_\d{6})?\.db$/);
   return m ? m[1] : "";
 }
 
@@ -681,6 +709,54 @@ function normalizeWorkbookReferences(content: WorkbookContent): void {
   walk(content);
 }
 
+function parseSongs(
+  db: DatabaseSync,
+  seed: string,
+  docs: { DocumentId: number; Title: string; Subtitle: string | null }[],
+): SongItem[] {
+  const songs: SongItem[] = [];
+  for (const doc of docs) {
+    const row = db
+      .prepare("SELECT Content FROM Document WHERE DocumentId = ?")
+      .get(doc.DocumentId) as { Content: Uint8Array };
+    const html = decryptDocument(row.Content, seed);
+
+    const number = html.match(/<strong>CANCIÓN\s*(\d+)<\/strong>/i)?.[1];
+    if (!number) continue;
+    const h1 = html.match(/<h1\b[^>]*>([\s\S]*?)<\/h1>/)?.[1];
+    const theme = h1 ? stripTags(h1) : doc.Title;
+    if (!theme) continue;
+
+    songs.push({ number: Number(number), theme });
+  }
+  return songs;
+}
+
+function parseTalks(db: DatabaseSync, seed: string): TalkItem[] {
+  const docs = db
+    .prepare(
+      "SELECT DocumentId, Title, Subtitle FROM Document WHERE DocumentId >= 0 ORDER BY DocumentId",
+    )
+    .all() as { DocumentId: number; Title: string; Subtitle: string | null }[];
+  const talks: TalkItem[] = [];
+  for (const doc of docs) {
+    const row = db
+      .prepare("SELECT Content FROM Document WHERE DocumentId = ?")
+      .get(doc.DocumentId) as { Content: Uint8Array };
+    const html = decryptDocument(row.Content, seed);
+
+    const h1 = html.match(/<h1\b[^>]*>([\s\S]*?)<\/h1>/)?.[1];
+    const text = h1 ? stripTags(h1) : doc.Title;
+    const match = text.match(/^N[uú]m\.?\s*(\d+)\s*(.*)$/s) ?? text.match(/^(\d+)\.\s*(.*)$/s);
+    if (!match) continue;
+    const theme = match[2].trim();
+    if (!theme) continue;
+
+    talks.push({ number: Number(match[1]), theme });
+  }
+  return talks;
+}
+
 export function parsePublication(buffer: Uint8Array): ParsedPublication {
   const files = unzipSync(buffer);
   const manifestFile = files["manifest.json"];
@@ -714,11 +790,12 @@ export function parsePublication(buffer: Uint8Array): ParsedPublication {
         IssueNumber: number;
         PublicationType: string;
         UndatedSymbol: string;
+        Title: string;
       };
-      const issue = db.prepare("SELECT * FROM PublicationIssueProperty LIMIT 1").get() as {
+      const issue = (db.prepare("SELECT * FROM PublicationIssueProperty LIMIT 1").get() as {
         Symbol: string;
         Title?: string;
-      };
+      } | null) ?? { Symbol: pub.Symbol };
       const docs = db
         .prepare(
           "SELECT DocumentId, Title, Subtitle FROM Document WHERE DocumentId > 0 ORDER BY DocumentId",
@@ -759,6 +836,28 @@ export function parsePublication(buffer: Uint8Array): ParsedPublication {
           languageCode,
           fileName: manifest.publication?.fileName ?? dbFile,
           articles: parseWatchtowerArticles(db, seed, docs),
+        };
+      }
+
+      if (pub.PublicationType === "Talk") {
+        return {
+          kind: "talks",
+          symbol,
+          name: manifest.publication?.title ?? pub.Title ?? name,
+          languageCode,
+          fileName: manifest.publication?.fileName ?? dbFile,
+          talks: parseTalks(db, seed),
+        };
+      }
+
+      if (pub.UndatedSymbol === "sjj") {
+        return {
+          kind: "songs",
+          symbol,
+          name,
+          languageCode,
+          fileName: manifest.publication?.fileName ?? dbFile,
+          songs: parseSongs(db, seed, docs),
         };
       }
 
