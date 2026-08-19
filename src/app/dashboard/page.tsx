@@ -154,14 +154,14 @@ export default async function DashboardPage() {
           </Card>
         </Link>
 
-        <Link href="/dashboard/reunioes" className="block">
+        <Link href="/dashboard/reunioes/conteudo" className="block">
           <Card className="h-full transition-colors hover:bg-muted/40">
             <CardContent className="flex items-center gap-3">
               <div className="bg-primary/10 text-primary flex size-11 items-center justify-center rounded-xl">
                 <CalendarDays className="size-5" aria-hidden="true" />
               </div>
               <div>
-                <p className="text-sm font-medium">Reuniões</p>
+                <p className="text-sm font-medium">Conteúdo das reuniões</p>
                 <p className="text-muted-foreground text-xs">Apostilas importadas dos .jwpub</p>
               </div>
             </CardContent>
