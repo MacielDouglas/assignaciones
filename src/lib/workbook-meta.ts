@@ -1,0 +1,33 @@
+export type WorkbookLanguage = "pt" | "es" | "other";
+
+export function workbookLanguage(symbol: string): WorkbookLanguage {
+  const suffix = symbol
+    .slice(symbol.lastIndexOf("-") + 1)
+    .trim()
+    .toUpperCase();
+  if (suffix === "S") return "es";
+  if (suffix === "T" || suffix === "P") return "pt";
+  return "other";
+}
+
+export function workbookIssueKey(symbol: string): number {
+  const m = symbol.match(/mwb(\d{2})\.(\d{2})/i);
+  if (!m) return 0;
+  const year = 2000 + Number(m[1]);
+  const month = Number(m[2]);
+  if (month < 1 || month > 12) return 0;
+  return year * 12 + month;
+}
+
+export function workbookMonthRange(name: string): string {
+  const m = name.match(/\(([^()]*?)\)/);
+  if (!m) return "";
+  const inner = m[1].trim();
+  const months = inner.replace(/\s*\d{4}\s*$/, "").trim();
+  if (!months || /[0-9]/.test(months) || !months.includes("-")) return "";
+  return months
+    .split("-")
+    .map((part) => part.trim())
+    .filter(Boolean)
+    .join(" - ");
+}

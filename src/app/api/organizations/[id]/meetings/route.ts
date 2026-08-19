@@ -1,6 +1,6 @@
 import { MeetingType } from "@/generated/prisma/enums";
 import { getErrorMessage, jsonError, jsonOk } from "@/lib/api";
-import { listMeetings, upsertMeeting } from "@/lib/meetings";
+import { listMeetings, pruneMeetings, upsertMeeting } from "@/lib/meetings";
 import { requireOrganizationAccess } from "@/lib/organizations";
 import { canManagePeople } from "@/lib/roles";
 import { meetingSaveSchema } from "@/lib/schemas";
@@ -48,6 +48,7 @@ export async function POST(
     }
 
     const meeting = await upsertMeeting(id, parsed.data);
+    await pruneMeetings(id);
     return jsonOk({ meeting }, 201);
   } catch (error) {
     return jsonError(500, getErrorMessage(error));

@@ -1,6 +1,7 @@
 import { getErrorMessage, jsonError, jsonOk } from "@/lib/api";
 import { parseWorkbook } from "@/lib/jwpub";
 import { requireOrganizationAccess } from "@/lib/organizations";
+import { prisma } from "@/lib/prisma";
 import { canManagePeople } from "@/lib/roles";
 import { getSessionUser } from "@/lib/session";
 
@@ -31,7 +32,12 @@ export async function POST(
     const buffer = new Uint8Array(await file.arrayBuffer());
     const workbook = parseWorkbook(buffer);
 
-    return jsonOk({ workbook });
+    const existing = await prisma.meetingWorkbook.findFirst({
+      where: { organizationId: id, symbol: workbook.symbol },
+      select: { id: true, name: true, updatedAt: true },
+    });
+
+    return jsonOk({ workbook, exists: existing !== null, existing });
   } catch (error) {
     return jsonError(400, getErrorMessage(error));
   }

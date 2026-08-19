@@ -7,8 +7,10 @@ import { Button } from "@/components/ui/button";
 import type { MemberRole } from "@/generated/prisma/enums";
 import { auth } from "@/lib/auth";
 import type { WorkbookContent } from "@/lib/jwpub";
+import { pruneMeetings } from "@/lib/meetings";
 import { prisma } from "@/lib/prisma";
 import { canManagePeople, isSubUser } from "@/lib/roles";
+import { workbookIssueKey } from "@/lib/workbook-meta";
 
 export default async function MeetingContentPage() {
   const session = await auth.api.getSession({
@@ -47,6 +49,8 @@ export default async function MeetingContentPage() {
 
   const canEdit = subUser || canManagePeople(role);
 
+  await pruneMeetings(organizationId);
+
   const [midweek, weekend] = await Promise.all([
     prisma.meetingWorkbook.findMany({
       where: { organizationId, meetingType: "MIDWEEK" },
@@ -57,6 +61,9 @@ export default async function MeetingContentPage() {
       orderBy: { updatedAt: "desc" },
     }),
   ]);
+
+  const sortByIssue = (list: typeof midweek) =>
+    [...list].sort((a, b) => workbookIssueKey(b.symbol) - workbookIssueKey(a.symbol));
 
   const orgName = organizationNames?.find((org) => org.id === organizationId)?.name;
 
@@ -107,8 +114,8 @@ export default async function MeetingContentPage() {
 
         <MeetingsManager
           organizationId={organizationId}
-          initialMidweek={midweek.map(toRow)}
-          initialWeekend={weekend.map(toRow)}
+          initialMidweek={sortByIssue(midweek).map(toRow)}
+          initialWeekend={sortByIssue(weekend).map(toRow)}
           canEdit={canEdit}
         />
       </div>

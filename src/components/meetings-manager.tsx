@@ -1,6 +1,7 @@
 ﻿"use client";
 
 import {
+  AlertTriangle,
   ArrowUpFromLine,
   CalendarDays,
   ChevronDown,
@@ -25,6 +26,12 @@ import { Textarea } from "@/components/ui/textarea";
 import { ApiError, apiFetch, getErrorMessage } from "@/lib/api-client";
 import type { WorkbookContent, WorkbookPart, WorkbookWeek } from "@/lib/jwpub";
 import { cn } from "@/lib/utils";
+import {
+  type WorkbookLanguage,
+  workbookIssueKey,
+  workbookLanguage,
+  workbookMonthRange,
+} from "@/lib/workbook-meta";
 
 export interface MeetingWorkbookRow {
   id: string;
@@ -77,7 +84,9 @@ export function MeetingsManager({
     Record<MeetingWorkbookRow["meetingType"], MeetingWorkbookRow[]>
   >({ MIDWEEK: initialMidweek, WEEKEND: initialWeekend });
   const [tab, setTab] = useState<TabKey>("midweek");
+  const [language, setLanguage] = useState<WorkbookLanguage>("es");
   const [draft, setDraft] = useState<EditorDraft | null>(null);
+  const [duplicate, setDuplicate] = useState<EditorDraft | null>(null);
   const [importing, setImporting] = useState(false);
   const [saving, setSaving] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
@@ -85,8 +94,11 @@ export function MeetingsManager({
 
   function upsertRow(row: MeetingWorkbookRow) {
     setByType((prev) => {
-      const list = prev[row.meetingType].filter((item) => item.symbol !== row.symbol);
-      return { ...prev, [row.meetingType]: [row, ...list] };
+      const list = prev[row.meetingType]
+        .filter((item) => item.symbol !== row.symbol)
+        .concat(row)
+        .sort((a, b) => workbookIssueKey(b.symbol) - workbookIssueKey(a.symbol));
+      return { ...prev, [row.meetingType]: list };
     });
   }
 
@@ -121,8 +133,8 @@ export function MeetingsManager({
             : `Erro ${response.status}.`;
         throw new ApiError(message, response.status);
       }
-      const workbook = (data as { workbook: EditorDraft }).workbook;
-      setDraft({
+      const workbook = (data as { workbook: EditorDraft; exists?: boolean }).workbook;
+      const draftData: EditorDraft = {
         meetingType: tab === "midweek" ? "MIDWEEK" : "WEEKEND",
         symbol: workbook.symbol,
         name: workbook.name,
@@ -132,7 +144,12 @@ export function MeetingsManager({
         languageCode: workbook.languageCode,
         coverImageUrl: workbook.coverImageUrl,
         content: workbook.content,
-      });
+      };
+      if (data.exists) {
+        setDuplicate(draftData);
+      } else {
+        setDraft(draftData);
+      }
     } catch (error) {
       toast.error(getErrorMessage(error));
     } finally {
@@ -181,10 +198,21 @@ export function MeetingsManager({
     <div className="space-y-6">
       <Tabs value={tab} onValueChange={(value) => setTab(value as TabKey)}>
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <TabsList className="w-full sm:w-fit">
-            <TabsTrigger value="midweek">Meio de semana</TabsTrigger>
-            <TabsTrigger value="weekend">Fim de semana</TabsTrigger>
-          </TabsList>
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-2">
+            <Tabs
+              value={language}
+              onValueChange={(value) => setLanguage(value as WorkbookLanguage)}
+            >
+              <TabsList className="w-full sm:w-fit">
+                <TabsTrigger value="es">Español</TabsTrigger>
+                <TabsTrigger value="pt">Português</TabsTrigger>
+              </TabsList>
+            </Tabs>
+            <TabsList className="w-full sm:w-fit">
+              <TabsTrigger value="midweek">Meio de semana</TabsTrigger>
+              <TabsTrigger value="weekend">Fim de semana</TabsTrigger>
+            </TabsList>
+          </div>
 
           {canEdit && (
             <>
@@ -217,6 +245,7 @@ export function MeetingsManager({
 
         <TabsContent value="midweek" className="mt-6">
           <WorkbookList
+            language={language}
             rows={byType.MIDWEEK}
             canEdit={canEdit}
             onEdit={openEditor}
@@ -229,6 +258,7 @@ export function MeetingsManager({
 
         <TabsContent value="weekend" className="mt-6">
           <WorkbookList
+            language={language}
             rows={byType.WEEKEND}
             canEdit={canEdit}
             onEdit={openEditor}
@@ -249,12 +279,57 @@ export function MeetingsManager({
           onSave={() => handleSave(draft)}
         />
       )}
+
+      {duplicate && (
+        <Dialog
+          open
+          onOpenChange={(open) => {
+            if (!open) setDuplicate(null);
+          }}
+        >
+          <DialogContent className="sm:max-w-md">
+            <div className="flex items-start gap-4">
+              <div className="bg-destructive/10 text-destructive flex size-11 shrink-0 items-center justify-center rounded-full">
+                <AlertTriangle className="size-5" aria-hidden="true" />
+              </div>
+              <div className="min-w-0 space-y-1.5">
+                <DialogTitle className="text-lg font-semibold tracking-tight">
+                  Apostila já importada
+                </DialogTitle>
+                <DialogDescription className="text-sm">
+                  A apostila <span className="font-medium text-foreground">{duplicate.symbol}</span>{" "}
+                  já está no banco de dados. Deseja atualizar o conteúdo com este arquivo?
+                </DialogDescription>
+              </div>
+            </div>
+            <div className="flex flex-col-reverse gap-2.5 sm:flex-row sm:justify-end sm:gap-2">
+              <Button
+                variant="outline"
+                className="w-full sm:w-auto"
+                onClick={() => setDuplicate(null)}
+              >
+                Cancelar
+              </Button>
+              <Button
+                className="w-full sm:w-auto"
+                onClick={() => {
+                  setDraft(duplicate);
+                  setDuplicate(null);
+                }}
+              >
+                Atualizar
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
+      )}
     </div>
   );
 }
 
 function WorkbookList({
   rows,
+  language,
   canEdit,
   onEdit,
   onDelete,
@@ -263,6 +338,7 @@ function WorkbookList({
   importing,
 }: {
   rows: MeetingWorkbookRow[];
+  language: WorkbookLanguage;
   canEdit: boolean;
   onEdit: (row: MeetingWorkbookRow) => void;
   onDelete: (row: MeetingWorkbookRow) => void;
@@ -270,18 +346,23 @@ function WorkbookList({
   onImport: () => void;
   importing: boolean;
 }) {
-  if (rows.length === 0) {
+  const filtered = rows.filter((row) => workbookLanguage(row.symbol) === language);
+  const languageLabel = language === "es" ? "espanhol" : "português";
+
+  if (filtered.length === 0) {
     return (
       <Card className="overflow-hidden rounded-2xl border">
-        <CardContent className="flex flex-col items-center gap-4 px-5 py-10 sm:px-6 text-center sm:py-20">
+        <CardContent className="flex flex-col items-center gap-4 px-5 py-10 text-center sm:px-6 sm:py-20">
           <div className="bg-muted flex size-14 items-center justify-center rounded-2xl">
             <CalendarDays className="text-muted-foreground size-6" aria-hidden="true" />
           </div>
           <div className="space-y-1.5">
-            <p className="text-lg font-semibold tracking-tight">Nenhuma apostila importada</p>
+            <p className="text-lg font-semibold tracking-tight">
+              Nenhuma apostila em {languageLabel}
+            </p>
             <p className="text-muted-foreground mx-auto max-w-xs text-sm">
               {canEdit
-                ? "Importe o arquivo .jwpub da reunião para começar a montar a escala."
+                ? `Importe o arquivo .jwpub em ${languageLabel} para começar a montar a escala.`
                 : "Entre em contato com um organizador para importar a apostila."}
             </p>
           </div>
@@ -302,49 +383,56 @@ function WorkbookList({
 
   return (
     <div className="divide-y divide-border overflow-hidden rounded-2xl border bg-card">
-      {rows.map((row) => (
-        <div key={row.id} className="flex items-center gap-3 px-5 py-4">
-          <button
-            type="button"
-            onClick={() => onEdit(row)}
-            className="min-w-0 flex-1 cursor-pointer text-left outline-none focus-visible:ring-3 focus-visible:ring-ring/50 rounded-xl"
-          >
-            <p className="text-sm font-medium truncate">{row.name}</p>
-            <p className="text-muted-foreground mt-0.5 flex flex-wrap items-center gap-x-2 text-sm">
-              <span className="tabular-nums">{row.content.weeks.length} semanas</span>
-              <span aria-hidden="true">·</span>
-              <span>atualizado em {new Date(row.updatedAt).toLocaleDateString("pt-BR")}</span>
-            </p>
-          </button>
-          {canEdit && (
-            <div className="flex shrink-0 items-center gap-1">
-              <Button
-                variant="ghost"
-                size="icon"
-                className="rounded-full"
-                onClick={() => onEdit(row)}
-                aria-label="Editar apostila"
-              >
-                <Pencil />
-              </Button>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="text-destructive rounded-full hover:text-destructive"
-                onClick={() => onDelete(row)}
-                disabled={deletingId === row.id}
-                aria-label="Excluir apostila"
-              >
-                {deletingId === row.id ? (
-                  <Loader2 className="animate-spin" aria-hidden="true" />
-                ) : (
-                  <Trash2 />
-                )}
-              </Button>
-            </div>
-          )}
-        </div>
-      ))}
+      {filtered.map((row) => {
+        const range = workbookMonthRange(row.name);
+        return (
+          <div key={row.id} className="flex items-center gap-3 px-5 py-4">
+            <button
+              type="button"
+              onClick={() => onEdit(row)}
+              className="min-w-0 flex-1 cursor-pointer rounded-xl text-left outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
+            >
+              <p className="text-sm font-medium truncate">
+                {row.symbol}
+                {range ? ` - ${range}` : ""}
+              </p>
+              <p className="text-muted-foreground mt-0.5 truncate text-xs">{row.name}</p>
+              <p className="text-muted-foreground mt-1 flex flex-wrap items-center gap-x-2 text-xs">
+                <span className="tabular-nums">{row.content.weeks.length} semanas</span>
+                <span aria-hidden="true">·</span>
+                <span>atualizado em {new Date(row.updatedAt).toLocaleDateString("pt-BR")}</span>
+              </p>
+            </button>
+            {canEdit && (
+              <div className="flex shrink-0 items-center gap-1">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="rounded-full"
+                  onClick={() => onEdit(row)}
+                  aria-label="Editar apostila"
+                >
+                  <Pencil />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="text-destructive rounded-full hover:text-destructive"
+                  onClick={() => onDelete(row)}
+                  disabled={deletingId === row.id}
+                  aria-label="Excluir apostila"
+                >
+                  {deletingId === row.id ? (
+                    <Loader2 className="animate-spin" aria-hidden="true" />
+                  ) : (
+                    <Trash2 />
+                  )}
+                </Button>
+              </div>
+            )}
+          </div>
+        );
+      })}
     </div>
   );
 }
