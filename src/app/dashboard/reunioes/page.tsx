@@ -75,33 +75,43 @@ export default async function MeetingsPage() {
   });
 
   return (
-    <main className="mx-auto w-full max-w-3xl flex-1 space-y-6 px-6 py-8">
-      <div className="flex items-center gap-3">
-        <Button variant="ghost" size="icon-sm" asChild>
-          <Link href="/dashboard" aria-label="Voltar ao painel">
-            <ArrowLeft />
-          </Link>
-        </Button>
-        <div>
-          <h1 className="text-lg font-medium">Reuniões</h1>
+    <main className="mx-auto w-full max-w-2xl flex-1 px-6 py-12 sm:py-16">
+      <div className="space-y-8">
+        <header className="space-y-6">
+          <Button
+            variant="ghost"
+            size="sm"
+            className="rounded-full text-muted-foreground hover:text-foreground"
+            asChild
+          >
+            <Link href="/dashboard" aria-label="Voltar ao painel">
+              <ArrowLeft />
+              Painel
+            </Link>
+          </Button>
+          <div className="space-y-2">
+            <h1 className="text-3xl font-semibold tracking-tight text-balance sm:text-4xl">
+              Reuniões
+            </h1>
+            <p className="text-muted-foreground max-w-md text-base">
+              Apostilas importadas dos arquivos .jwpub, prontas para montar a escala da congregação.
+            </p>
+          </div>
+        </header>
+
+        {subUser && organizationNames && organizationNames.length > 1 && (
           <p className="text-muted-foreground text-sm">
-            Apostilas de reuniões importadas dos arquivos .jwpub
+            Mostrando a organização &quot;{orgName}&quot;.
           </p>
-        </div>
+        )}
+
+        <MeetingsManager
+          organizationId={organizationId}
+          initialMidweek={midweek.map(toRow)}
+          initialWeekend={weekend.map(toRow)}
+          canEdit={canEdit}
+        />
       </div>
-
-      {subUser && organizationNames && organizationNames.length > 1 && (
-        <p className="text-muted-foreground text-xs">
-          Mostrando a organização &quot;{orgName}&quot;.
-        </p>
-      )}
-
-      <MeetingsManager
-        organizationId={organizationId}
-        initialMidweek={midweek.map(toRow)}
-        initialWeekend={weekend.map(toRow)}
-        canEdit={canEdit}
-      />
     </main>
   );
 }

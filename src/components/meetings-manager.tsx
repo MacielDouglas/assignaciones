@@ -1,23 +1,25 @@
 "use client";
 
-import { FileUp, Loader2, Music, Pencil, Trash2 } from "lucide-react";
+import {
+  ArrowUpFromLine,
+  CalendarDays,
+  ChevronDown,
+  FileUp,
+  Loader2,
+  Pencil,
+  Plus,
+  Trash2,
+  X,
+} from "lucide-react";
 import { type ReactNode, useRef, useState } from "react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { ApiError, apiFetch, getErrorMessage } from "@/lib/api-client";
@@ -85,6 +87,20 @@ export function MeetingsManager({
     setByType((prev) => {
       const list = prev[row.meetingType].filter((item) => item.symbol !== row.symbol);
       return { ...prev, [row.meetingType]: [row, ...list] };
+    });
+  }
+
+  function openEditor(row: MeetingWorkbookRow) {
+    setDraft({
+      meetingType: row.meetingType,
+      symbol: row.symbol,
+      name: row.name,
+      shortTitle: row.shortTitle ?? undefined,
+      displayTitle: row.displayTitle ?? undefined,
+      referenceTitle: row.referenceTitle ?? undefined,
+      languageCode: row.languageCode ?? undefined,
+      coverImageUrl: row.coverImageUrl ?? undefined,
+      content: row.content,
     });
   }
 
@@ -162,10 +178,10 @@ export function MeetingsManager({
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       <Tabs value={tab} onValueChange={(value) => setTab(value as TabKey)}>
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <TabsList>
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <TabsList className="w-full sm:w-fit">
             <TabsTrigger value="midweek">Meio de semana</TabsTrigger>
             <TabsTrigger value="weekend">Fim de semana</TabsTrigger>
           </TabsList>
@@ -184,6 +200,7 @@ export function MeetingsManager({
               />
               <Button
                 variant="outline"
+                className="w-full rounded-full sm:w-auto"
                 onClick={() => fileInputRef.current?.click()}
                 disabled={importing}
               >
@@ -198,47 +215,27 @@ export function MeetingsManager({
           )}
         </div>
 
-        <TabsContent value="midweek">
+        <TabsContent value="midweek" className="mt-6">
           <WorkbookList
             rows={byType.MIDWEEK}
             canEdit={canEdit}
-            onEdit={(row) =>
-              setDraft({
-                meetingType: row.meetingType,
-                symbol: row.symbol,
-                name: row.name,
-                shortTitle: row.shortTitle ?? undefined,
-                displayTitle: row.displayTitle ?? undefined,
-                referenceTitle: row.referenceTitle ?? undefined,
-                languageCode: row.languageCode ?? undefined,
-                coverImageUrl: row.coverImageUrl ?? undefined,
-                content: row.content,
-              })
-            }
+            onEdit={openEditor}
             onDelete={handleDelete}
             deletingId={deletingId}
+            onImport={() => fileInputRef.current?.click()}
+            importing={importing}
           />
         </TabsContent>
 
-        <TabsContent value="weekend">
+        <TabsContent value="weekend" className="mt-6">
           <WorkbookList
             rows={byType.WEEKEND}
             canEdit={canEdit}
-            onEdit={(row) =>
-              setDraft({
-                meetingType: row.meetingType,
-                symbol: row.symbol,
-                name: row.name,
-                shortTitle: row.shortTitle ?? undefined,
-                displayTitle: row.displayTitle ?? undefined,
-                referenceTitle: row.referenceTitle ?? undefined,
-                languageCode: row.languageCode ?? undefined,
-                coverImageUrl: row.coverImageUrl ?? undefined,
-                content: row.content,
-              })
-            }
+            onEdit={openEditor}
             onDelete={handleDelete}
             deletingId={deletingId}
+            onImport={() => fileInputRef.current?.click()}
+            importing={importing}
           />
         </TabsContent>
       </Tabs>
@@ -262,69 +259,91 @@ function WorkbookList({
   onEdit,
   onDelete,
   deletingId,
+  onImport,
+  importing,
 }: {
   rows: MeetingWorkbookRow[];
   canEdit: boolean;
   onEdit: (row: MeetingWorkbookRow) => void;
   onDelete: (row: MeetingWorkbookRow) => void;
   deletingId: string | null;
+  onImport: () => void;
+  importing: boolean;
 }) {
   if (rows.length === 0) {
     return (
-      <Card className="mt-4">
-        <CardContent className="flex flex-col items-center gap-2 py-10 text-center">
-          <Music className="text-muted-foreground size-8" aria-hidden="true" />
-          <p className="text-sm font-medium">Nenhuma apostila importada</p>
-          <p className="text-muted-foreground text-xs">
-            {canEdit
-              ? "Importe um arquivo .jwpub para começar."
-              : "Entre em contato com um organizador para importar a apostila."}
-          </p>
+      <Card className="overflow-hidden rounded-2xl border">
+        <CardContent className="flex flex-col items-center gap-4 px-6 py-16 text-center sm:py-20">
+          <div className="bg-muted flex size-14 items-center justify-center rounded-2xl">
+            <CalendarDays className="text-muted-foreground size-6" aria-hidden="true" />
+          </div>
+          <div className="space-y-1.5">
+            <p className="text-lg font-semibold tracking-tight">Nenhuma apostila importada</p>
+            <p className="text-muted-foreground mx-auto max-w-xs text-sm">
+              {canEdit
+                ? "Importe o arquivo .jwpub da reunião para começar a montar a escala."
+                : "Entre em contato com um organizador para importar a apostila."}
+            </p>
+          </div>
+          {canEdit && (
+            <Button className="mt-2 rounded-full" onClick={onImport} disabled={importing}>
+              {importing ? (
+                <Loader2 className="animate-spin" aria-hidden="true" />
+              ) : (
+                <ArrowUpFromLine aria-hidden="true" />
+              )}
+              Importar apostila
+            </Button>
+          )}
         </CardContent>
       </Card>
     );
   }
 
   return (
-    <div className="mt-4 space-y-2">
+    <div className="divide-y divide-border overflow-hidden rounded-2xl border bg-card">
       {rows.map((row) => (
-        <Card key={row.id}>
-          <CardContent className="flex items-center gap-3 py-3">
-            <div className="min-w-0 flex-1">
-              <p className="truncate text-sm font-medium">{row.name}</p>
-              <p className="text-muted-foreground truncate text-xs">
-                {row.symbol} · {row.content.weeks.length} semanas ·{" "}
-                {new Date(row.updatedAt).toLocaleDateString("pt-BR")}
-              </p>
+        <div key={row.id} className="flex items-center gap-3 px-5 py-4">
+          <button
+            type="button"
+            onClick={() => onEdit(row)}
+            className="min-w-0 flex-1 cursor-pointer text-left outline-none focus-visible:ring-3 focus-visible:ring-ring/50 rounded-xl"
+          >
+            <p className="text-sm font-medium truncate">{row.name}</p>
+            <p className="text-muted-foreground mt-0.5 flex flex-wrap items-center gap-x-2 text-sm">
+              <span className="tabular-nums">{row.content.weeks.length} semanas</span>
+              <span aria-hidden="true">·</span>
+              <span>atualizado em {new Date(row.updatedAt).toLocaleDateString("pt-BR")}</span>
+            </p>
+          </button>
+          {canEdit && (
+            <div className="flex shrink-0 items-center gap-1">
+              <Button
+                variant="ghost"
+                size="icon"
+                className="rounded-full"
+                onClick={() => onEdit(row)}
+                aria-label="Editar apostila"
+              >
+                <Pencil />
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="text-destructive rounded-full hover:text-destructive"
+                onClick={() => onDelete(row)}
+                disabled={deletingId === row.id}
+                aria-label="Excluir apostila"
+              >
+                {deletingId === row.id ? (
+                  <Loader2 className="animate-spin" aria-hidden="true" />
+                ) : (
+                  <Trash2 />
+                )}
+              </Button>
             </div>
-            {canEdit && (
-              <div className="flex shrink-0 items-center gap-1">
-                <Button
-                  variant="ghost"
-                  size="icon-sm"
-                  onClick={() => onEdit(row)}
-                  aria-label="Editar"
-                >
-                  <Pencil />
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="icon-sm"
-                  onClick={() => onDelete(row)}
-                  disabled={deletingId === row.id}
-                  aria-label="Excluir"
-                  className="text-destructive hover:text-destructive"
-                >
-                  {deletingId === row.id ? (
-                    <Loader2 className="animate-spin" aria-hidden="true" />
-                  ) : (
-                    <Trash2 />
-                  )}
-                </Button>
-              </div>
-            )}
-          </CardContent>
-        </Card>
+          )}
+        </div>
       ))}
     </div>
   );
@@ -358,171 +377,217 @@ function MeetingsEditor({
         if (!open && !saving) onCancel();
       }}
     >
-      <DialogContent className="max-h-[85vh] max-w-3xl overflow-y-auto sm:max-w-3xl">
-        <DialogHeader>
-          <DialogTitle>Editar apostila</DialogTitle>
-          <DialogDescription>{draft.symbol}</DialogDescription>
-        </DialogHeader>
-
-        <div className="space-y-4">
-          <div className="grid gap-2 sm:grid-cols-2">
-            <Field label="Nome" className="sm:col-span-2">
-              <Input
-                value={draft.name}
-                onChange={(event) => onChange({ ...draft, name: event.target.value })}
-              />
-            </Field>
-            <Field label="Título curto">
-              <Input
-                value={draft.shortTitle ?? ""}
-                onChange={(event) => onChange({ ...draft, shortTitle: event.target.value })}
-              />
-            </Field>
-            <Field label="Título de exibição">
-              <Input
-                value={draft.displayTitle ?? ""}
-                onChange={(event) => onChange({ ...draft, displayTitle: event.target.value })}
-              />
-            </Field>
-            <Field label="Título de referência">
-              <Input
-                value={draft.referenceTitle ?? ""}
-                onChange={(event) => onChange({ ...draft, referenceTitle: event.target.value })}
-              />
-            </Field>
-            <Field label="Código de idioma">
-              <Input
-                value={draft.languageCode ?? ""}
-                onChange={(event) => onChange({ ...draft, languageCode: event.target.value })}
-              />
-            </Field>
+      <DialogContent
+        showCloseButton={false}
+        className="max-h-[90vh] max-w-3xl gap-0 overflow-hidden p-0 sm:max-w-3xl"
+      >
+        <header className="flex items-start justify-between gap-4 border-b px-6 py-5">
+          <div className="min-w-0 space-y-1">
+            <DialogTitle className="text-xl font-semibold tracking-tight">
+              Editar apostila
+            </DialogTitle>
+            <DialogDescription className="text-muted-foreground truncate text-sm">
+              {draft.name} · {draft.symbol}
+            </DialogDescription>
           </div>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="rounded-full"
+            onClick={onCancel}
+            disabled={saving}
+            aria-label="Fechar"
+          >
+            <X />
+          </Button>
+        </header>
 
-          <Separator />
-
-          <div className="grid gap-2 sm:grid-cols-2">
-            <Field label="Volume">
-              <Input
-                value={content.coverInformation?.volume ?? ""}
-                onChange={(event) =>
-                  update((c) => {
-                    c.coverInformation = {
-                      symbol: c.coverInformation?.symbol ?? draft.symbol,
-                      volume: event.target.value,
-                    };
-                  })
-                }
-              />
-            </Field>
-            <Field label="Imagem da capa">
-              <Input
-                value={content.coverInformation?.coverImage ?? ""}
-                onChange={(event) =>
-                  update((c) => {
-                    c.coverInformation = {
-                      symbol: c.coverInformation?.symbol ?? draft.symbol,
-                      coverImage: event.target.value,
-                    };
-                  })
-                }
-              />
-            </Field>
-          </div>
-
-          <div className="space-y-3">
-            {content.weeks.map((week, weekIndex) => (
-              <WeekCard
-                key={week.week || `week-${weekIndex}`}
-                week={week}
-                onChange={(nextWeek) =>
-                  update((c) => {
-                    c.weeks[weekIndex] = nextWeek;
-                  })
-                }
-                onRemove={() =>
-                  update((c) => {
-                    c.weeks.splice(weekIndex, 1);
-                  })
-                }
-              />
-            ))}
-          </div>
-
-          {content.additionalInformation && (
-            <div className="space-y-2">
-              <Separator />
-              <p className="text-sm font-medium">Informações adicionais</p>
-              <div className="grid gap-2 sm:grid-cols-2">
-                <Field label="Semana">
+        <div className="max-h-[calc(90vh-10rem)] overflow-y-auto px-6 py-6">
+          <div className="space-y-10">
+            <section className="space-y-4">
+              <h3 className="text-muted-foreground text-xs font-medium tracking-widest uppercase">
+                Identificação
+              </h3>
+              <div className="grid gap-4 sm:grid-cols-2">
+                <Field label="Nome" className="sm:col-span-2">
                   <Input
-                    value={content.additionalInformation.week}
+                    className="h-9"
+                    value={draft.name}
+                    onChange={(event) => onChange({ ...draft, name: event.target.value })}
+                  />
+                </Field>
+                <Field label="Título curto">
+                  <Input
+                    className="h-9"
+                    value={draft.shortTitle ?? ""}
+                    onChange={(event) => onChange({ ...draft, shortTitle: event.target.value })}
+                  />
+                </Field>
+                <Field label="Título de exibição">
+                  <Input
+                    className="h-9"
+                    value={draft.displayTitle ?? ""}
+                    onChange={(event) => onChange({ ...draft, displayTitle: event.target.value })}
+                  />
+                </Field>
+                <Field label="Título de referência">
+                  <Input
+                    className="h-9"
+                    value={draft.referenceTitle ?? ""}
+                    onChange={(event) => onChange({ ...draft, referenceTitle: event.target.value })}
+                  />
+                </Field>
+                <Field label="Código de idioma">
+                  <Input
+                    className="h-9"
+                    value={draft.languageCode ?? ""}
+                    onChange={(event) => onChange({ ...draft, languageCode: event.target.value })}
+                  />
+                </Field>
+              </div>
+            </section>
+
+            <section className="space-y-4">
+              <h3 className="text-muted-foreground text-xs font-medium tracking-widest uppercase">
+                Capa
+              </h3>
+              <div className="grid gap-4 sm:grid-cols-2">
+                <Field label="Volume">
+                  <Input
+                    className="h-9"
+                    value={content.coverInformation?.volume ?? ""}
                     onChange={(event) =>
                       update((c) => {
-                        const ai = c.additionalInformation;
-                        if (ai) ai.week = event.target.value;
+                        c.coverInformation = {
+                          symbol: c.coverInformation?.symbol ?? draft.symbol,
+                          volume: event.target.value,
+                        };
                       })
                     }
                   />
                 </Field>
-                <Field label="Título">
+                <Field label="Imagem da capa">
                   <Input
-                    value={content.additionalInformation.title}
+                    className="h-9"
+                    value={content.coverInformation?.coverImage ?? ""}
                     onChange={(event) =>
                       update((c) => {
-                        const ai = c.additionalInformation;
-                        if (ai) ai.title = event.target.value;
-                      })
-                    }
-                  />
-                </Field>
-                <Field label="Duração">
-                  <Input
-                    value={content.additionalInformation.duration}
-                    onChange={(event) =>
-                      update((c) => {
-                        const ai = c.additionalInformation;
-                        if (ai) ai.duration = event.target.value;
-                      })
-                    }
-                  />
-                </Field>
-                <Field label="Vídeo">
-                  <Input
-                    value={content.additionalInformation.video ?? ""}
-                    onChange={(event) =>
-                      update((c) => {
-                        const ai = c.additionalInformation;
-                        if (ai) ai.video = event.target.value;
-                      })
-                    }
-                  />
-                </Field>
-                <Field label="Conteúdo" className="sm:col-span-2">
-                  <Textarea
-                    rows={5}
-                    value={content.additionalInformation.content ?? ""}
-                    onChange={(event) =>
-                      update((c) => {
-                        const ai = c.additionalInformation;
-                        if (ai) ai.content = event.target.value;
+                        c.coverInformation = {
+                          symbol: c.coverInformation?.symbol ?? draft.symbol,
+                          coverImage: event.target.value,
+                        };
                       })
                     }
                   />
                 </Field>
               </div>
-            </div>
-          )}
+            </section>
+
+            <section className="space-y-4">
+              <h3 className="text-muted-foreground text-xs font-medium tracking-widest uppercase">
+                Semanas · {content.weeks.length}
+              </h3>
+              <div className="space-y-3">
+                {content.weeks.map((week, weekIndex) => (
+                  <WeekCard
+                    key={week.week || `week-${weekIndex}`}
+                    week={week}
+                    onChange={(nextWeek) =>
+                      update((c) => {
+                        c.weeks[weekIndex] = nextWeek;
+                      })
+                    }
+                    onRemove={() =>
+                      update((c) => {
+                        c.weeks.splice(weekIndex, 1);
+                      })
+                    }
+                  />
+                ))}
+              </div>
+            </section>
+
+            {content.additionalInformation && (
+              <section className="space-y-4">
+                <h3 className="text-muted-foreground text-xs font-medium tracking-widest uppercase">
+                  Informações adicionais
+                </h3>
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <Field label="Semana">
+                    <Input
+                      className="h-9"
+                      value={content.additionalInformation.week}
+                      onChange={(event) =>
+                        update((c) => {
+                          const ai = c.additionalInformation;
+                          if (ai) ai.week = event.target.value;
+                        })
+                      }
+                    />
+                  </Field>
+                  <Field label="Título">
+                    <Input
+                      className="h-9"
+                      value={content.additionalInformation.title}
+                      onChange={(event) =>
+                        update((c) => {
+                          const ai = c.additionalInformation;
+                          if (ai) ai.title = event.target.value;
+                        })
+                      }
+                    />
+                  </Field>
+                  <Field label="Duração">
+                    <Input
+                      className="h-9"
+                      value={content.additionalInformation.duration}
+                      onChange={(event) =>
+                        update((c) => {
+                          const ai = c.additionalInformation;
+                          if (ai) ai.duration = event.target.value;
+                        })
+                      }
+                    />
+                  </Field>
+                  <Field label="Vídeo">
+                    <Input
+                      className="h-9"
+                      value={content.additionalInformation.video ?? ""}
+                      onChange={(event) =>
+                        update((c) => {
+                          const ai = c.additionalInformation;
+                          if (ai) ai.video = event.target.value;
+                        })
+                      }
+                    />
+                  </Field>
+                  <Field label="Conteúdo" className="sm:col-span-2">
+                    <Textarea
+                      rows={5}
+                      value={content.additionalInformation.content ?? ""}
+                      onChange={(event) =>
+                        update((c) => {
+                          const ai = c.additionalInformation;
+                          if (ai) ai.content = event.target.value;
+                        })
+                      }
+                    />
+                  </Field>
+                </div>
+              </section>
+            )}
+          </div>
         </div>
 
-        <DialogFooter>
-          <Button variant="outline" onClick={onCancel} disabled={saving}>
+        <footer className="flex justify-end gap-2 border-t bg-background px-6 py-4">
+          <Button variant="outline" className="rounded-full" onClick={onCancel} disabled={saving}>
             Cancelar
           </Button>
-          <Button onClick={onSave} disabled={saving}>
+          <Button className="rounded-full" onClick={onSave} disabled={saving}>
             {saving && <Loader2 className="animate-spin" aria-hidden="true" />}
             Salvar
           </Button>
-        </DialogFooter>
+        </footer>
       </DialogContent>
     </Dialog>
   );
@@ -538,8 +603,8 @@ function Field({
   children: ReactNode;
 }) {
   return (
-    <div className={cn("space-y-1", className)}>
-      <Label className="text-xs">{label}</Label>
+    <div className={cn("space-y-1.5", className)}>
+      <Label className="text-muted-foreground text-xs font-medium">{label}</Label>
       {children}
     </div>
   );
@@ -554,61 +619,91 @@ function WeekCard({
   onChange: (week: WorkbookWeek) => void;
   onRemove: () => void;
 }) {
+  const partCount = [
+    week.meeting["TREASURES FROM GODS WORD"],
+    week.meeting["APPLY YOURSELF TO THE FIELD MINISTRY"],
+    week.meeting["LIVING AS CHRISTIANS"],
+  ].reduce((total, parts) => total + (parts?.length ?? 0), 0);
+
   return (
-    <details className="rounded-lg border" open>
-      <summary className="flex cursor-pointer list-none items-center justify-between gap-2 px-3 py-2 [&::-webkit-details-marker]:hidden">
-        <span className="text-sm font-medium">{week.week || "Semana"}</span>
+    <details className="group overflow-hidden rounded-xl border bg-card" open>
+      <summary className="flex cursor-pointer list-none items-center gap-3 px-4 py-3.5 [&::-webkit-details-marker]:hidden">
+        <ChevronDown
+          className="text-muted-foreground size-4 shrink-0 transition-transform group-open:rotate-180"
+          aria-hidden="true"
+        />
+        <div className="min-w-0 flex-1">
+          <p className="text-sm font-medium truncate">{week.week || "Semana"}</p>
+          <p className="text-muted-foreground truncate text-xs">
+            {week.BibleReading} · {partCount} {partCount === 1 ? "parte" : "partes"}
+          </p>
+        </div>
         <Button
           variant="ghost"
           size="icon-sm"
           type="button"
+          className="text-destructive rounded-full hover:text-destructive"
           onClick={(event) => {
             event.preventDefault();
             onRemove();
           }}
           aria-label="Remover semana"
-          className="text-destructive hover:text-destructive"
         >
           <Trash2 />
         </Button>
       </summary>
 
-      <div className="space-y-3 border-t px-3 py-3">
-        <div className="grid gap-2 sm:grid-cols-2">
+      <div className="space-y-5 border-t px-4 py-4 sm:px-5 sm:py-5">
+        <div className="grid gap-4 sm:grid-cols-2">
           <Field label="Semana">
             <Input
+              className="h-9"
               value={week.week}
               onChange={(event) => onChange({ ...week, week: event.target.value })}
             />
           </Field>
           <Field label="Leitura da Bíblia">
             <Input
+              className="h-9"
               value={week.BibleReading}
               onChange={(event) => onChange({ ...week, BibleReading: event.target.value })}
             />
           </Field>
         </div>
 
-        <div className="grid gap-2 sm:grid-cols-2">
+        <div className="grid gap-4 sm:grid-cols-2">
           <Field label="Cântico inicial">
             <Input
+              className="h-9"
               value={week.meeting.openingSong ?? ""}
               onChange={(event) =>
-                onChange({ ...week, meeting: { ...week.meeting, openingSong: event.target.value } })
-              }
-            />
-          </Field>
-          <Field label="Oração inicial">
-            <Checkbox
-              checked={week.meeting.openingPrayer ?? false}
-              onCheckedChange={(checked) =>
                 onChange({
                   ...week,
-                  meeting: { ...week.meeting, openingPrayer: checked === true },
+                  meeting: { ...week.meeting, openingSong: event.target.value },
                 })
               }
             />
           </Field>
+          <div className="flex items-end pb-1">
+            <div className="flex items-center gap-2">
+              <Checkbox
+                id="opening-prayer"
+                checked={week.meeting.openingPrayer ?? false}
+                onCheckedChange={(checked) =>
+                  onChange({
+                    ...week,
+                    meeting: { ...week.meeting, openingPrayer: checked === true },
+                  })
+                }
+              />
+              <Label
+                htmlFor="opening-prayer"
+                className="text-muted-foreground cursor-pointer text-sm font-medium"
+              >
+                Oração inicial
+              </Label>
+            </div>
+          </div>
         </div>
 
         {week.meeting.openingComments !== undefined && (
@@ -636,8 +731,8 @@ function WeekCard({
           const parts = week.meeting[sectionKey];
           if (!parts) return null;
           return (
-            <div key={sectionKey} className="space-y-2">
-              <p className="text-muted-foreground text-xs font-medium">
+            <div key={sectionKey} className="space-y-3">
+              <p className="text-muted-foreground text-xs font-medium tracking-widest uppercase">
                 {SECTION_LABELS[sectionKey] ?? sectionKey}
               </p>
               {parts.map((part, partIndex) => (
@@ -673,26 +768,39 @@ function WeekCard({
           </Field>
         )}
 
-        <div className="grid gap-2 sm:grid-cols-2">
+        <div className="grid gap-4 sm:grid-cols-2">
           <Field label="Cântico final">
             <Input
+              className="h-9"
               value={week.meeting.closingSong ?? ""}
               onChange={(event) =>
-                onChange({ ...week, meeting: { ...week.meeting, closingSong: event.target.value } })
-              }
-            />
-          </Field>
-          <Field label="Oração final">
-            <Checkbox
-              checked={week.meeting.closingPrayer ?? false}
-              onCheckedChange={(checked) =>
                 onChange({
                   ...week,
-                  meeting: { ...week.meeting, closingPrayer: checked === true },
+                  meeting: { ...week.meeting, closingSong: event.target.value },
                 })
               }
             />
           </Field>
+          <div className="flex items-end pb-1">
+            <div className="flex items-center gap-2">
+              <Checkbox
+                id="closing-prayer"
+                checked={week.meeting.closingPrayer ?? false}
+                onCheckedChange={(checked) =>
+                  onChange({
+                    ...week,
+                    meeting: { ...week.meeting, closingPrayer: checked === true },
+                  })
+                }
+              />
+              <Label
+                htmlFor="closing-prayer"
+                className="text-muted-foreground cursor-pointer text-sm font-medium"
+              >
+                Oração final
+              </Label>
+            </div>
+          </div>
         </div>
       </div>
     </details>
@@ -709,31 +817,34 @@ function PartEditor({
   onRemove: () => void;
 }) {
   return (
-    <div className="space-y-2 rounded-lg border p-3">
-      <div className="flex items-center gap-2">
-        <span className="bg-muted text-muted-foreground flex size-6 shrink-0 items-center justify-center rounded-md text-xs font-medium">
+    <div className="space-y-4 rounded-xl border p-4">
+      <div className="flex items-center gap-3">
+        <span className="bg-muted flex size-7 shrink-0 items-center justify-center rounded-lg text-sm font-medium tabular-nums">
           {part.number ?? "–"}
         </span>
         <Input
+          className="h-9 flex-1"
           value={part.title}
           onChange={(event) => onChange({ ...part, title: event.target.value })}
+          aria-label="Título da parte"
         />
         <Button
           variant="ghost"
           size="icon-sm"
           type="button"
+          className="text-destructive rounded-full hover:text-destructive"
           onClick={onRemove}
           aria-label="Remover parte"
-          className="text-destructive hover:text-destructive"
         >
           <Trash2 />
         </Button>
       </div>
 
-      <div className="grid gap-2 sm:grid-cols-3">
+      <div className="grid gap-4 sm:grid-cols-3">
         {part.duration !== undefined && (
           <Field label="Duração">
             <Input
+              className="h-9"
               value={part.duration}
               onChange={(event) => onChange({ ...part, duration: event.target.value })}
             />
@@ -742,6 +853,7 @@ function PartEditor({
         {part.format !== undefined && (
           <Field label="Formato">
             <Input
+              className="h-9"
               value={part.format}
               onChange={(event) => onChange({ ...part, format: event.target.value })}
             />
@@ -750,6 +862,7 @@ function PartEditor({
         {part.territory !== undefined && (
           <Field label="Território">
             <Input
+              className="h-9"
               value={part.territory}
               onChange={(event) => onChange({ ...part, territory: event.target.value })}
             />
@@ -760,7 +873,7 @@ function PartEditor({
       {part.assignment !== undefined && (
         <Field label="Designação">
           <Textarea
-            rows={2}
+            rows={3}
             value={part.assignment}
             onChange={(event) => onChange({ ...part, assignment: event.target.value })}
           />
@@ -806,12 +919,12 @@ function StringList({
   onChange: (values: string[]) => void;
 }) {
   return (
-    <div className="space-y-1">
-      <Label className="text-xs">{label}</Label>
-      <div className="space-y-1.5">
+    <div className="space-y-2">
+      <p className="text-muted-foreground text-xs font-medium">{label}</p>
+      <div className="space-y-2">
         {values.map((value, index) => (
           // biome-ignore lint/suspicious/noArrayIndexKey: editable list, items never reorder
-          <div key={index} className="flex items-start gap-1.5">
+          <div key={index} className="flex items-start gap-2">
             <Textarea
               rows={2}
               value={value}
@@ -825,16 +938,23 @@ function StringList({
               variant="ghost"
               size="icon-sm"
               type="button"
+              className="text-destructive rounded-full hover:text-destructive"
               onClick={() => onChange(values.filter((_, i) => i !== index))}
               aria-label="Remover linha"
-              className="text-destructive hover:text-destructive"
             >
               <Trash2 />
             </Button>
           </div>
         ))}
       </div>
-      <Button variant="outline" size="sm" type="button" onClick={() => onChange([...values, ""])}>
+      <Button
+        variant="outline"
+        size="sm"
+        type="button"
+        className="rounded-full"
+        onClick={() => onChange([...values, ""])}
+      >
+        <Plus aria-hidden="true" />
         Adicionar linha
       </Button>
     </div>
