@@ -41,6 +41,10 @@ yarn-error.log*
 *.db
 *.sqlite
 
+# arquivos jwpub (publicações da JW Library)
+/jwpub/
+/mwb_*_refatorado_*.json
+
 # agentes locais (config e skills do agente, não fazem parte do produto)
 .opencode/
 

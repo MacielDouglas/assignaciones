@@ -23,6 +23,11 @@ enum Sex {
   FEMALE
 }
 
+enum MeetingType {
+  MIDWEEK
+  WEEKEND
+}
+
 model User {
   id            String    @id @default(cuid())
   name          String?
@@ -48,6 +53,7 @@ model Organization {
   members      OrganizationMember[]
   families     Family[]
   persons      Person[]
+  meetingWorkbooks MeetingWorkbook[]
   inviteTokens InviteToken[]
 }
 
@@ -79,6 +85,28 @@ model Family {
 
   @@unique([organizationId, name])
   @@index([organizationId])
+}
+
+model MeetingWorkbook {
+  id             String      @id @default(cuid())
+  organizationId String
+  meetingType    MeetingType @default(MIDWEEK)
+  symbol         String
+  name           String
+  shortTitle     String?
+  displayTitle   String?
+  referenceTitle String?
+  languageCode   String?
+  fileName       String?
+  coverImageUrl  String?
+  content        Json
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@unique([organizationId, meetingType, symbol])
+  @@index([organizationId, meetingType])
 }
 
 model Person {
