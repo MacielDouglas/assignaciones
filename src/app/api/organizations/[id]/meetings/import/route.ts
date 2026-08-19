@@ -5,6 +5,15 @@ import { prisma } from "@/lib/prisma";
 import { canManagePeople } from "@/lib/roles";
 import { getSessionUser } from "@/lib/session";
 
+const IMPORT_KIND_LABELS: Record<string, string> = {
+  workbook: "Apostila",
+  watchtower: "Sentinela",
+  songs: "Cánticos",
+  talks: "Discursos",
+};
+
+const IMPORT_KINDS = new Set(Object.keys(IMPORT_KIND_LABELS));
+
 export async function POST(
   request: Request,
   ctx: RouteContext<"/api/organizations/[id]/meetings/import">,
@@ -29,8 +38,20 @@ export async function POST(
       return jsonError(400, "O arquivo deve ter a extensão .jwpub.");
     }
 
+    const expectedKind = formData.get("kind");
+    if (typeof expectedKind !== "string" || !IMPORT_KINDS.has(expectedKind)) {
+      return jsonError(400, "Informe o tipo de importação.");
+    }
+
     const buffer = new Uint8Array(await file.arrayBuffer());
     const parsed = parsePublication(buffer);
+
+    if (parsed.kind !== expectedKind) {
+      return jsonError(
+        400,
+        `Este arquivo não corresponde ao arquivo selecionado para importação (${IMPORT_KIND_LABELS[expectedKind]}).`,
+      );
+    }
 
     if (parsed.kind === "watchtower") {
       const existing = await prisma.watchtower.findFirst({

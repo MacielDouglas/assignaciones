@@ -200,6 +200,7 @@ export function MeetingsManager({
     try {
       const form = new FormData();
       form.append("file", file);
+      form.append("kind", tab);
       const response = await fetch(`/api/organizations/${organizationId}/meetings/import`, {
         method: "POST",
         body: form,
