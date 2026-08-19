@@ -2,8 +2,8 @@
 import { headers } from "next/headers";
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { PeopleManager, type PersonRow } from "@/components/people-manager";
 import { Button } from "@/components/ui/button";
+import { PeopleManager, type PersonRow } from "@/features/people/components/people-manager";
 import type { MemberRole } from "@/generated/prisma/enums";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";

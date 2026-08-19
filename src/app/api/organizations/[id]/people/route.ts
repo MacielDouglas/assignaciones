@@ -1,9 +1,9 @@
+import { createPerson } from "@/features/people/lib/people";
+import { personInputSchema } from "@/features/people/schemas";
 import { getErrorMessage, jsonError, jsonOk } from "@/lib/api";
 import { requireOrganizationAccess } from "@/lib/organizations";
-import { createPerson } from "@/lib/people";
 import { prisma } from "@/lib/prisma";
 import { canManagePeople } from "@/lib/roles";
-import { personInputSchema } from "@/lib/schemas";
 import { getSessionUser } from "@/lib/session";
 
 export async function GET(request: Request, ctx: RouteContext<"/api/organizations/[id]/people">) {

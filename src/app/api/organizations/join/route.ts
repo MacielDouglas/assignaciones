@@ -1,9 +1,9 @@
+import { joinOrganizationSchema } from "@/features/auth/schemas";
+import { hashTokenCode, isTokenExpired, isTokenUsed } from "@/features/tokens/lib/tokens";
 import { InviteTokenType, MemberRole } from "@/generated/prisma/enums";
 import { getErrorMessage, jsonError, jsonOk } from "@/lib/api";
 import { prisma } from "@/lib/prisma";
-import { joinOrganizationSchema } from "@/lib/schemas";
 import { getSessionUser } from "@/lib/session";
-import { hashTokenCode, isTokenExpired, isTokenUsed } from "@/lib/tokens";
 
 export async function POST(request: Request) {
   try {

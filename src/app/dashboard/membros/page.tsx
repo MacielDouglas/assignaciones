@@ -2,8 +2,8 @@
 import { headers } from "next/headers";
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { type MemberRow, MembersManager } from "@/components/members-manager";
 import { Button } from "@/components/ui/button";
+import { type MemberRow, MembersManager } from "@/features/members/components/members-manager";
 import type { MemberRole } from "@/generated/prisma/enums";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";

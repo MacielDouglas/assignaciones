@@ -1,9 +1,9 @@
+import { listMeetings, pruneMeetings, upsertMeeting } from "@/features/meetings/lib/meetings";
+import { meetingSaveSchema } from "@/features/meetings/schemas";
 import { MeetingType } from "@/generated/prisma/enums";
 import { getErrorMessage, jsonError, jsonOk } from "@/lib/api";
-import { listMeetings, pruneMeetings, upsertMeeting } from "@/lib/meetings";
 import { requireOrganizationAccess } from "@/lib/organizations";
 import { canManagePeople } from "@/lib/roles";
-import { meetingSaveSchema } from "@/lib/schemas";
 import { getSessionUser } from "@/lib/session";
 
 export async function GET(request: Request, ctx: RouteContext<"/api/organizations/[id]/meetings">) {

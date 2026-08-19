@@ -2,10 +2,10 @@
 import { headers } from "next/headers";
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { SignOutButton } from "@/components/sign-out-button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { SignOutButton } from "@/features/auth/components/sign-out-button";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { isSubUser } from "@/lib/roles";

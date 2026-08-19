@@ -1,9 +1,9 @@
+import { listTalks, replaceTalks } from "@/features/meetings/lib/talks";
+import { talksSaveSchema } from "@/features/meetings/schemas";
 import { getErrorMessage, jsonError, jsonOk } from "@/lib/api";
 import { requireOrganizationAccess } from "@/lib/organizations";
 import { canManagePeople } from "@/lib/roles";
-import { talksSaveSchema } from "@/lib/schemas";
 import { getSessionUser } from "@/lib/session";
-import { listTalks, replaceTalks } from "@/lib/talks";
 
 export async function GET(request: Request, ctx: RouteContext<"/api/organizations/[id]/talks">) {
   try {

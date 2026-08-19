@@ -1,9 +1,12 @@
 ﻿import { headers } from "next/headers";
 import { redirect } from "next/navigation";
-import { SignOutButton } from "@/components/sign-out-button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { CreateOrganizationForm, JoinOrganizationForm } from "@/components/welcome-forms";
+import { SignOutButton } from "@/features/auth/components/sign-out-button";
+import {
+  CreateOrganizationForm,
+  JoinOrganizationForm,
+} from "@/features/auth/components/welcome-forms";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { isSubUser } from "@/lib/roles";

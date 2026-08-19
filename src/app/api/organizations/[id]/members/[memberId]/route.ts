@@ -1,9 +1,9 @@
+import { updateMemberRoleSchema } from "@/features/members/schemas";
 import { MemberRole } from "@/generated/prisma/enums";
 import { getErrorMessage, jsonError, jsonOk } from "@/lib/api";
 import { requireOrganizationAccess } from "@/lib/organizations";
 import { prisma } from "@/lib/prisma";
 import { canPromoteTo } from "@/lib/roles";
-import { updateMemberRoleSchema } from "@/lib/schemas";
 import { getSessionUser } from "@/lib/session";
 
 export async function PATCH(

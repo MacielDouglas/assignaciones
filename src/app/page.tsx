@@ -1,8 +1,8 @@
 ﻿import { CalendarDays } from "lucide-react";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
-import { GoogleSignInButton } from "@/components/social-login-buttons";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { GoogleSignInButton } from "@/features/auth/components/social-login-buttons";
 import { auth } from "@/lib/auth";
 
 export default async function HomePage() {

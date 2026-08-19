@@ -1,8 +1,8 @@
+import { deleteWatchtower } from "@/features/meetings/lib/watchtowers";
 import { getErrorMessage, jsonError, jsonOk } from "@/lib/api";
 import { requireOrganizationAccess } from "@/lib/organizations";
 import { canManagePeople } from "@/lib/roles";
 import { getSessionUser } from "@/lib/session";
-import { deleteWatchtower } from "@/lib/watchtowers";
 
 export async function DELETE(
   request: Request,

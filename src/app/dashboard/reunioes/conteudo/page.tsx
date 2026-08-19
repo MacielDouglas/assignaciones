@@ -2,21 +2,21 @@ import { ArrowLeft } from "lucide-react";
 import { headers } from "next/headers";
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import {
-  type CatalogRow,
-  MeetingsManager,
-  type MeetingWorkbookRow,
-  type WatchtowerRow,
-} from "@/components/meetings-manager";
 import { Button } from "@/components/ui/button";
+import { MeetingsManager } from "@/features/meetings/components/meetings-manager";
+import type {
+  CatalogRow,
+  MeetingWorkbookRow,
+  WatchtowerRow,
+} from "@/features/meetings/components/types";
+import type { WorkbookContent } from "@/features/meetings/lib/jwpub";
+import { pruneMeetings } from "@/features/meetings/lib/meetings";
+import { migrateLegacyWatchtowers, pruneWatchtowers } from "@/features/meetings/lib/watchtowers";
+import { workbookIssueKey } from "@/features/meetings/lib/workbook-meta";
 import type { MemberRole } from "@/generated/prisma/enums";
 import { auth } from "@/lib/auth";
-import type { WorkbookContent } from "@/lib/jwpub";
-import { pruneMeetings } from "@/lib/meetings";
 import { prisma } from "@/lib/prisma";
 import { canManagePeople, isSubUser } from "@/lib/roles";
-import { migrateLegacyWatchtowers, pruneWatchtowers } from "@/lib/watchtowers";
-import { workbookIssueKey } from "@/lib/workbook-meta";
 
 export default async function MeetingContentPage() {
   const session = await auth.api.getSession({

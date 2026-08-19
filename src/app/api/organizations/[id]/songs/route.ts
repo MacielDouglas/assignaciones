@@ -1,9 +1,9 @@
+import { listSongs, replaceSongs } from "@/features/meetings/lib/songs";
+import { songsSaveSchema } from "@/features/meetings/schemas";
 import { getErrorMessage, jsonError, jsonOk } from "@/lib/api";
 import { requireOrganizationAccess } from "@/lib/organizations";
 import { canManagePeople } from "@/lib/roles";
-import { songsSaveSchema } from "@/lib/schemas";
 import { getSessionUser } from "@/lib/session";
-import { listSongs, replaceSongs } from "@/lib/songs";
 
 export async function GET(request: Request, ctx: RouteContext<"/api/organizations/[id]/songs">) {
   try {

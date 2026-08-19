@@ -1,6 +1,6 @@
-import type { WatchtowerArticle } from "@/lib/jwpub";
+import type { WatchtowerArticle } from "@/features/meetings/lib/jwpub";
+import { workbookIssueKey, workbookLanguage } from "@/features/meetings/lib/workbook-meta";
 import { prisma } from "@/lib/prisma";
-import { workbookIssueKey, workbookLanguage } from "@/lib/workbook-meta";
 
 const MAX_WATCHTOWERS_PER_LANGUAGE = 12;
 

@@ -1,8 +1,8 @@
+import { deletePerson, updatePerson } from "@/features/people/lib/people";
+import { personUpdateSchema } from "@/features/people/schemas";
 import { getErrorMessage, jsonError, jsonOk } from "@/lib/api";
 import { requireOrganizationAccess } from "@/lib/organizations";
-import { deletePerson, updatePerson } from "@/lib/people";
 import { canManagePeople } from "@/lib/roles";
-import { personUpdateSchema } from "@/lib/schemas";
 import { getSessionUser } from "@/lib/session";
 
 export async function PATCH(

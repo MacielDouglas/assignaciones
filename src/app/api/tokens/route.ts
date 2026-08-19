@@ -1,11 +1,7 @@
-import { InviteTokenType } from "@/generated/prisma/enums";
-import { getErrorMessage, jsonError, jsonOk } from "@/lib/api";
-import { getUserMembership } from "@/lib/organizations";
-import { getFamilyNameFromPersonName, normalizePersonFields } from "@/lib/person-rules";
-import { prisma } from "@/lib/prisma";
-import { canManageTokens } from "@/lib/roles";
-import { createInviteTokenSchema } from "@/lib/schemas";
-import { getSessionUser } from "@/lib/session";
+import {
+  getFamilyNameFromPersonName,
+  normalizePersonFields,
+} from "@/features/people/lib/person-rules";
 import {
   formatTokenCode,
   generateTokenCode,
@@ -13,7 +9,14 @@ import {
   isTokenExpired,
   isTokenUsed,
   TOKEN_TTL_MS,
-} from "@/lib/tokens";
+} from "@/features/tokens/lib/tokens";
+import { createInviteTokenSchema } from "@/features/tokens/schemas";
+import { InviteTokenType } from "@/generated/prisma/enums";
+import { getErrorMessage, jsonError, jsonOk } from "@/lib/api";
+import { getUserMembership } from "@/lib/organizations";
+import { prisma } from "@/lib/prisma";
+import { canManageTokens } from "@/lib/roles";
+import { getSessionUser } from "@/lib/session";
 
 export async function POST(request: Request) {
   try {

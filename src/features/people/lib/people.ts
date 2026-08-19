@@ -1,5 +1,5 @@
+import { normalizePersonFields, resolveMarriage } from "@/features/people/lib/person-rules";
 import type { Sex } from "@/generated/prisma/enums";
-import { normalizePersonFields, resolveMarriage } from "@/lib/person-rules";
 import { prisma } from "@/lib/prisma";
 
 export interface PersonData {

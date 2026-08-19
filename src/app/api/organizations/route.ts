@@ -1,10 +1,10 @@
+import { createOrganizationSchema } from "@/features/auth/schemas";
+import { getFamilyNameFromPersonName } from "@/features/people/lib/person-rules";
+import { hashTokenCode, isTokenExpired, isTokenUsed } from "@/features/tokens/lib/tokens";
 import { InviteTokenType, MemberRole } from "@/generated/prisma/enums";
 import { getErrorMessage, jsonError, jsonOk } from "@/lib/api";
-import { getFamilyNameFromPersonName } from "@/lib/person-rules";
 import { prisma } from "@/lib/prisma";
-import { createOrganizationSchema } from "@/lib/schemas";
 import { getSessionUser } from "@/lib/session";
-import { hashTokenCode, isTokenExpired, isTokenUsed } from "@/lib/tokens";
 
 export async function POST(request: Request) {
   try {

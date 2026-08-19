@@ -1,4 +1,4 @@
-import type { TalkItem } from "@/lib/jwpub";
+import type { TalkItem } from "@/features/meetings/lib/jwpub";
 import { prisma } from "@/lib/prisma";
 
 export async function listTalks(organizationId: string) {

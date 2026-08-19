@@ -1,8 +1,8 @@
+import type { WorkbookContent } from "@/features/meetings/lib/jwpub";
+import { workbookIssueKey, workbookLanguage } from "@/features/meetings/lib/workbook-meta";
 import type { Prisma } from "@/generated/prisma/client";
 import type { MeetingType } from "@/generated/prisma/enums";
-import type { WorkbookContent } from "@/lib/jwpub";
 import { prisma } from "@/lib/prisma";
-import { workbookIssueKey, workbookLanguage } from "@/lib/workbook-meta";
 
 const MAX_WORKBOOKS_PER_GROUP = 12;
 

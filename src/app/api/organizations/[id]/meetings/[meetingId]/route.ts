@@ -1,8 +1,8 @@
+import { deleteMeeting, updateMeeting } from "@/features/meetings/lib/meetings";
+import { meetingUpdateSchema } from "@/features/meetings/schemas";
 import { getErrorMessage, jsonError, jsonOk } from "@/lib/api";
-import { deleteMeeting, updateMeeting } from "@/lib/meetings";
 import { requireOrganizationAccess } from "@/lib/organizations";
 import { canManagePeople } from "@/lib/roles";
-import { meetingUpdateSchema } from "@/lib/schemas";
 import { getSessionUser } from "@/lib/session";
 
 export async function PATCH(

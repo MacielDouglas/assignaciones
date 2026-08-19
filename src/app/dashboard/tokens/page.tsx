@@ -1,13 +1,13 @@
-﻿import { ArrowLeft } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 import { headers } from "next/headers";
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { type TokenRow, TokensManager } from "@/components/tokens-manager";
 import { Button } from "@/components/ui/button";
+import { type TokenRow, TokensManager } from "@/features/tokens/components/tokens-manager";
+import { isTokenExpired, isTokenUsed } from "@/features/tokens/lib/tokens";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { canManageTokens, isSubUser } from "@/lib/roles";
-import { isTokenExpired, isTokenUsed } from "@/lib/tokens";
 
 function statusOf(usedAt: Date | null, expiresAt: Date) {
   if (isTokenUsed(usedAt)) return "USED" as const;

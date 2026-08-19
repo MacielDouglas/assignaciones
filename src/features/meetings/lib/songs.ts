@@ -1,4 +1,4 @@
-import type { SongItem } from "@/lib/jwpub";
+import type { SongItem } from "@/features/meetings/lib/jwpub";
 import { prisma } from "@/lib/prisma";
 
 export async function listSongs(organizationId: string) {

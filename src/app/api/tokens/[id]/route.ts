@@ -1,9 +1,9 @@
+import { isTokenUsed, TOKEN_TTL_MS } from "@/features/tokens/lib/tokens";
 import { getErrorMessage, jsonError, jsonOk } from "@/lib/api";
 import { getUserMembership } from "@/lib/organizations";
 import { prisma } from "@/lib/prisma";
 import { canManageTokens } from "@/lib/roles";
 import { getSessionUser } from "@/lib/session";
-import { isTokenUsed, TOKEN_TTL_MS } from "@/lib/tokens";
 
 async function assertCanManageToken(tokenId: string, userId: string, subUser: boolean) {
   const token = await prisma.inviteToken.findUnique({ where: { id: tokenId } });

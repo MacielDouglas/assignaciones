@@ -1,5 +1,5 @@
+import { parsePublication } from "@/features/meetings/lib/jwpub";
 import { getErrorMessage, jsonError, jsonOk } from "@/lib/api";
-import { parsePublication } from "@/lib/jwpub";
 import { requireOrganizationAccess } from "@/lib/organizations";
 import { prisma } from "@/lib/prisma";
 import { canManagePeople } from "@/lib/roles";
