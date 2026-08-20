@@ -1,4 +1,12 @@
-﻿import { Building2, CalendarDays, KeyRound, Settings, UserRound, Users } from "lucide-react";
+﻿import {
+  Building2,
+  CalendarClock,
+  CalendarDays,
+  KeyRound,
+  Settings,
+  UserRound,
+  Users,
+} from "lucide-react";
 import { headers } from "next/headers";
 import Link from "next/link";
 import { redirect } from "next/navigation";
@@ -149,6 +157,20 @@ export default async function DashboardPage() {
               <div>
                 <p className="text-sm font-medium">Pessoas</p>
                 <p className="text-muted-foreground text-xs">Membros, famílias e designações</p>
+              </div>
+            </CardContent>
+          </Card>
+        </Link>
+
+        <Link href="/dashboard/reunioes" className="block">
+          <Card className="h-full transition-colors hover:bg-muted/40">
+            <CardContent className="flex items-center gap-3">
+              <div className="bg-primary/10 text-primary flex size-11 items-center justify-center rounded-xl">
+                <CalendarClock className="size-5" aria-hidden="true" />
+              </div>
+              <div>
+                <p className="text-sm font-medium">Reuniões</p>
+                <p className="text-muted-foreground text-xs">Programação da semana</p>
               </div>
             </CardContent>
           </Card>
