@@ -3,7 +3,7 @@
 import { LogOut, Menu } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { getFullNav, getPrimaryNav, isNavActive, type NavItem } from "@/components/dashboard-nav";
+import { getPrimaryNav, isNavActive, type NavItem } from "@/components/dashboard-nav";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -59,7 +59,6 @@ export function DashboardHeader({ role, displayName }: { role: MemberRole; displ
   };
 
   const primaryItems = getPrimaryNav(role);
-  const fullItems = getFullNav(role);
 
   return (
     <header className="sticky top-0 z-40 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80">
@@ -106,11 +105,11 @@ export function DashboardHeader({ role, displayName }: { role: MemberRole; displ
                 </span>
               </DropdownMenuLabel>
               <DropdownMenuSeparator />
-              {fullItems.map((item) => {
+              {primaryItems.map((item) => {
                 const active = isNavActive(
                   pathname,
                   item.href,
-                  fullItems.map((full) => full.href),
+                  primaryItems.map((primary) => primary.href),
                 );
                 return (
                   <DropdownMenuItem key={item.href} asChild>

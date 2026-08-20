@@ -25,7 +25,7 @@ export function canManagePeople(role: MemberRole): boolean {
 }
 
 export function canManageTokens(role: MemberRole): boolean {
-  return role === "OWNER";
+  return role === "OWNER" || role === "ADMIN";
 }
 
 export function canManageMembers(role: MemberRole): boolean {

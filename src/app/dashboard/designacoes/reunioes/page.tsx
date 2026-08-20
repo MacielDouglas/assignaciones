@@ -1,7 +1,8 @@
+﻿import { ArrowLeft } from "lucide-react";
 import { headers } from "next/headers";
+import Link from "next/link";
 import { redirect } from "next/navigation";
-import { AssignmentsList } from "@/features/meetings/components/assignments-list";
-import { DesignacoesTabs } from "@/features/meetings/components/designacoes-tabs";
+import { Button } from "@/components/ui/button";
 import { MeetingScheduleContent } from "@/features/meetings/components/meeting-schedule-content";
 import { getMeetingSchedulePageData } from "@/features/meetings/lib/meeting-page";
 import type { MemberRole } from "@/generated/prisma/enums";
@@ -9,7 +10,7 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { canManagePeople, isSubUser } from "@/lib/roles";
 
-export default async function DesignacoesPage() {
+export default async function MeetingsPage() {
   const session = await auth.api.getSession({
     headers: await headers(),
   });
@@ -47,26 +48,24 @@ export default async function DesignacoesPage() {
 
   return (
     <main className="mx-auto w-full max-w-4xl flex-1 space-y-8 px-5 py-10 sm:px-6 sm:py-16">
-      <header className="space-y-2">
-        <h1 className="text-3xl font-semibold tracking-tight text-balance sm:text-4xl">
-          Designações
-        </h1>
-        <p className="text-muted-foreground max-w-md text-base">
-          Programação semanal das reuniões e as designações atribuídas.
-        </p>
+      <header className="space-y-1">
+        <Button variant="ghost" size="sm" className="-ml-2 w-fit" asChild>
+          <Link href="/dashboard/designacoes">
+            <ArrowLeft aria-hidden="true" />
+            Designações
+          </Link>
+        </Button>
+        <div className="space-y-2">
+          <h1 className="text-3xl font-semibold tracking-tight text-balance sm:text-4xl">
+            Reuniões
+          </h1>
+          <p className="text-muted-foreground max-w-md text-base">
+            Programação semanal gerada a partir da apostila e das configurações.
+          </p>
+        </div>
       </header>
 
-      <DesignacoesTabs
-        reunioes={<MeetingScheduleContent data={data} canEdit={canEdit} />}
-        designacoes={
-          <AssignmentsList
-            midweekSections={data.midweekSections}
-            weekendSections={data.weekendSections}
-            assignedNames={data.assignedNames}
-            canEdit={canEdit}
-          />
-        }
-      />
+      <MeetingScheduleContent data={data} canEdit={canEdit} />
     </main>
   );
 }

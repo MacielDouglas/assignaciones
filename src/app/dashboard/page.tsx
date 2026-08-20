@@ -122,21 +122,23 @@ export default async function DashboardPage() {
       )}
 
       <nav className="grid gap-3 sm:grid-cols-2">
-        <Link href="/dashboard/pessoas" className="block">
-          <Card className="h-full transition-colors hover:bg-muted/40">
-            <CardContent className="flex items-center gap-3">
-              <div className="bg-primary/10 text-primary flex size-11 items-center justify-center rounded-xl">
-                <Users className="size-5" aria-hidden="true" />
-              </div>
-              <div>
-                <p className="text-sm font-medium">Pessoas</p>
-                <p className="text-muted-foreground text-xs">Membros, famílias e designações</p>
-              </div>
-            </CardContent>
-          </Card>
-        </Link>
+        {subUser || role === "OWNER" || role === "ADMIN" ? (
+          <Link href="/dashboard/membros?tab=pessoas" className="block">
+            <Card className="h-full transition-colors hover:bg-muted/40">
+              <CardContent className="flex items-center gap-3">
+                <div className="bg-primary/10 text-primary flex size-11 items-center justify-center rounded-xl">
+                  <Users className="size-5" aria-hidden="true" />
+                </div>
+                <div>
+                  <p className="text-sm font-medium">Pessoas</p>
+                  <p className="text-muted-foreground text-xs">Membros, famílias e designações</p>
+                </div>
+              </CardContent>
+            </Card>
+          </Link>
+        ) : null}
 
-        <Link href="/dashboard/reunioes" className="block">
+        <Link href="/dashboard/designacoes/reunioes" className="block">
           <Card className="h-full transition-colors hover:bg-muted/40">
             <CardContent className="flex items-center gap-3">
               <div className="bg-primary/10 text-primary flex size-11 items-center justify-center rounded-xl">
@@ -150,7 +152,7 @@ export default async function DashboardPage() {
           </Card>
         </Link>
 
-        <Link href="/dashboard/reunioes/conteudo" className="block">
+        <Link href="/dashboard/designacoes/reunioes/conteudo" className="block">
           <Card className="h-full transition-colors hover:bg-muted/40">
             <CardContent className="flex items-center gap-3">
               <div className="bg-primary/10 text-primary flex size-11 items-center justify-center rounded-xl">
@@ -194,8 +196,8 @@ export default async function DashboardPage() {
           </Link>
         ) : null}
 
-        {subUser || role === "OWNER" ? (
-          <Link href="/dashboard/tokens" className="block">
+        {subUser || role === "OWNER" || role === "ADMIN" ? (
+          <Link href="/dashboard/membros?tab=tokens" className="block">
             <Card className="h-full transition-colors hover:bg-muted/40">
               <CardContent className="flex items-center gap-3">
                 <div className="bg-primary/10 text-primary flex size-11 items-center justify-center rounded-xl">

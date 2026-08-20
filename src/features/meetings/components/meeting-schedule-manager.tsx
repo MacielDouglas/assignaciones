@@ -377,7 +377,7 @@ export function MeetingScheduleManager({
                   </p>
                 </div>
                 <Button variant="outline" asChild>
-                  <Link href="/dashboard/reunioes/conteudo">Conteúdo das reuniões</Link>
+                  <Link href="/dashboard/designacoes/reunioes/conteudo">Conteúdo das reuniões</Link>
                 </Button>
               </CardContent>
             </Card>

@@ -36,31 +36,30 @@ function MeetingCardSkeleton() {
 
 export default function Loading() {
   return (
-    <main className="mx-auto w-full max-w-4xl flex-1 px-5 py-10 sm:px-6 sm:py-16">
-      <div className="space-y-8">
-        <header className="space-y-3">
-          <div className="space-y-2">
-            <Skeleton className="h-10 w-48 sm:h-12" />
-            <Skeleton className="h-4 w-72 max-w-full" />
-          </div>
-        </header>
-
-        <div className="flex flex-wrap items-center gap-2">
-          <Skeleton className="h-6 w-44 rounded-full" />
-          <Skeleton className="h-6 w-32 rounded-full" />
-          <Skeleton className="ml-auto h-8 w-40 rounded-full" />
+    <main className="mx-auto w-full max-w-4xl flex-1 space-y-8 px-5 py-10 sm:px-6 sm:py-16">
+      <header className="space-y-1">
+        <Skeleton className="h-8 w-28 rounded-full" />
+        <div className="space-y-2">
+          <Skeleton className="h-10 w-48 sm:h-12" />
+          <Skeleton className="h-4 w-72 max-w-full" />
         </div>
+      </header>
 
-        <div className="flex gap-1">
-          <Skeleton className="h-9 w-36 rounded-lg" />
-          <Skeleton className="h-9 w-32 rounded-lg" />
-        </div>
-
-        {Array.from({ length: 2 }).map((_, index) => (
-          // biome-ignore lint/suspicious/noArrayIndexKey: static skeleton, items never reorder
-          <MeetingCardSkeleton key={index} />
-        ))}
+      <div className="flex flex-wrap items-center gap-2">
+        <Skeleton className="h-6 w-44 rounded-full" />
+        <Skeleton className="h-6 w-32 rounded-full" />
+        <Skeleton className="ml-auto h-8 w-40 rounded-full" />
       </div>
+
+      <div className="flex gap-1">
+        <Skeleton className="h-9 w-36 rounded-lg" />
+        <Skeleton className="h-9 w-32 rounded-lg" />
+      </div>
+
+      {Array.from({ length: 2 }).map((_, index) => (
+        // biome-ignore lint/suspicious/noArrayIndexKey: static skeleton, items never reorder
+        <MeetingCardSkeleton key={index} />
+      ))}
     </main>
   );
 }
