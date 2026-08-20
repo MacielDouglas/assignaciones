@@ -4,6 +4,11 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { SettingsManager } from "@/features/settings/components/settings-manager";
+import {
+  getSectors,
+  getWeeklyCleaning,
+  listGeneralCleanings,
+} from "@/features/settings/lib/cleaning-data";
 import { getSchedule, listEvents } from "@/features/settings/lib/events";
 import type { MemberRole } from "@/generated/prisma/enums";
 import { auth } from "@/lib/auth";
@@ -47,9 +52,12 @@ export default async function SettingsPage() {
 
   const canEdit = subUser || canManageSettings(role);
 
-  const [schedule, events] = await Promise.all([
+  const [schedule, events, sectors, weekly, general] = await Promise.all([
     getSchedule(organizationId),
     listEvents(organizationId),
+    getSectors(organizationId),
+    getWeeklyCleaning(organizationId),
+    listGeneralCleanings(organizationId),
   ]);
 
   const orgName = organizationNames?.find((org) => org.id === organizationId)?.name;
@@ -65,7 +73,7 @@ export default async function SettingsPage() {
         <div>
           <h1 className="text-lg font-medium">Configurações</h1>
           <p className="text-muted-foreground text-sm">
-            Reuniões regulares, eventos especiais e agenda da congregação
+            Reuniões, eventos especiais e limpeza da congregação
           </p>
         </div>
       </div>
@@ -86,6 +94,10 @@ export default async function SettingsPage() {
         organizationId={organizationId}
         initialSchedule={schedule}
         initialEvents={events}
+        initialSectors={sectors}
+        initialWeekly={weekly}
+        initialGeneral={general}
+        today={new Date().toISOString()}
         canEdit={canEdit}
       />
     </main>

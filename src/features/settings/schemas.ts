@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { SpecialEventKind, WeekDay } from "@/generated/prisma/enums";
+import { AllowedSex, SpecialEventKind, WeekDay } from "@/generated/prisma/enums";
 
 export const timeSchema = z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/, "Horário inválido.");
 
@@ -98,3 +98,43 @@ export const specialEventInputSchema = z
 
 export type MeetingScheduleInput = z.infer<typeof meetingScheduleSchema>;
 export type SpecialEventInput = z.infer<typeof specialEventInputSchema>;
+
+export const cleaningSectorSchema = z.object({
+  name: z
+    .string()
+    .trim()
+    .min(1, "Informe o nome do setor.")
+    .max(40, "O nome deve ter no máximo 40 caracteres."),
+  peopleNeeded: z
+    .number()
+    .int("Quantidade inválida.")
+    .min(1, "Informe ao menos 1 pessoa.")
+    .max(50, "No máximo 50 pessoas."),
+  allowsYouth: z.boolean(),
+  allowedSex: z.nativeEnum(AllowedSex),
+});
+
+export const cleaningWeeklySchema = z
+  .object({
+    enabled: z.boolean(),
+    day: z.nativeEnum(WeekDay).nullable(),
+    time: timeSchema.nullable(),
+  })
+  .refine((data) => !data.enabled || (data.day !== null && data.time !== null), {
+    message: "Informe o dia e o horário da Limpeza Semanal.",
+    path: ["day"],
+  })
+  .refine((data) => data.enabled || (data.day === null && data.time === null), {
+    message: "Desative a Limpeza Semanal para salvar.",
+    path: ["enabled"],
+  });
+
+export const cleaningGeneralInputSchema = z.object({
+  date: dateSchema,
+  time: timeSchema,
+  acknowledgedConflict: z.boolean().optional(),
+});
+
+export type CleaningSectorInput = z.infer<typeof cleaningSectorSchema>;
+export type CleaningWeeklyInput = z.infer<typeof cleaningWeeklySchema>;
+export type CleaningGeneralInput = z.infer<typeof cleaningGeneralInputSchema>;

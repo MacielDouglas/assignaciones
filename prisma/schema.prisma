@@ -47,6 +47,12 @@ enum SpecialEventKind {
   ASSEMBLY_REPRESENTATIVE
 }
 
+enum AllowedSex {
+  MALE
+  FEMALE
+  BOTH
+}
+
 model User {
   id            String    @id @default(cuid())
   name          String?
@@ -79,6 +85,9 @@ model Organization {
   inviteTokens     InviteToken[]
   meetingSchedule  MeetingSchedule?
   specialEvents    SpecialEvent[]
+  cleaningSectors  CleaningSector[]
+  cleaningWeekly   CleaningWeekly?
+  cleaningGeneral  CleaningGeneral[]
 }
 
 model OrganizationMember {
@@ -166,6 +175,46 @@ model SpecialEvent {
   organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
 
   @@index([organizationId, kind])
+  @@index([organizationId, date])
+}
+
+model CleaningSector {
+  id             String     @id @default(cuid())
+  organizationId String
+  name           String
+  peopleNeeded   Int
+  allowsYouth    Boolean    @default(true)
+  allowedSex     AllowedSex @default(BOTH)
+  createdAt      DateTime   @default(now())
+  updatedAt      DateTime   @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId])
+}
+
+model CleaningWeekly {
+  id             String   @id @default(cuid())
+  organizationId String   @unique
+  enabled        Boolean  @default(false)
+  day            WeekDay?
+  time           String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+}
+
+model CleaningGeneral {
+  id             String   @id @default(cuid())
+  organizationId String
+  date           DateTime
+  time           String
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
   @@index([organizationId, date])
 }
 

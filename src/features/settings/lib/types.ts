@@ -1,4 +1,4 @@
-import type { SpecialEventKind, WeekDay } from "@/generated/prisma/enums";
+import type { AllowedSex, SpecialEventKind, WeekDay } from "@/generated/prisma/enums";
 
 export interface ScheduleData {
   midweekDay: WeekDay | null;
@@ -91,4 +91,42 @@ export const EVENT_KIND_ORDER: SpecialEventKind[] = [
 export const LIMITED_PER_YEAR: Record<string, number> = {
   MEMORIAL: 1,
   CONVENTION: 1,
+};
+
+export interface CleaningSectorData {
+  id: string;
+  name: string;
+  peopleNeeded: number;
+  allowsYouth: boolean;
+  allowedSex: AllowedSex;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface WeeklyCleaningData {
+  enabled: boolean;
+  day: WeekDay | null;
+  time: string | null;
+}
+
+export interface GeneralCleaningData {
+  id: string;
+  date: string;
+  time: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export const ALLOWED_SEX_LABELS: Record<AllowedSex, string> = {
+  MALE: "Masculino",
+  FEMALE: "Feminino",
+  BOTH: "Ambos",
+};
+
+export const ALLOWED_SEX_ORDER: AllowedSex[] = ["MALE", "FEMALE", "BOTH"];
+
+export const EMPTY_WEEKLY_CLEANING: WeeklyCleaningData = {
+  enabled: false,
+  day: null,
+  time: null,
 };

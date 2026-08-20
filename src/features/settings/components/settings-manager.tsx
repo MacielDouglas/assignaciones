@@ -3,13 +3,21 @@
 import { AlertTriangle } from "lucide-react";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { findConflicts, formatDay } from "@/features/settings/lib/schedule";
-import type { ScheduleData, SpecialEventData } from "@/features/settings/lib/types";
+import type {
+  CleaningSectorData,
+  GeneralCleaningData,
+  ScheduleData,
+  SpecialEventData,
+  WeeklyCleaningData,
+} from "@/features/settings/lib/types";
 import { EVENT_KIND_LABELS, EVENT_KIND_ORDER } from "@/features/settings/lib/types";
 import type { SpecialEventKind, WeekDay } from "@/generated/prisma/enums";
 import { apiFetch, getErrorMessage } from "@/lib/api-client";
 import type { SpecialEventInput } from "../schemas";
+import { CleaningManager } from "./cleaning-manager";
 import { EventDialog } from "./event-dialog";
 import { EventList } from "./event-list";
 import { RegularMeetingCard } from "./regular-meeting-card";
@@ -31,11 +39,19 @@ export function SettingsManager({
   organizationId,
   initialSchedule,
   initialEvents,
+  initialSectors,
+  initialWeekly,
+  initialGeneral,
+  today,
   canEdit,
 }: {
   organizationId: string;
   initialSchedule: ScheduleData;
   initialEvents: SpecialEventData[];
+  initialSectors: CleaningSectorData[];
+  initialWeekly: WeeklyCleaningData;
+  initialGeneral: GeneralCleaningData[];
+  today: string;
   canEdit: boolean;
 }) {
   const [schedule, setSchedule] = useState<ScheduleData>(initialSchedule);
@@ -146,101 +162,111 @@ export function SettingsManager({
   }
 
   return (
-    <div className="space-y-8">
-      {errorConflicts.length > 0 && (
-        <Card className="border-destructive/40 bg-destructive/5">
-          <CardContent className="flex items-start gap-3 py-4">
-            <AlertTriangle className="text-destructive mt-0.5 size-5 shrink-0" aria-hidden="true" />
-            <div className="min-w-0 space-y-1">
-              <p className="text-destructive text-sm font-medium">Conflitos de agenda</p>
-              {errorConflicts.map((conflict, index) => (
-                <p
-                  // biome-ignore lint/suspicious/noArrayIndexKey: lista estática de mensagens
-                  key={index}
-                  className="text-destructive/90 text-xs"
-                >
-                  {conflict.message}
-                </p>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      )}
+    <Tabs defaultValue="meetings">
+      <TabsList>
+        <TabsTrigger value="meetings">Reuniões</TabsTrigger>
+        <TabsTrigger value="cleaning">Limpeza</TabsTrigger>
+      </TabsList>
 
-      <section className="space-y-3">
-        <h2 className="text-base font-semibold">Reuniões regulares</h2>
-        <RegularMeetingCard
-          title={MEETING_TITLES.midweek}
-          day={schedule.midweekDay}
-          time={schedule.midweekTime}
-          canEdit={canEdit}
-          deleting={deletingMeeting === "midweek"}
-          onConfigure={() => setEditingMeeting("midweek")}
-          onDelete={() => handleDeleteMeeting("midweek")}
-        />
-        <RegularMeetingCard
-          title={MEETING_TITLES.weekend}
-          day={schedule.weekendDay}
-          time={schedule.weekendTime}
-          canEdit={canEdit}
-          deleting={deletingMeeting === "weekend"}
-          onConfigure={() => setEditingMeeting("weekend")}
-          onDelete={() => handleDeleteMeeting("weekend")}
-        />
-        {editingMeeting && (
-          <ScheduleMeetingDialog
-            title={MEETING_TITLES[editingMeeting]}
-            description="Escolha o dia e o horário da reunião"
-            day={editingMeeting === "midweek" ? schedule.midweekDay : schedule.weekendDay}
-            time={editingMeeting === "midweek" ? schedule.midweekTime : schedule.weekendTime}
-            saving={saving}
-            onSave={(day, time) => handleSaveSchedule(editingMeeting, day, time)}
-            onClose={() => setEditingMeeting(null)}
-          />
+      <TabsContent value="meetings" className="mt-6 space-y-8">
+        {errorConflicts.length > 0 && (
+          <Card className="border-destructive/40 bg-destructive/5">
+            <CardContent className="flex items-start gap-3 py-4">
+              <AlertTriangle
+                className="text-destructive mt-0.5 size-5 shrink-0"
+                aria-hidden="true"
+              />
+              <div className="min-w-0 space-y-1">
+                <p className="text-destructive text-sm font-medium">Conflitos de agenda</p>
+                {errorConflicts.map((conflict, index) => (
+                  <p
+                    // biome-ignore lint/suspicious/noArrayIndexKey: lista estática de mensagens
+                    key={index}
+                    className="text-destructive/90 text-xs"
+                  >
+                    {conflict.message}
+                  </p>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
         )}
-      </section>
 
-      <section className="space-y-3">
-        <h2 className="text-base font-semibold">Reuniões especiais</h2>
-        {EVENT_KIND_ORDER.map((kind) => (
-          <EventList
-            key={kind}
-            kind={kind}
-            events={events.filter((event) => event.kind === kind)}
-            schedule={schedule}
-            conflicts={conflicts}
+        <section className="space-y-3">
+          <h2 className="text-base font-semibold">Reuniões regulares</h2>
+          <RegularMeetingCard
+            title={MEETING_TITLES.midweek}
+            day={schedule.midweekDay}
+            time={schedule.midweekTime}
             canEdit={canEdit}
-            deletingId={deletingId}
-            onConfigure={() => setDraft({ kind, event: null })}
-            onEdit={(event) => setDraft({ kind, event })}
-            onDelete={handleDeleteEvent}
+            deleting={deletingMeeting === "midweek"}
+            onConfigure={() => setEditingMeeting("midweek")}
+            onDelete={() => handleDeleteMeeting("midweek")}
           />
-        ))}
-        {draft && (
-          <EventDialog
-            kind={draft.kind}
-            initial={draft.event}
-            schedule={schedule}
-            events={events.filter((event) => event.id !== draft.event?.id)}
-            saving={saving}
-            onSave={handleSaveEvent}
-            onClose={() => setDraft(null)}
+          <RegularMeetingCard
+            title={MEETING_TITLES.weekend}
+            day={schedule.weekendDay}
+            time={schedule.weekendTime}
+            canEdit={canEdit}
+            deleting={deletingMeeting === "weekend"}
+            onConfigure={() => setEditingMeeting("weekend")}
+            onDelete={() => handleDeleteMeeting("weekend")}
           />
-        )}
-      </section>
+          {editingMeeting && (
+            <ScheduleMeetingDialog
+              title={MEETING_TITLES[editingMeeting]}
+              description="Escolha o dia e o horário da reunião"
+              day={editingMeeting === "midweek" ? schedule.midweekDay : schedule.weekendDay}
+              time={editingMeeting === "midweek" ? schedule.midweekTime : schedule.weekendTime}
+              saving={saving}
+              onSave={(day, time) => handleSaveSchedule(editingMeeting, day, time)}
+              onClose={() => setEditingMeeting(null)}
+            />
+          )}
+        </section>
 
-      <section className="space-y-3">
-        <h2 className="text-base font-semibold">Limpeza</h2>
-        <Card>
-          <CardHeader>
-            <CardTitle>Escala de limpeza</CardTitle>
-            <CardDescription>Organização da limpeza do salão</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <p className="text-muted-foreground text-sm">Em breve.</p>
-          </CardContent>
-        </Card>
-      </section>
-    </div>
+        <section className="space-y-3">
+          <h2 className="text-base font-semibold">Reuniões especiais</h2>
+          {EVENT_KIND_ORDER.map((kind) => (
+            <EventList
+              key={kind}
+              kind={kind}
+              events={events.filter((event) => event.kind === kind)}
+              schedule={schedule}
+              conflicts={conflicts}
+              canEdit={canEdit}
+              deletingId={deletingId}
+              onConfigure={() => setDraft({ kind, event: null })}
+              onEdit={(event) => setDraft({ kind, event })}
+              onDelete={handleDeleteEvent}
+            />
+          ))}
+          {draft && (
+            <EventDialog
+              kind={draft.kind}
+              initial={draft.event}
+              schedule={schedule}
+              events={events.filter((event) => event.id !== draft.event?.id)}
+              saving={saving}
+              onSave={handleSaveEvent}
+              onClose={() => setDraft(null)}
+            />
+          )}
+        </section>
+      </TabsContent>
+
+      <TabsContent value="cleaning" className="mt-6">
+        <CleaningManager
+          organizationId={organizationId}
+          schedule={schedule}
+          events={events}
+          today={today}
+          initialSectors={initialSectors}
+          initialWeekly={initialWeekly}
+          initialGeneral={initialGeneral}
+          canEdit={canEdit}
+        />
+      </TabsContent>
+    </Tabs>
   );
 }
