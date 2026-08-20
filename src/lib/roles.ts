@@ -32,6 +32,10 @@ export function canManageMembers(role: MemberRole): boolean {
   return role === "OWNER" || role === "ADMIN";
 }
 
+export function canManageSettings(role: MemberRole): boolean {
+  return role === "OWNER" || role === "ADMIN";
+}
+
 export function canPromoteTo(actor: MemberRole, target: MemberRole): boolean {
   if (actor === "OWNER") return true;
   if (actor === "ADMIN") return target !== "OWNER";

@@ -28,6 +28,25 @@ enum MeetingType {
   WEEKEND
 }
 
+enum WeekDay {
+  MONDAY
+  TUESDAY
+  WEDNESDAY
+  THURSDAY
+  FRIDAY
+  SATURDAY
+  SUNDAY
+}
+
+enum SpecialEventKind {
+  MEMORIAL
+  SPECIAL_TALK
+  CIRCUIT_OVERSEER_VISIT
+  CONVENTION
+  ASSEMBLY_TRAVELING_OVERSEER
+  ASSEMBLY_REPRESENTATIVE
+}
+
 model User {
   id            String    @id @default(cuid())
   name          String?
@@ -58,6 +77,8 @@ model Organization {
   songs            Song[]
   talks            Talk[]
   inviteTokens     InviteToken[]
+  meetingSchedule  MeetingSchedule?
+  specialEvents    SpecialEvent[]
 }
 
 model OrganizationMember {
@@ -110,6 +131,42 @@ model MeetingWorkbook {
 
   @@unique([organizationId, meetingType, symbol])
   @@index([organizationId, meetingType])
+}
+
+model MeetingSchedule {
+  id             String   @id @default(cuid())
+  organizationId String   @unique
+  midweekDay     WeekDay?
+  midweekTime    String?
+  weekendDay     WeekDay?
+  weekendTime    String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+}
+
+model SpecialEvent {
+  id             String            @id @default(cuid())
+  organizationId String
+  kind           SpecialEventKind
+  date           DateTime
+  endDate        DateTime?
+  time           String?
+  location       String?
+  theme          String?
+  speaker        String?
+  traveler       String?
+  serviceTalk    String?
+  publicTalk     String?
+  finalTalk      String?
+  createdAt      DateTime          @default(now())
+  updatedAt      DateTime          @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId, kind])
+  @@index([organizationId, date])
 }
 
 model Watchtower {

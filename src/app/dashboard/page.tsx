@@ -1,4 +1,4 @@
-﻿import { Building2, CalendarDays, KeyRound, UserRound, Users } from "lucide-react";
+﻿import { Building2, CalendarDays, KeyRound, Settings, UserRound, Users } from "lucide-react";
 import { headers } from "next/headers";
 import Link from "next/link";
 import { redirect } from "next/navigation";
@@ -163,6 +163,20 @@ export default async function DashboardPage() {
               <div>
                 <p className="text-sm font-medium">Conteúdo das reuniões</p>
                 <p className="text-muted-foreground text-xs">Apostilas importadas dos .jwpub</p>
+              </div>
+            </CardContent>
+          </Card>
+        </Link>
+
+        <Link href="/dashboard/configuracoes" className="block">
+          <Card className="h-full transition-colors hover:bg-muted/40">
+            <CardContent className="flex items-center gap-3">
+              <div className="bg-primary/10 text-primary flex size-11 items-center justify-center rounded-xl">
+                <Settings className="size-5" aria-hidden="true" />
+              </div>
+              <div>
+                <p className="text-sm font-medium">Configurações</p>
+                <p className="text-muted-foreground text-xs">Reuniões e eventos especiais</p>
               </div>
             </CardContent>
           </Card>
