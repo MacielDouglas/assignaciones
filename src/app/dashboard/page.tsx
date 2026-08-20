@@ -197,15 +197,15 @@ export default async function DashboardPage() {
         ) : null}
 
         {subUser || role === "OWNER" || role === "ADMIN" ? (
-          <Link href="/dashboard/membros?tab=tokens" className="block">
+          <Link href="/dashboard/membros?tab=convites" className="block">
             <Card className="h-full transition-colors hover:bg-muted/40">
               <CardContent className="flex items-center gap-3">
                 <div className="bg-primary/10 text-primary flex size-11 items-center justify-center rounded-xl">
                   <KeyRound className="size-5" aria-hidden="true" />
                 </div>
                 <div>
-                  <p className="text-sm font-medium">Tokens</p>
-                  <p className="text-muted-foreground text-xs">Convites e acessos</p>
+                  <p className="text-sm font-medium">Convites</p>
+                  <p className="text-muted-foreground text-xs">Convites para a congregação</p>
                 </div>
               </CardContent>
             </Card>

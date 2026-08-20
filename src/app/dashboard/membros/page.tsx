@@ -1,6 +1,6 @@
 ﻿import { headers } from "next/headers";
 import { redirect } from "next/navigation";
-import { MembersTabs } from "@/components/members-tabs";
+import { type MembersTab, MembersTabs } from "@/components/members-tabs";
 import { type MemberRow, MembersManager } from "@/features/members/components/members-manager";
 import { PeopleManager, type PersonRow } from "@/features/people/components/people-manager";
 import { type TokenRow, TokensManager } from "@/features/tokens/components/tokens-manager";
@@ -32,8 +32,12 @@ export default async function MembersPage({
   const user = session.user as { id: string; email: string | null };
   const subUser = isSubUser(user.email);
   const params = await searchParams;
-  const tab =
-    params.tab === "tokens" ? "tokens" : params.tab === "pessoas" ? "pessoas" : "usuarios";
+  const tab: MembersTab =
+    params.tab === "irmaos"
+      ? "irmaos"
+      : params.tab === "convites" || params.tab === "tokens"
+        ? "convites"
+        : "pessoas";
 
   let organizationId: string;
   let actorRole: MemberRole;
@@ -110,13 +114,13 @@ export default async function MembersPage({
       <header className="space-y-2">
         <h1 className="text-3xl font-semibold tracking-tight text-balance sm:text-4xl">Membros</h1>
         <p className="text-muted-foreground max-w-md text-base">
-          Convites, usuários e pessoas da organização.
+          Pessoas da congregação, irmãos com acesso e convites.
         </p>
       </header>
 
       <MembersTabs
         defaultValue={tab}
-        tokens={
+        convites={
           <TokensManager
             canCreateOrgTokens={subUser}
             canCreateInviteTokens
@@ -138,7 +142,7 @@ export default async function MembersPage({
             }
           />
         }
-        usuarios={
+        irmaos={
           <MembersManager
             organizationId={organizationId}
             actorRole={actorRole}

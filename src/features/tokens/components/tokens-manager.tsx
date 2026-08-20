@@ -8,6 +8,14 @@ import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -46,13 +54,10 @@ export interface AvailablePerson {
   familia: { id: string; name: string };
 }
 
-const STATUS_LABEL: Record<
-  TokenRow["status"],
-  { label: string; variant: "default" | "secondary" | "destructive" }
-> = {
-  ACTIVE: { label: "Ativo", variant: "default" },
+const STATUS_LABEL: Record<TokenRow["status"], { label: string; variant: "secondary" }> = {
+  ACTIVE: { label: "Ativo", variant: "secondary" },
   USED: { label: "Usado", variant: "secondary" },
-  EXPIRED: { label: "Expirado", variant: "destructive" },
+  EXPIRED: { label: "Expirado", variant: "secondary" },
 };
 
 function formatDate(date: string) {
@@ -60,8 +65,6 @@ function formatDate(date: string) {
     day: "2-digit",
     month: "2-digit",
     year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
   });
 }
 
@@ -82,12 +85,14 @@ export function TokensManager({
   const [tokens, setTokens] = useState(initialTokens);
   const [generated, setGenerated] = useState<string | null>(null);
   const [creating, setCreating] = useState(false);
+  const [pendingDelete, setPendingDelete] = useState<TokenRow | null>(null);
 
   const [selectedPersonId, setSelectedPersonId] = useState("");
   const [personName, setPersonName] = useState("");
   const [personSexo, setPersonSexo] = useState<Sex>(Sex.MALE);
   const [familyId, setFamilyId] = useState("");
   const [newFamilyName, setNewFamilyName] = useState("");
+  const [renewingId, setRenewingId] = useState<string | null>(null);
 
   const creatingNewPerson = selectedPersonId === "";
 
@@ -99,7 +104,7 @@ export function TokensManager({
         body: JSON.stringify({ type: InviteTokenType.ORGANIZATION_CREATE }),
       });
       setGenerated(result.token);
-      toast.success("Token criado!");
+      toast.success("Convite criado.");
       refresh();
     } catch (error) {
       toast.error(getErrorMessage(error));
@@ -119,12 +124,13 @@ export function TokensManager({
           personId: selectedPersonId || undefined,
           personName: creatingNewPerson ? personName : undefined,
           personSexo: creatingNewPerson ? personSexo : undefined,
-          familyId: creatingNewPerson && familyId ? familyId : undefined,
-          newFamilyName: creatingNewPerson && newFamilyName ? newFamilyName : undefined,
+          familyId: creatingNewPerson && !newFamilyName.trim() ? familyId : undefined,
+          newFamilyName:
+            creatingNewPerson && newFamilyName.trim() ? newFamilyName.trim() : undefined,
         }),
       });
       setGenerated(result.token);
-      toast.success("Convite criado!");
+      toast.success("Convite criado.");
       setSelectedPersonId("");
       setPersonName("");
       setPersonSexo(Sex.MALE);
@@ -139,21 +145,23 @@ export function TokensManager({
   }
 
   async function renewToken(id: string) {
+    setRenewingId(id);
     try {
       await apiFetch(`/api/tokens/${id}`, { method: "PATCH" });
-      toast.success("Token renovado por mais 24 horas.");
-      refresh();
+      toast.success("Convite renovado por mais 24 horas.");
+      await refresh();
     } catch (error) {
       toast.error(getErrorMessage(error));
+    } finally {
+      setRenewingId(null);
     }
   }
 
   async function removeToken(id: string) {
-    if (!confirm("Remover este token?")) return;
     try {
       await apiFetch(`/api/tokens/${id}`, { method: "DELETE" });
-      toast.success("Token removido.");
-      refresh();
+      toast.success("Convite removido.");
+      await refresh();
     } catch (error) {
       toast.error(getErrorMessage(error));
     }
@@ -161,15 +169,22 @@ export function TokensManager({
 
   async function refresh() {
     router.refresh();
-    const response = await fetch("/api/tokens");
-    const data = (await response.json()) as TokenRow[];
-    setTokens(data);
+    try {
+      const data = await apiFetch<TokenRow[]>("/api/tokens");
+      setTokens(data);
+    } catch (error) {
+      toast.error(getErrorMessage(error));
+    }
   }
 
-  function copyToken() {
+  async function copyToken() {
     if (!generated) return;
-    void navigator.clipboard.writeText(generated);
-    toast.success("Token copiado!");
+    try {
+      await navigator.clipboard.writeText(generated);
+      toast.success("Código copiado!");
+    } catch {
+      toast.error("Não foi possível copiar o código.");
+    }
   }
 
   return (
@@ -177,34 +192,18 @@ export function TokensManager({
       {generated && (
         <Card className="border-primary/40">
           <CardHeader>
-            <CardTitle>Token gerado</CardTitle>
+            <CardTitle>Convite gerado</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
             <p className="font-mono text-center text-lg font-semibold tracking-widest">
               {generated}
             </p>
             <p className="text-muted-foreground text-center text-xs">
-              Copie e envie este token. Ele não será mostrado novamente.
+              Copie e envie este código ao convidado. Ele não será mostrado novamente.
             </p>
             <Button className="w-full" onClick={copyToken}>
-              <Copy /> Copiar token
+              <Copy /> Copiar código
             </Button>
-          </CardContent>
-        </Card>
-      )}
-
-      {canCreateOrgTokens && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Token para criar organização</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <Button onClick={createOrganizationToken} disabled={creating}>
-              <KeyRound /> {creating ? "Gerando..." : "Gerar token"}
-            </Button>
-            <p className="text-muted-foreground mt-3 text-xs">
-              O token permite criar uma organização e vale por 24 horas.
-            </p>
           </CardContent>
         </Card>
       )}
@@ -212,14 +211,14 @@ export function TokensManager({
       {canCreateInviteTokens && (
         <Card>
           <CardHeader>
-            <CardTitle>Convidar membro</CardTitle>
+            <CardTitle>Convidar irmão</CardTitle>
           </CardHeader>
           <CardContent>
             <form onSubmit={createInviteToken} className="space-y-4">
               <div className="space-y-2">
-                <Label>Pessoa</Label>
+                <Label htmlFor="invite-person">Pessoa</Label>
                 <Select value={selectedPersonId} onValueChange={setSelectedPersonId}>
-                  <SelectTrigger className="w-full">
+                  <SelectTrigger id="invite-person" className="w-full">
                     <SelectValue placeholder="Criar nova pessoa ou escolher existente" />
                   </SelectTrigger>
                   <SelectContent>
@@ -238,14 +237,14 @@ export function TokensManager({
                 </Select>
                 {availablePeople.length === 0 && creatingNewPerson && (
                   <p className="text-muted-foreground text-xs">
-                    Nenhuma pessoa disponível sem usuário ou token no momento.
+                    Nenhuma pessoa disponível sem usuário ou convite no momento.
                   </p>
                 )}
               </div>
 
               {!creatingNewPerson && selectedPersonId && (
                 <p className="text-muted-foreground text-sm">
-                  Token será gerado para{" "}
+                  O convite será gerado para{" "}
                   <strong className="text-foreground">
                     {availablePeople.find((person) => person.id === selectedPersonId)?.nome}
                   </strong>{" "}
@@ -267,12 +266,12 @@ export function TokensManager({
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label>Sexo</Label>
+                    <Label htmlFor="invite-sexo">Sexo</Label>
                     <Select
                       value={personSexo}
                       onValueChange={(value) => setPersonSexo(value as Sex)}
                     >
-                      <SelectTrigger className="w-full">
+                      <SelectTrigger id="invite-sexo" className="w-full">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
@@ -282,9 +281,13 @@ export function TokensManager({
                     </Select>
                   </div>
                   <div className="space-y-2">
-                    <Label>Família</Label>
-                    <Select value={familyId} onValueChange={setFamilyId}>
-                      <SelectTrigger className="w-full">
+                    <Label htmlFor="invite-family">Família</Label>
+                    <Select
+                      value={familyId}
+                      onValueChange={setFamilyId}
+                      disabled={newFamilyName.trim() !== ""}
+                    >
+                      <SelectTrigger id="invite-family" className="w-full">
                         <SelectValue placeholder="Escolher família" />
                       </SelectTrigger>
                       <SelectContent>
@@ -295,6 +298,11 @@ export function TokensManager({
                         ))}
                       </SelectContent>
                     </Select>
+                    {newFamilyName.trim() !== "" && (
+                      <p className="text-muted-foreground text-xs">
+                        Uma família chamada &quot;{newFamilyName.trim()}&quot; será criada.
+                      </p>
+                    )}
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="new-family">Ou criar nova família</Label>
@@ -308,25 +316,46 @@ export function TokensManager({
                 </div>
               )}
               <Button type="submit" disabled={creating}>
-                <KeyRound /> {creating ? "Gerando..." : "Gerar token de convite"}
+                <KeyRound /> {creating ? "Gerando..." : "Gerar convite"}
               </Button>
             </form>
           </CardContent>
         </Card>
       )}
 
+      {canCreateOrgTokens && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Convidar administrador do sistema</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <Button onClick={createOrganizationToken} disabled={creating}>
+              <KeyRound /> {creating ? "Gerando..." : "Gerar convite"}
+            </Button>
+            <p className="text-muted-foreground mt-3 text-xs">
+              O código permite criar uma nova organização no sistema e vale por 24 horas.
+            </p>
+          </CardContent>
+        </Card>
+      )}
+
       <Card>
         <CardHeader>
-          <CardTitle>Histórico</CardTitle>
+          <CardTitle>Convites gerados</CardTitle>
         </CardHeader>
         <CardContent className="space-y-2">
           {tokens.length === 0 ? (
             <p className="text-muted-foreground text-center py-6 text-sm">
-              Nenhum token gerado ainda.
+              Nenhum convite gerado ainda.
             </p>
           ) : (
             tokens.map((token) => {
               const status = STATUS_LABEL[token.status];
+              const personLabel =
+                token.person?.nome ??
+                (token.type === InviteTokenType.ORGANIZATION_CREATE
+                  ? "criação de organização"
+                  : "membro");
               return (
                 <div
                   key={token.id}
@@ -336,7 +365,7 @@ export function TokensManager({
                     <p className="text-sm font-medium">
                       {token.type === InviteTokenType.ORGANIZATION_CREATE
                         ? "Criação de organização"
-                        : `Convite para ${token.person?.nome ?? "membro"}`}
+                        : `Convite para ${personLabel}`}
                     </p>
                     <p className="text-muted-foreground truncate text-xs">
                       Criado em {formatDate(token.createdAt)} · expira em{" "}
@@ -347,13 +376,14 @@ export function TokensManager({
                         : ""}
                     </p>
                   </div>
-                  <div className="flex shrink-0 items-center gap-1">
+                  <div className="flex shrink-0 items-center gap-2">
                     <Badge variant={status.variant}>{status.label}</Badge>
                     {token.status !== "USED" && (
                       <Button
                         variant="ghost"
                         size="icon"
-                        aria-label="Renovar token"
+                        aria-label={`Renovar convite de ${personLabel}`}
+                        disabled={renewingId === token.id}
                         onClick={() => renewToken(token.id)}
                       >
                         <RefreshCw />
@@ -362,8 +392,8 @@ export function TokensManager({
                     <Button
                       variant="ghost"
                       size="icon"
-                      aria-label="Remover token"
-                      onClick={() => removeToken(token.id)}
+                      aria-label={`Remover convite de ${personLabel}`}
+                      onClick={() => setPendingDelete(token)}
                     >
                       <Trash2 />
                     </Button>
@@ -374,6 +404,38 @@ export function TokensManager({
           )}
         </CardContent>
       </Card>
+
+      <Dialog
+        open={pendingDelete !== null}
+        onOpenChange={(open) => !open && setPendingDelete(null)}
+      >
+        <DialogContent showCloseButton={false}>
+          <DialogHeader>
+            <DialogTitle>Remover este convite?</DialogTitle>
+            <DialogDescription>
+              {pendingDelete?.status === "ACTIVE"
+                ? "O convite ainda está ativo — o irmão não conseguirá mais acessar com este código."
+                : "O convite será removido do histórico."}
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setPendingDelete(null)}>
+              Cancelar
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={() => {
+                if (!pendingDelete) return;
+                const id = pendingDelete.id;
+                setPendingDelete(null);
+                void removeToken(id);
+              }}
+            >
+              Remover convite
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

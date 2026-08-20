@@ -2,12 +2,19 @@
 
 import { Pencil, Plus, Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useMemo, useState } from "react";
+import { useId, useMemo, useState } from "react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -104,7 +111,7 @@ const emptyForm: PersonFormState = {
   newFamilyName: "",
   chefeFamilia: false,
   jovem: false,
-  estudante: true,
+  estudante: false,
   batizado: false,
   ativo: true,
   limpeza: true,
@@ -114,7 +121,7 @@ const emptyForm: PersonFormState = {
   fazendoDiscipulos: false,
   explicandoCrencas: false,
   discursoFacaseuMelhor: false,
-  leituraBiblia: true,
+  leituraBiblia: false,
   privilegiosServico: false,
   oracao: false,
   anciao: false,
@@ -154,20 +161,115 @@ function CheckboxField({
   onCheckedChange: (checked: boolean) => void;
   disabled?: boolean;
 }) {
+  const id = useId();
   return (
     <div className="flex items-center gap-2">
       <Checkbox
-        id={label}
+        id={id}
         checked={checked}
         onCheckedChange={(value) => onCheckedChange(value === true)}
         disabled={disabled}
       />
-      <Label htmlFor={label} className="cursor-pointer font-normal">
+      <Label htmlFor={id} className="cursor-pointer font-normal">
         {label}
       </Label>
     </div>
   );
 }
+
+function PrivilegeGroup({
+  title,
+  keys,
+  form,
+  set,
+}: {
+  title: string;
+  keys: (keyof PersonFormState)[];
+  form: PersonFormState;
+  set: <K extends keyof PersonFormState>(key: K, value: PersonFormState[K]) => void;
+}) {
+  const allChecked = keys.every((key) => form[key] === true);
+  return (
+    <div className="space-y-2">
+      <div className="flex items-center justify-between gap-2">
+        <h4 className="text-muted-foreground text-xs font-medium tracking-wide uppercase">
+          {title}
+        </h4>
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          className="h-8 px-2 text-xs"
+          onClick={() => {
+            for (const key of keys) set(key, !allChecked);
+          }}
+        >
+          {allChecked ? "Limpar" : "Marcar todos"}
+        </Button>
+      </div>
+      <div className="grid grid-cols-1 gap-3 min-[380px]:grid-cols-2 sm:grid-cols-3">
+        {keys.map((key) => (
+          <CheckboxField
+            key={key}
+            label={PRIVILEGE_LABEL[key]}
+            checked={form[key] === true}
+            onCheckedChange={(value) => set(key, value)}
+          />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+const PRIVILEGE_LABEL: Record<string, string> = {
+  anciao: "Ancião",
+  oQueVoceDiria: "'O que você diria?'",
+  presidenteNossaVida: "Presidente de 'Nossa Vida Cristã'",
+  discursoTesouros: "Discurso de tesouros",
+  joiasEspirituais: "Joias espirituais",
+  partesNossaVidaCrista: "Partes de 'Nossa Vida Cristã'",
+  estudoBiblicoCongregacao: "Estudo bíblico de congregação",
+  leitorEstudoBiblico: "Leitor do estudo bíblico",
+  presidenteReuniaoPublica: "Presidente da reunião pública",
+  discursoPublico: "Discurso público",
+  dirigenteEstudoSentinela: "Dirigente do estudo de Sentinela",
+  leitorEstudoSentinela: "Leitor do estudo de Sentinela",
+  iniciandoConversa: "Iniciando conversas",
+  cultivandoInteresse: "Cultivando interesse",
+  fazendoDiscipulos: "Fazendo discípulos",
+  explicandoCrencas: "Explicando crenças",
+  discursoFacaseuMelhor: "'Faça o seu melhor'",
+  leituraBiblia: "Leitura da Bíblia",
+  privilegiosServico: "Privilégios de serviço",
+  oracao: "Oração",
+};
+
+const MIDWEEK_PRIVILEGES: (keyof PersonFormState)[] = [
+  "anciao",
+  "oQueVoceDiria",
+  "presidenteNossaVida",
+  "discursoTesouros",
+  "joiasEspirituais",
+  "partesNossaVidaCrista",
+  "estudoBiblicoCongregacao",
+  "leitorEstudoBiblico",
+];
+
+const PUBLIC_PRIVILEGES: (keyof PersonFormState)[] = [
+  "presidenteReuniaoPublica",
+  "discursoPublico",
+  "dirigenteEstudoSentinela",
+  "leitorEstudoSentinela",
+];
+
+const GENERAL_KEYS: (keyof PersonFormState)[] = [
+  "chefeFamilia",
+  "jovem",
+  "estudante",
+  "batizado",
+  "ativo",
+  "limpeza",
+];
 
 export function PeopleManager({
   organizationId,
@@ -186,7 +288,23 @@ export function PeopleManager({
   const [form, setForm] = useState<PersonFormState | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
-  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [pendingDelete, setPendingDelete] = useState<PersonRow | null>(null);
+  const [pendingDeleteFamily, setPendingDeleteFamily] = useState<FamilyOption | null>(null);
+  const [confirmDiscard, setConfirmDiscard] = useState(false);
+
+  const dirty = useMemo(
+    () => form !== null && JSON.stringify(form) !== JSON.stringify(emptyForm),
+    [form],
+  );
+
+  function requestClose() {
+    if (dirty) {
+      setConfirmDiscard(true);
+    } else {
+      setForm(null);
+      setEditingId(null);
+    }
+  }
 
   const grouped = useMemo(() => {
     const map = new Map<string, PersonRow[]>();
@@ -198,6 +316,11 @@ export function PeopleManager({
     }
     return Array.from(map.entries()).sort(([a], [b]) => a.localeCompare(b));
   }, [people]);
+
+  const emptyFamilies = useMemo(() => {
+    const names = new Set(grouped.map(([name]) => name));
+    return familyOptions.filter((family) => !names.has(family.name));
+  }, [familyOptions, grouped]);
 
   function set<K extends keyof PersonFormState>(key: K, value: PersonFormState[K]) {
     setForm((current) => (current ? { ...current, [key]: value } : current));
@@ -260,21 +383,21 @@ export function PeopleManager({
           method: "PATCH",
           body: JSON.stringify(payload),
         });
-        toast.success("Pessoa atualizada!");
+        toast.success("Pessoa atualizada.");
       } else {
         await apiFetch(`/api/organizations/${organizationId}/people`, {
           method: "POST",
           body: JSON.stringify(payload),
         });
-        toast.success("Pessoa cadastrada!");
+        toast.success("Pessoa cadastrada.");
       }
 
       setForm(null);
       setEditingId(null);
       router.refresh();
-      const response = await fetch(`/api/organizations/${organizationId}/people`);
-      const data = await response.json();
-      setPeople(data);
+      await apiFetch<PersonRow[]>(`/api/organizations/${organizationId}/people`)
+        .then(setPeople)
+        .catch(() => undefined);
     } catch (error) {
       toast.error(getErrorMessage(error));
     } finally {
@@ -283,8 +406,7 @@ export function PeopleManager({
   }
 
   async function handleDelete(person: PersonRow) {
-    if (!confirm(`Excluir "${person.nome}"?`)) return;
-    setDeletingId(person.id);
+    setPendingDelete(null);
     try {
       await apiFetch(`/api/organizations/${organizationId}/people/${person.id}`, {
         method: "DELETE",
@@ -293,8 +415,20 @@ export function PeopleManager({
       setPeople((current) => current.filter((item) => item.id !== person.id));
     } catch (error) {
       toast.error(getErrorMessage(error));
-    } finally {
-      setDeletingId(null);
+    }
+  }
+
+  async function handleDeleteFamily(family: FamilyOption) {
+    setPendingDeleteFamily(null);
+    try {
+      await apiFetch(`/api/organizations/${organizationId}/families/${family.id}`, {
+        method: "DELETE",
+      });
+      toast.success("Família excluída.");
+      setFamilyOptions((current) => current.filter((item) => item.id !== family.id));
+      router.refresh();
+    } catch (error) {
+      toast.error(getErrorMessage(error));
     }
   }
 
@@ -316,28 +450,38 @@ export function PeopleManager({
         </Button>
       )}
 
-      {form && (
-        <Card>
-          <CardHeader>
-            <CardTitle>{editingId ? "Editar pessoa" : "Nova pessoa"}</CardTitle>
-          </CardHeader>
-          <CardContent>
+      <Dialog
+        open={form !== null}
+        onOpenChange={(open) => {
+          if (!open) requestClose();
+        }}
+      >
+        <DialogContent className="sm:max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>{editingId ? "Editar pessoa" : "Nova pessoa"}</DialogTitle>
+            <DialogDescription>Preencha os dados da pessoa.</DialogDescription>
+          </DialogHeader>
+          <div className="max-h-[70dvh] overflow-y-auto pr-1">
             <form onSubmit={handleSubmit} className="space-y-5">
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="space-y-2">
                   <Label htmlFor="person-nome">Nome</Label>
                   <Input
                     id="person-nome"
-                    value={form.nome}
+                    value={form?.nome ?? ""}
                     onChange={(event) => set("nome", event.target.value)}
                     placeholder="Nome completo"
                     required
+                    autoFocus
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label>Sexo</Label>
-                  <Select value={form.sexo} onValueChange={(value) => set("sexo", value as Sex)}>
-                    <SelectTrigger className="w-full">
+                  <Label htmlFor="person-sexo">Sexo</Label>
+                  <Select
+                    value={form?.sexo ?? Sex.MALE}
+                    onValueChange={(value) => set("sexo", value as Sex)}
+                  >
+                    <SelectTrigger id="person-sexo" className="w-full">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -347,9 +491,13 @@ export function PeopleManager({
                   </Select>
                 </div>
                 <div className="space-y-2">
-                  <Label>Família</Label>
-                  <Select value={form.familiaId} onValueChange={(value) => set("familiaId", value)}>
-                    <SelectTrigger className="w-full">
+                  <Label htmlFor="person-family">Família</Label>
+                  <Select
+                    value={form?.familiaId ?? ""}
+                    onValueChange={(value) => set("familiaId", value)}
+                    disabled={form?.newFamilyName.trim() !== ""}
+                  >
+                    <SelectTrigger id="person-family" className="w-full">
                       <SelectValue placeholder="Escolher família" />
                     </SelectTrigger>
                     <SelectContent>
@@ -361,193 +509,134 @@ export function PeopleManager({
                     </SelectContent>
                   </Select>
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="new-family">Ou criar nova família</Label>
-                  <Input
-                    id="new-family"
-                    value={form.newFamilyName}
-                    onChange={(event) => set("newFamilyName", event.target.value)}
-                    placeholder="Nome da nova família"
+                {form?.chefeFamilia === true && (
+                  <div className="space-y-2">
+                    <Label htmlFor="new-family">Ou criar nova família</Label>
+                    <Input
+                      id="new-family"
+                      value={form?.newFamilyName ?? ""}
+                      onChange={(event) => set("newFamilyName", event.target.value)}
+                      placeholder="Nome da nova família"
+                    />
+                    {form?.newFamilyName.trim() !== "" && (
+                      <p className="text-muted-foreground text-xs">
+                        Uma família chamada &quot;{form?.newFamilyName.trim()}&quot; será criada.
+                      </p>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                <div className="flex items-center justify-between gap-2">
+                  <h4 className="text-muted-foreground text-xs font-medium tracking-wide uppercase">
+                    Informações gerais
+                  </h4>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="h-8 px-2 text-xs"
+                    onClick={() => {
+                      const allChecked = GENERAL_KEYS.every((key) => form?.[key] === true);
+                      for (const key of GENERAL_KEYS) set(key, !allChecked);
+                    }}
+                  >
+                    {GENERAL_KEYS.every((key) => form?.[key] === true) ? "Limpar" : "Marcar todos"}
+                  </Button>
+                </div>
+                <div className="grid grid-cols-1 gap-3 min-[380px]:grid-cols-2 sm:grid-cols-3">
+                  <CheckboxField
+                    label="Chefe de família"
+                    checked={form?.chefeFamilia ?? false}
+                    onCheckedChange={(value) => {
+                      set("chefeFamilia", value);
+                      if (!value) set("newFamilyName", "");
+                    }}
+                  />
+                  <CheckboxField
+                    label="Jovem"
+                    checked={form?.jovem ?? false}
+                    onCheckedChange={(value) => {
+                      set("jovem", value);
+                      if (value) set("casado", false);
+                    }}
+                  />
+                  <CheckboxField
+                    label="Estudante"
+                    checked={form?.estudante ?? false}
+                    onCheckedChange={(value) => set("estudante", value)}
+                  />
+                  <CheckboxField
+                    label="Batizado"
+                    checked={form?.batizado ?? false}
+                    onCheckedChange={(value) => set("batizado", value)}
+                  />
+                  <CheckboxField
+                    label="Ativo"
+                    checked={form?.ativo ?? false}
+                    onCheckedChange={(value) => set("ativo", value)}
+                  />
+                  <CheckboxField
+                    label="Limpeza"
+                    checked={form?.limpeza ?? false}
+                    onCheckedChange={(value) => set("limpeza", value)}
+                  />
+                  <CheckboxField
+                    label="Casado"
+                    checked={form?.casado ?? false}
+                    onCheckedChange={(value) => set("casado", value)}
+                    disabled={form?.jovem ?? false}
                   />
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-                <CheckboxField
-                  label="Chefe de família"
-                  checked={form.chefeFamilia}
-                  onCheckedChange={(value) => set("chefeFamilia", value)}
-                />
-                <CheckboxField
-                  label="Jovem"
-                  checked={form.jovem}
-                  onCheckedChange={(value) => set("jovem", value)}
-                />
-                <CheckboxField
-                  label="Estudante"
-                  checked={form.estudante}
-                  onCheckedChange={(value) => set("estudante", value)}
-                />
-                <CheckboxField
-                  label="Batizado"
-                  checked={form.batizado}
-                  onCheckedChange={(value) => set("batizado", value)}
-                />
-                <CheckboxField
-                  label="Ativo"
-                  checked={form.ativo}
-                  onCheckedChange={(value) => set("ativo", value)}
-                />
-                <CheckboxField
-                  label="Limpeza"
-                  checked={form.limpeza}
-                  onCheckedChange={(value) => set("limpeza", value)}
-                />
-                <CheckboxField
-                  label="Casado"
-                  checked={form.casado}
-                  onCheckedChange={(value) => set("casado", value)}
-                  disabled={form.jovem}
-                />
-              </div>
-
               {showStudentFields && (
-                <div className="space-y-3">
-                  <p className="text-muted-foreground text-xs font-medium uppercase tracking-wide">
-                    Estudante
-                  </p>
-                  <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-                    <CheckboxField
-                      label="Iniciando conversa"
-                      checked={form.iniciandoConversa}
-                      onCheckedChange={(value) => set("iniciandoConversa", value)}
-                    />
-                    <CheckboxField
-                      label="Cultivando interesse"
-                      checked={form.cultivandoInteresse}
-                      onCheckedChange={(value) => set("cultivandoInteresse", value)}
-                    />
-                    <CheckboxField
-                      label="Fazendo discípulos"
-                      checked={form.fazendoDiscipulos}
-                      onCheckedChange={(value) => set("fazendoDiscipulos", value)}
-                    />
-                    <CheckboxField
-                      label="Explicando crenças"
-                      checked={form.explicandoCrencas}
-                      onCheckedChange={(value) => set("explicandoCrencas", value)}
-                    />
-                  </div>
-                </div>
+                <PrivilegeGroup
+                  title="Estudante"
+                  keys={[
+                    "iniciandoConversa",
+                    "cultivandoInteresse",
+                    "fazendoDiscipulos",
+                    "explicandoCrencas",
+                  ]}
+                  form={form}
+                  set={set}
+                />
               )}
 
               {showMaleStudentFields && (
-                <div className="space-y-3">
-                  <p className="text-muted-foreground text-xs font-medium uppercase tracking-wide">
-                    Homem · estudante
-                  </p>
-                  <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-                    <CheckboxField
-                      label="Discurso 'Faça seu melhor'"
-                      checked={form.discursoFacaseuMelhor}
-                      onCheckedChange={(value) => set("discursoFacaseuMelhor", value)}
-                    />
-                    <CheckboxField
-                      label="Leitura da Bíblia"
-                      checked={form.leituraBiblia}
-                      onCheckedChange={(value) => set("leituraBiblia", value)}
-                    />
-                  </div>
-                </div>
+                <PrivilegeGroup
+                  title="Homem · estudante"
+                  keys={["discursoFacaseuMelhor", "leituraBiblia"]}
+                  form={form}
+                  set={set}
+                />
               )}
 
               {showMaleBaptizedFields && (
-                <div className="space-y-3">
-                  <p className="text-muted-foreground text-xs font-medium uppercase tracking-wide">
-                    Homem · batizado
-                  </p>
-                  <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-                    <CheckboxField
-                      label="Privilégios de serviço"
-                      checked={form.privilegiosServico}
-                      onCheckedChange={(value) => set("privilegiosServico", value)}
-                    />
-                    <CheckboxField
-                      label="Oração"
-                      checked={form.oracao}
-                      onCheckedChange={(value) => set("oracao", value)}
-                    />
-                  </div>
-                </div>
+                <PrivilegeGroup
+                  title="Homem · batizado"
+                  keys={["privilegiosServico", "oracao"]}
+                  form={form}
+                  set={set}
+                />
               )}
 
               {showPrivilegeFields && (
-                <div className="space-y-3">
-                  <p className="text-muted-foreground text-xs font-medium uppercase tracking-wide">
-                    Privilégios de serviço
-                  </p>
-                  <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-                    <CheckboxField
-                      label="Ancião"
-                      checked={form.anciao}
-                      onCheckedChange={(value) => set("anciao", value)}
-                    />
-                    <CheckboxField
-                      label="'O que você diria?'"
-                      checked={form.oQueVoceDiria}
-                      onCheckedChange={(value) => set("oQueVoceDiria", value)}
-                    />
-                    <CheckboxField
-                      label="Presidente de 'Nossa Vida Cristã'"
-                      checked={form.presidenteNossaVida}
-                      onCheckedChange={(value) => set("presidenteNossaVida", value)}
-                    />
-                    <CheckboxField
-                      label="Discurso de tesouros"
-                      checked={form.discursoTesouros}
-                      onCheckedChange={(value) => set("discursoTesouros", value)}
-                    />
-                    <CheckboxField
-                      label="Joias espirituais"
-                      checked={form.joiasEspirituais}
-                      onCheckedChange={(value) => set("joiasEspirituais", value)}
-                    />
-                    <CheckboxField
-                      label="Partes de 'Nossa Vida Cristã'"
-                      checked={form.partesNossaVidaCrista}
-                      onCheckedChange={(value) => set("partesNossaVidaCrista", value)}
-                    />
-                    <CheckboxField
-                      label="Estudo bíblico de congregação"
-                      checked={form.estudoBiblicoCongregacao}
-                      onCheckedChange={(value) => set("estudoBiblicoCongregacao", value)}
-                    />
-                    <CheckboxField
-                      label="Leitor do estudo bíblico"
-                      checked={form.leitorEstudoBiblico}
-                      onCheckedChange={(value) => set("leitorEstudoBiblico", value)}
-                    />
-                    <CheckboxField
-                      label="Presidente da reunião pública"
-                      checked={form.presidenteReuniaoPublica}
-                      onCheckedChange={(value) => set("presidenteReuniaoPublica", value)}
-                    />
-                    <CheckboxField
-                      label="Discurso público"
-                      checked={form.discursoPublico}
-                      onCheckedChange={(value) => set("discursoPublico", value)}
-                    />
-                    <CheckboxField
-                      label="Dirigente do estudo de Sentinela"
-                      checked={form.dirigenteEstudoSentinela}
-                      onCheckedChange={(value) => set("dirigenteEstudoSentinela", value)}
-                    />
-                    <CheckboxField
-                      label="Leitor do estudo de Sentinela"
-                      checked={form.leitorEstudoSentinela}
-                      onCheckedChange={(value) => set("leitorEstudoSentinela", value)}
-                    />
-                  </div>
+                <div className="space-y-4">
+                  <PrivilegeGroup
+                    title="Reunião de meio de semana"
+                    keys={MIDWEEK_PRIVILEGES}
+                    form={form}
+                    set={set}
+                  />
+                  <PrivilegeGroup
+                    title="Reunião pública"
+                    keys={PUBLIC_PRIVILEGES}
+                    form={form}
+                    set={set}
+                  />
                 </div>
               )}
 
@@ -555,21 +644,38 @@ export function PeopleManager({
                 <Button type="submit" disabled={saving}>
                   {saving ? "Salvando..." : editingId ? "Salvar alterações" : "Cadastrar"}
                 </Button>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  onClick={() => {
-                    setForm(null);
-                    setEditingId(null);
-                  }}
-                >
+                <Button type="button" variant="ghost" onClick={requestClose}>
                   Cancelar
                 </Button>
               </div>
             </form>
-          </CardContent>
-        </Card>
-      )}
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={confirmDiscard} onOpenChange={(open) => !open && setConfirmDiscard(false)}>
+        <DialogContent showCloseButton={false}>
+          <DialogHeader>
+            <DialogTitle>Descartar alterações?</DialogTitle>
+            <DialogDescription>As informações preenchidas serão perdidas.</DialogDescription>
+          </DialogHeader>
+          <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+            <Button variant="outline" onClick={() => setConfirmDiscard(false)}>
+              Continuar editando
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={() => {
+                setConfirmDiscard(false);
+                setForm(null);
+                setEditingId(null);
+              }}
+            >
+              Descartar
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {grouped.length === 0 ? (
         <Card>
@@ -595,20 +701,18 @@ export function PeopleManager({
                   className="flex items-center justify-between gap-3 rounded-lg border px-3 py-2"
                 >
                   <div className="min-w-0 space-y-0.5">
-                    <p className="flex flex-wrap items-center gap-2 text-sm font-medium">
+                    <p className="truncate text-sm font-medium" title={person.nome}>
                       {person.nome}
-                      {!person.ativo && (
-                        <span className="text-muted-foreground text-xs">(inativo)</span>
-                      )}
-                      {person.casado && (
-                        <span className="text-muted-foreground text-xs">casado(a)</span>
-                      )}
-                      {person.member && (
-                        <span className="text-muted-foreground text-xs">
-                          usuário · {person.member.role.toLowerCase()}
-                        </span>
-                      )}
                     </p>
+                    {(person.casado || person.member || !person.ativo) && (
+                      <p className="flex flex-wrap items-center gap-2 text-xs">
+                        {!person.ativo && <span className="text-muted-foreground">(inativo)</span>}
+                        {person.casado && <span className="text-muted-foreground">casado(a)</span>}
+                        {person.member && (
+                          <span className="text-muted-foreground">irmão com acesso</span>
+                        )}
+                      </p>
+                    )}
                     <p className="text-muted-foreground text-xs">
                       {person.chefeFamilia ? "Chefe de família · " : ""}
                       {person.jovem ? "Jovem · " : ""}
@@ -618,7 +722,7 @@ export function PeopleManager({
                     </p>
                   </div>
                   {canEdit && (
-                    <div className="flex shrink-0 gap-1">
+                    <div className="flex shrink-0 gap-2">
                       <Button
                         variant="ghost"
                         size="icon"
@@ -634,8 +738,8 @@ export function PeopleManager({
                         variant="ghost"
                         size="icon"
                         aria-label={`Excluir ${person.nome}`}
-                        disabled={deletingId === person.id}
-                        onClick={() => handleDelete(person)}
+                        disabled={pendingDelete?.id === person.id}
+                        onClick={() => setPendingDelete(person)}
                       >
                         <Trash2 />
                       </Button>
@@ -647,6 +751,100 @@ export function PeopleManager({
           </Card>
         ))
       )}
+
+      {canEdit &&
+        emptyFamilies.map((family) => (
+          <Card key={family.id}>
+            <CardHeader className="flex flex-row items-center justify-between gap-3">
+              <CardTitle>{family.name}</CardTitle>
+              <Button
+                variant="ghost"
+                size="icon"
+                aria-label={`Excluir família ${family.name}`}
+                onClick={() => setPendingDeleteFamily(family)}
+              >
+                <Trash2 />
+              </Button>
+            </CardHeader>
+            <CardContent>
+              <p className="text-muted-foreground text-xs">
+                Nenhuma pessoa nesta família. A família pode ser excluída.
+              </p>
+            </CardContent>
+          </Card>
+        ))}
+
+      <Dialog
+        open={pendingDelete !== null}
+        onOpenChange={(open) => !open && setPendingDelete(null)}
+      >
+        <DialogContent showCloseButton={false}>
+          <DialogHeader>
+            <DialogTitle>Excluir {pendingDelete?.nome}?</DialogTitle>
+            <DialogDescription>
+              A pessoa será removida da congregação e não poderá mais ser designada. Esta ação não
+              pode ser desfeita.
+            </DialogDescription>
+            {pendingDelete?.member && (
+              <p className="bg-destructive/10 text-destructive rounded-lg px-3 py-2 text-xs">
+                Este irmão tem uma conta de acesso — o usuário perderá o acesso ao sistema.
+              </p>
+            )}
+            {pendingDelete?.spouse && (
+              <p className="bg-destructive/10 text-destructive rounded-lg px-3 py-2 text-xs">
+                O vínculo de casamento com {pendingDelete.spouse.nome} será removido.
+              </p>
+            )}
+            {pendingDelete?.marriedTo && (
+              <p className="bg-destructive/10 text-destructive rounded-lg px-3 py-2 text-xs">
+                O vínculo de casamento com {pendingDelete.marriedTo.nome} será removido.
+              </p>
+            )}
+          </DialogHeader>
+          <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+            <Button variant="outline" onClick={() => setPendingDelete(null)}>
+              Cancelar
+            </Button>
+            <Button
+              variant="destructive"
+              disabled={!pendingDelete}
+              onClick={() => {
+                if (pendingDelete) void handleDelete(pendingDelete);
+              }}
+            >
+              Excluir
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog
+        open={pendingDeleteFamily !== null}
+        onOpenChange={(open) => !open && setPendingDeleteFamily(null)}
+      >
+        <DialogContent showCloseButton={false}>
+          <DialogHeader>
+            <DialogTitle>Excluir a família {pendingDeleteFamily?.name}?</DialogTitle>
+            <DialogDescription>
+              A família será removida da congregação. Esta ação não pode ser desfeita.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+            <Button variant="outline" onClick={() => setPendingDeleteFamily(null)}>
+              Cancelar
+            </Button>
+            <Button
+              variant="destructive"
+              disabled={!pendingDeleteFamily}
+              onClick={() => {
+                if (pendingDeleteFamily) void handleDeleteFamily(pendingDeleteFamily);
+              }}
+            >
+              Excluir família
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

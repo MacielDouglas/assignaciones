@@ -198,6 +198,8 @@ export async function GET(request: Request) {
       where: { organizationId: membership.organizationId },
       orderBy: { createdAt: "desc" },
       include: {
+        organization: { select: { id: true, name: true } },
+        createdBy: { select: { id: true, name: true, email: true } },
         usedBy: { select: { id: true, name: true, email: true } },
         person: { select: { id: true, nome: true } },
       },
@@ -215,6 +217,8 @@ export async function GET(request: Request) {
         expiresAt: token.expiresAt,
         usedAt: token.usedAt,
         createdAt: token.createdAt,
+        organization: token.organization,
+        createdBy: token.createdBy,
         usedBy: token.usedBy,
         person: token.person,
       })),

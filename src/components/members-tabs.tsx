@@ -1,29 +1,56 @@
 "use client";
 
-import type { ReactNode } from "react";
+import { useRouter } from "next/navigation";
+import { createContext, type ReactNode, useContext, useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+
+export type MembersTab = "pessoas" | "irmaos" | "convites";
+
+const MembersTabsContext = createContext<{ setValue: (tab: MembersTab) => void } | null>(null);
+
+export function useMembersTabs() {
+  const context = useContext(MembersTabsContext);
+  if (!context) throw new Error("useMembersTabs deve ser usado dentro de MembersTabs.");
+  return context;
+}
 
 export function MembersTabs({
   defaultValue,
-  tokens,
-  usuarios,
+  convites,
+  irmaos,
   pessoas,
 }: {
-  defaultValue: "tokens" | "usuarios" | "pessoas";
-  tokens: ReactNode;
-  usuarios: ReactNode;
+  defaultValue: MembersTab;
+  convites: ReactNode;
+  irmaos: ReactNode;
   pessoas: ReactNode;
 }) {
+  const router = useRouter();
+  const [value, setValue] = useState<MembersTab>(defaultValue);
+
+  function selectTab(tab: MembersTab) {
+    setValue(tab);
+    router.replace(`/dashboard/membros?tab=${tab}`);
+  }
+
   return (
-    <Tabs defaultValue={defaultValue}>
-      <TabsList>
-        <TabsTrigger value="tokens">Tokens</TabsTrigger>
-        <TabsTrigger value="usuarios">Usuários</TabsTrigger>
-        <TabsTrigger value="pessoas">Pessoas</TabsTrigger>
-      </TabsList>
-      <TabsContent value="tokens">{tokens}</TabsContent>
-      <TabsContent value="usuarios">{usuarios}</TabsContent>
-      <TabsContent value="pessoas">{pessoas}</TabsContent>
-    </Tabs>
+    <MembersTabsContext.Provider value={{ setValue: selectTab }}>
+      <Tabs
+        value={value}
+        onValueChange={(tab) => selectTab(tab as MembersTab)}
+        className="space-y-6"
+      >
+        <TabsList>
+          <TabsTrigger value="pessoas">Pessoas</TabsTrigger>
+          <TabsTrigger value="irmaos">Irmãos</TabsTrigger>
+          <TabsTrigger value="convites">Convites</TabsTrigger>
+        </TabsList>
+        <TabsContent value="pessoas">{pessoas}</TabsContent>
+        <TabsContent value="irmaos">{irmaos}</TabsContent>
+        <TabsContent value="convites" forceMount>
+          {convites}
+        </TabsContent>
+      </Tabs>
+    </MembersTabsContext.Provider>
   );
 }
