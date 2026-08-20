@@ -116,9 +116,27 @@ export const talksSaveSchema = z
     path: ["items"],
   });
 
+export const scheduledAssignmentSchema = z.object({
+  partId: z.string().min(1, "Identificador da parte é obrigatório."),
+  label: z.string().min(1, "Rótulo da designação é obrigatório."),
+  personId: z.string().min(1, "Pessoa designada é obrigatória."),
+});
+
+export const scheduledMeetingSchema = z.object({
+  weekStart: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Semana inválida."),
+  meetingType: z.enum(["MIDWEEK", "WEEKEND"]),
+  middleSong: z.number().int().positive().nullable(),
+  openingSong: z.number().int().positive().nullable(),
+  closingSong: z.number().int().positive().nullable(),
+  talkNumber: z.number().int().positive().nullable(),
+  articleId: z.string().min(1).nullable(),
+  assignments: z.array(scheduledAssignmentSchema),
+});
+
 export type WorkbookContentInput = z.infer<typeof workbookContentSchema>;
 export type MeetingSaveInput = z.infer<typeof meetingSaveSchema>;
 export type MeetingUpdateInput = z.infer<typeof meetingUpdateSchema>;
 export type WatchtowerSaveInput = z.infer<typeof watchtowerSaveSchema>;
 export type SongsSaveInput = z.infer<typeof songsSaveSchema>;
 export type TalksSaveInput = z.infer<typeof talksSaveSchema>;
+export type ScheduledMeetingInput = z.infer<typeof scheduledMeetingSchema>;

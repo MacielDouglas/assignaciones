@@ -1,4 +1,19 @@
 import type { WorkbookContent, WorkbookPart, WorkbookWeek } from "@/features/meetings/lib/jwpub";
+import type { WeekDay } from "@/generated/prisma/enums";
+
+const DAY_LABELS: Record<WeekDay, string> = {
+  MONDAY: "Segunda",
+  TUESDAY: "Terça",
+  WEDNESDAY: "Quarta",
+  THURSDAY: "Quinta",
+  FRIDAY: "Sexta",
+  SATURDAY: "Sábado",
+  SUNDAY: "Domingo",
+};
+
+export function weekdayLabel(day: WeekDay | null): string | null {
+  return day ? DAY_LABELS[day] : null;
+}
 
 export interface SongItem {
   number: number;
@@ -14,6 +29,8 @@ export interface WatchtowerArticleItem {
   id: string;
   title: string;
   dates: string | null;
+  openingSong?: number | null;
+  closingSong?: number | null;
 }
 
 export interface SchedulePerson {

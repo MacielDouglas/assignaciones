@@ -84,6 +84,7 @@ model Organization {
   talks            Talk[]
   inviteTokens     InviteToken[]
   meetingSchedule  MeetingSchedule?
+  scheduledMeetings ScheduledMeeting[]
   specialEvents    SpecialEvent[]
   cleaningSectors       CleaningSector[]
   cleaningWeekly        CleaningWeekly?
@@ -285,7 +286,8 @@ model WatchtowerArticle {
   closingSong  Int?
   order        Int    @default(0)
 
-  watchtower Watchtower @relation(fields: [watchtowerId], references: [id], onDelete: Cascade)
+  watchtower       Watchtower        @relation(fields: [watchtowerId], references: [id], onDelete: Cascade)
+  scheduledMeetings ScheduledMeeting[]
 
   @@index([watchtowerId])
 }
@@ -369,6 +371,7 @@ model Person {
   member  OrganizationMember?
   organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   inviteToken InviteToken?
+  scheduledAssignments ScheduledAssignment[]
 
   @@index([familiaId])
   @@index([organizationId])
@@ -435,4 +438,40 @@ model Verification {
   expiresAt  DateTime
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
+}
+
+model ScheduledMeeting {
+  id             String      @id @default(cuid())
+  organizationId String
+  weekStart      DateTime
+  meetingType    MeetingType @default(MIDWEEK)
+  middleSong     Int?
+  openingSong    Int?
+  closingSong    Int?
+  talkNumber     Int?
+  articleId      String?
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+
+  organization Organization          @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  article      WatchtowerArticle?    @relation(fields: [articleId], references: [id], onDelete: SetNull)
+  assignments  ScheduledAssignment[]
+
+  @@unique([organizationId, weekStart, meetingType])
+  @@index([organizationId])
+}
+
+model ScheduledAssignment {
+  id                 String   @id @default(cuid())
+  scheduledMeetingId String
+  partId             String
+  label              String
+  personId           String
+  createdAt          DateTime @default(now())
+
+  scheduledMeeting ScheduledMeeting @relation(fields: [scheduledMeetingId], references: [id], onDelete: Cascade)
+  person           Person           @relation(fields: [personId], references: [id], onDelete: Cascade)
+
+  @@unique([scheduledMeetingId, partId])
+  @@index([personId])
 }

@@ -42,6 +42,14 @@ export function isOwnerRole(role: MemberRole): boolean {
   return role === "OWNER";
 }
 
+export function isNavActive(pathname: string, href: string, itemHrefs: string[]): boolean {
+  if (pathname === href) return true;
+  if (!pathname.startsWith(`${href}/`)) return false;
+  return !itemHrefs.some(
+    (other) => other !== href && other.length > href.length && pathname.startsWith(`${other}/`),
+  );
+}
+
 export function getPrimaryNav(role: MemberRole): NavItem[] {
   if (isAdminRole(role)) {
     return [...PRIMARY_NAV_ITEMS, ...ADMIN_NAV_ITEMS];

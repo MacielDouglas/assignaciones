@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
-import { getPrimaryNav } from "@/components/dashboard-nav";
+import { getPrimaryNav, isNavActive } from "@/components/dashboard-nav";
 import type { MemberRole } from "@/generated/prisma/enums";
 import { cn } from "@/lib/utils";
 
@@ -43,7 +43,11 @@ export function BottomBar({ role }: { role: MemberRole }) {
         aria-label="Navegação inferior"
       >
         {items.map((item) => {
-          const active = pathname === item.href;
+          const active = isNavActive(
+            pathname,
+            item.href,
+            items.map((primary) => primary.href),
+          );
           return (
             <Link
               key={item.href}

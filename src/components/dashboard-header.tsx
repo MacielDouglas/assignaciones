@@ -3,7 +3,7 @@
 import { LogOut, Menu } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { getFullNav, getPrimaryNav, type NavItem } from "@/components/dashboard-nav";
+import { getFullNav, getPrimaryNav, isNavActive, type NavItem } from "@/components/dashboard-nav";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -17,12 +17,16 @@ import type { MemberRole } from "@/generated/prisma/enums";
 import { authClient } from "@/lib/auth-client";
 import { cn } from "@/lib/utils";
 
-function isActive(pathname: string, href: string): boolean {
-  return pathname === href;
-}
-
-function TabLink({ item, pathname }: { item: NavItem; pathname: string }) {
-  const active = isActive(pathname, item.href);
+function TabLink({
+  item,
+  pathname,
+  itemHrefs,
+}: {
+  item: NavItem;
+  pathname: string;
+  itemHrefs: string[];
+}) {
+  const active = isNavActive(pathname, item.href, itemHrefs);
   return (
     <Link
       href={item.href}
@@ -69,7 +73,12 @@ export function DashboardHeader({ role, displayName }: { role: MemberRole; displ
           aria-label="Navegação principal"
         >
           {primaryItems.map((item) => (
-            <TabLink key={item.href} item={item} pathname={pathname} />
+            <TabLink
+              key={item.href}
+              item={item}
+              pathname={pathname}
+              itemHrefs={primaryItems.map((primary) => primary.href)}
+            />
           ))}
         </nav>
 
@@ -98,7 +107,11 @@ export function DashboardHeader({ role, displayName }: { role: MemberRole; displ
               </DropdownMenuLabel>
               <DropdownMenuSeparator />
               {fullItems.map((item) => {
-                const active = isActive(pathname, item.href);
+                const active = isNavActive(
+                  pathname,
+                  item.href,
+                  fullItems.map((full) => full.href),
+                );
                 return (
                   <DropdownMenuItem key={item.href} asChild>
                     <Link href={item.href} className={cn(active && "bg-accent")}>
