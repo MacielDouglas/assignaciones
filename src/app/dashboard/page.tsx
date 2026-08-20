@@ -10,22 +10,11 @@
 import { headers } from "next/headers";
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { SignOutButton } from "@/features/auth/components/sign-out-button";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { isSubUser } from "@/lib/roles";
-
-function getInitials(name: string) {
-  return name
-    .split(" ")
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((part) => part[0]?.toUpperCase())
-    .join("");
-}
 
 const ROLE_LABEL: Record<string, string> = {
   OWNER: "Owner",
@@ -46,7 +35,6 @@ export default async function DashboardPage() {
     id: string;
     email: string | null;
     name: string | null;
-    image: string | null;
   };
   const subUser = isSubUser(user.email);
 
@@ -75,21 +63,7 @@ export default async function DashboardPage() {
   const role = membership?.role;
 
   return (
-    <main className="mx-auto w-full max-w-2xl flex-1 space-y-6 px-5 py-10 sm:px-6">
-      <header className="flex items-center justify-between gap-4">
-        <div className="flex min-w-0 items-center gap-4">
-          <Avatar className="size-12">
-            <AvatarImage src={user.image ?? undefined} alt={user.name ?? "Usuário"} />
-            <AvatarFallback>{getInitials(user.name ?? "U")}</AvatarFallback>
-          </Avatar>
-          <div className="min-w-0 space-y-1">
-            <p className="truncate text-sm font-medium">{user.name}</p>
-            <p className="text-muted-foreground truncate text-sm">{user.email}</p>
-          </div>
-        </div>
-        <SignOutButton />
-      </header>
-
+    <main className="mx-auto w-full max-w-4xl flex-1 space-y-6 px-5 py-10 sm:px-6">
       {subUser && (
         <Card>
           <CardHeader>

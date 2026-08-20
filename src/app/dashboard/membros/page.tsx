@@ -54,7 +54,7 @@ export default async function MembersPage() {
   });
 
   return (
-    <main className="mx-auto w-full max-w-3xl flex-1 space-y-6 px-5 py-10 sm:px-6">
+    <main className="mx-auto w-full max-w-4xl flex-1 space-y-6 px-5 py-10 sm:px-6">
       <div className="flex items-center gap-3">
         <Button variant="ghost" size="icon" asChild>
           <Link href="/dashboard" aria-label="Voltar ao painel">

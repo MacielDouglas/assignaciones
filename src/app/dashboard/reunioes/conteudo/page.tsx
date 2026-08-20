@@ -131,9 +131,9 @@ export default async function MeetingContentPage() {
   });
 
   return (
-    <main className="mx-auto w-full max-w-2xl flex-1 px-5 py-10 sm:px-6 sm:py-16">
+    <main className="mx-auto w-full max-w-4xl flex-1 px-5 py-10 sm:px-6 sm:py-16">
       <div className="space-y-8">
-        <header className="space-y-6">
+        <header className="space-y-3">
           <Button
             variant="ghost"
             size="sm"
