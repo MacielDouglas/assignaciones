@@ -9,9 +9,11 @@ import { findConflicts, formatDay } from "@/features/settings/lib/schedule";
 import type {
   CleaningSectorData,
   GeneralCleaningData,
+  GeneralSectorData,
   ScheduleData,
   SpecialEventData,
   WeeklyCleaningData,
+  WeeklySectorData,
 } from "@/features/settings/lib/types";
 import { EVENT_KIND_LABELS, EVENT_KIND_ORDER } from "@/features/settings/lib/types";
 import type { SpecialEventKind, WeekDay } from "@/generated/prisma/enums";
@@ -41,7 +43,9 @@ export function SettingsManager({
   initialEvents,
   initialSectors,
   initialWeekly,
+  initialWeeklySectors,
   initialGeneral,
+  initialGeneralSectors,
   today,
   canEdit,
 }: {
@@ -50,7 +54,9 @@ export function SettingsManager({
   initialEvents: SpecialEventData[];
   initialSectors: CleaningSectorData[];
   initialWeekly: WeeklyCleaningData;
+  initialWeeklySectors: WeeklySectorData[];
   initialGeneral: GeneralCleaningData[];
+  initialGeneralSectors: GeneralSectorData[];
   today: string;
   canEdit: boolean;
 }) {
@@ -263,7 +269,9 @@ export function SettingsManager({
           today={today}
           initialSectors={initialSectors}
           initialWeekly={initialWeekly}
+          initialWeeklySectors={initialWeeklySectors}
           initialGeneral={initialGeneral}
+          initialGeneralSectors={initialGeneralSectors}
           canEdit={canEdit}
         />
       </TabsContent>

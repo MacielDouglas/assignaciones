@@ -5,8 +5,10 @@ import { redirect } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { SettingsManager } from "@/features/settings/components/settings-manager";
 import {
+  getGeneralSectors,
   getSectors,
   getWeeklyCleaning,
+  getWeeklySectors,
   listGeneralCleanings,
 } from "@/features/settings/lib/cleaning-data";
 import { getSchedule, listEvents } from "@/features/settings/lib/events";
@@ -52,13 +54,16 @@ export default async function SettingsPage() {
 
   const canEdit = subUser || canManageSettings(role);
 
-  const [schedule, events, sectors, weekly, general] = await Promise.all([
-    getSchedule(organizationId),
-    listEvents(organizationId),
-    getSectors(organizationId),
-    getWeeklyCleaning(organizationId),
-    listGeneralCleanings(organizationId),
-  ]);
+  const [schedule, events, sectors, weekly, weeklySectors, general, generalSectors] =
+    await Promise.all([
+      getSchedule(organizationId),
+      listEvents(organizationId),
+      getSectors(organizationId),
+      getWeeklyCleaning(organizationId),
+      getWeeklySectors(organizationId),
+      listGeneralCleanings(organizationId),
+      getGeneralSectors(organizationId),
+    ]);
 
   const orgName = organizationNames?.find((org) => org.id === organizationId)?.name;
 
@@ -96,7 +101,9 @@ export default async function SettingsPage() {
         initialEvents={events}
         initialSectors={sectors}
         initialWeekly={weekly}
+        initialWeeklySectors={weeklySectors}
         initialGeneral={general}
+        initialGeneralSectors={generalSectors}
         today={new Date().toISOString()}
         canEdit={canEdit}
       />

@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { AllowedSex, SpecialEventKind, WeekDay } from "@/generated/prisma/enums";
+import { monthKeyOfIso, weekKeyOfIso } from "./lib/schedule";
 
 export const timeSchema = z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/, "Horário inválido.");
 
@@ -105,6 +106,11 @@ export const cleaningSectorSchema = z.object({
     .trim()
     .min(1, "Informe o nome do setor.")
     .max(40, "O nome deve ter no máximo 40 caracteres."),
+  task: z
+    .string()
+    .trim()
+    .min(1, "Informe a tarefa do setor.")
+    .max(2000, "A tarefa deve ter no máximo 2000 caracteres."),
   peopleNeeded: z
     .number()
     .int("Quantidade inválida.")
@@ -114,27 +120,56 @@ export const cleaningSectorSchema = z.object({
   allowedSex: z.nativeEnum(AllowedSex),
 });
 
+export const cleaningListSectorSchema = z.object({
+  name: z
+    .string()
+    .trim()
+    .min(1, "Informe o nome do setor.")
+    .max(40, "O nome deve ter no máximo 40 caracteres."),
+  task: z
+    .string()
+    .trim()
+    .min(1, "Informe a tarefa do setor.")
+    .max(2000, "A tarefa deve ter no máximo 2000 caracteres."),
+});
+
 export const cleaningWeeklySchema = z
   .object({
-    enabled: z.boolean(),
-    day: z.nativeEnum(WeekDay).nullable(),
-    time: timeSchema.nullable(),
+    time: timeSchema,
+    dates: z.array(dateSchema).min(1, "Selecione ao menos uma data para a Limpeza Semanal."),
   })
-  .refine((data) => !data.enabled || (data.day !== null && data.time !== null), {
-    message: "Informe o dia e o horário da Limpeza Semanal.",
-    path: ["day"],
-  })
-  .refine((data) => data.enabled || (data.day === null && data.time === null), {
-    message: "Desative a Limpeza Semanal para salvar.",
-    path: ["enabled"],
+  .refine((data) => new Set(data.dates.map(weekKeyOfIso)).size === data.dates.length, {
+    message: "Selecione apenas um dia por semana.",
+    path: ["dates"],
   });
 
-export const cleaningGeneralInputSchema = z.object({
+export const cleaningGeneralDateSchema = z.object({
+  date: dateSchema,
+  time: timeSchema,
+});
+
+export const cleaningGeneralInputSchema = z
+  .object({
+    dates: z
+      .array(cleaningGeneralDateSchema)
+      .min(1, "Selecione ao menos uma data para a Limpeza Geral."),
+    acknowledgedConflict: z.boolean().optional(),
+  })
+  .refine(
+    (data) =>
+      new Set(data.dates.map((entry) => monthKeyOfIso(entry.date))).size === data.dates.length,
+    { message: "Selecione apenas uma data por mês.", path: ["dates"] },
+  );
+
+export const cleaningGeneralUpdateSchema = z.object({
   date: dateSchema,
   time: timeSchema,
   acknowledgedConflict: z.boolean().optional(),
 });
 
 export type CleaningSectorInput = z.infer<typeof cleaningSectorSchema>;
+export type CleaningListSectorInput = z.infer<typeof cleaningListSectorSchema>;
 export type CleaningWeeklyInput = z.infer<typeof cleaningWeeklySchema>;
+export type CleaningGeneralDateInput = z.infer<typeof cleaningGeneralDateSchema>;
 export type CleaningGeneralInput = z.infer<typeof cleaningGeneralInputSchema>;
+export type CleaningGeneralUpdateInput = z.infer<typeof cleaningGeneralUpdateSchema>;

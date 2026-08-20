@@ -1,13 +1,15 @@
 "use client";
 
-import { Pencil, Plus, Trash2, Users } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
+import { Pencil, Plus, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import type { CleaningSectorData } from "@/features/settings/lib/types";
-import { ALLOWED_SEX_LABELS } from "@/features/settings/lib/types";
 
-export function CleaningSectorsCard({
+type Sector = { id: string; name: string; task: string };
+
+export function SectorListCard<T extends Sector>({
+  title,
+  description,
+  addLabel,
   sectors,
   canEdit,
   deletingId,
@@ -15,27 +17,27 @@ export function CleaningSectorsCard({
   onEdit,
   onDelete,
 }: {
-  sectors: CleaningSectorData[];
+  title: string;
+  description: string;
+  addLabel: string;
+  sectors: T[];
   canEdit: boolean;
   deletingId: string | null;
   onAdd: () => void;
-  onEdit: (sector: CleaningSectorData) => void;
-  onDelete: (sector: CleaningSectorData) => void;
+  onEdit: (sector: T) => void;
+  onDelete: (sector: T) => void;
 }) {
   return (
     <Card>
       <CardHeader>
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0 space-y-1">
-            <CardTitle>Limpeza Após Reunião</CardTitle>
-            <CardDescription>
-              Gerada automaticamente após cada reunião de meio de semana, fim de semana, comemoração
-              e discurso especial, exceto em semanas de congresso ou assembleias.
-            </CardDescription>
+            <CardTitle>{title}</CardTitle>
+            <CardDescription>{description}</CardDescription>
           </div>
           {canEdit && (
             <Button size="sm" variant="outline" onClick={onAdd} className="shrink-0">
-              <Plus /> Adicionar setor
+              <Plus /> {addLabel}
             </Button>
           )}
         </div>
@@ -51,19 +53,9 @@ export function CleaningSectorsCard({
               key={sector.id}
               className="flex items-start justify-between gap-3 rounded-lg border px-3 py-2.5"
             >
-              <div className="min-w-0 space-y-1.5">
+              <div className="min-w-0 space-y-1">
                 <p className="text-sm font-medium">{sector.name}</p>
                 <p className="text-muted-foreground text-sm">{sector.task}</p>
-                <div className="flex flex-wrap gap-1.5">
-                  <Badge variant="secondary">
-                    <Users className="mr-1 size-3" aria-hidden="true" />
-                    {sector.peopleNeeded} {sector.peopleNeeded === 1 ? "pessoa" : "pessoas"}
-                  </Badge>
-                  <Badge variant="secondary">{ALLOWED_SEX_LABELS[sector.allowedSex]}</Badge>
-                  <Badge variant="secondary">
-                    {sector.allowsYouth ? "Permite jovens" : "Somente adultos"}
-                  </Badge>
-                </div>
               </div>
               {canEdit && (
                 <div className="flex shrink-0 gap-1">

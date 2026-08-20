@@ -6,7 +6,7 @@ import type {
   SpecialEventData,
   WeeklyCleaningData,
 } from "./types";
-import { EVENT_KIND_LABELS, WEEKDAY_FULL_LABELS } from "./types";
+import { EVENT_KIND_LABELS } from "./types";
 
 export interface CleaningContext {
   schedule: ScheduleData;
@@ -30,6 +30,7 @@ export interface WeekCleaning {
   reasonLabel: string | null;
   afterMeeting: boolean;
   weekly: boolean;
+  weeklyDatesInWeek: string[];
   weeklyCancelled: boolean;
   general: GeneralCleaningData | null;
   blockedBy: string | null;
@@ -79,7 +80,10 @@ export function cleaningForWeek(weekStart: Date, ctx: CleaningContext): WeekClea
     ctx.general.find(
       (cleaning) => weekStartUtc(parseIsoDay(cleaning.date)).getTime() === weekStart.getTime(),
     ) ?? null;
-  const weekly = ctx.weekly.enabled;
+  const weeklyDatesInWeek = ctx.weekly.dates.filter(
+    (date) => weekStartUtc(parseIsoDay(date)).getTime() === weekStart.getTime(),
+  );
+  const weekly = weeklyDatesInWeek.length > 0;
   const weeklyCancelled = weekly && general !== null;
 
   return {
@@ -88,6 +92,7 @@ export function cleaningForWeek(weekStart: Date, ctx: CleaningContext): WeekClea
     reasonLabel: reason ? REASON_LABELS[reason] : null,
     afterMeeting,
     weekly,
+    weeklyDatesInWeek,
     weeklyCancelled,
     general,
     blockedBy: blocker ? EVENT_KIND_LABELS[blocker.kind].toLowerCase() : null,
@@ -102,18 +107,21 @@ export interface CleaningConflict {
 
 export function findCleaningConflicts(ctx: CleaningContext): CleaningConflict[] {
   const conflicts: CleaningConflict[] = [];
-  if (!ctx.weekly.enabled) return conflicts;
+  if (ctx.weekly.dates.length === 0) return conflicts;
 
   const currentWeek = weekStartUtc(ctx.today).getTime();
   for (const cleaning of ctx.general) {
     const week = weekStartUtc(parseIsoDay(cleaning.date));
     if (week.getTime() < currentWeek) continue;
+    const inSameWeek = ctx.weekly.dates.some(
+      (date) => weekStartUtc(parseIsoDay(date)).getTime() === week.getTime(),
+    );
+    if (!inSameWeek) continue;
     const weekLabel = formatDay(week);
     const dateLabel = formatDay(parseIsoDay(cleaning.date));
-    const dayLabel = WEEKDAY_FULL_LABELS[ctx.weekly.day ?? "MONDAY"];
     conflicts.push({
       id: cleaning.id,
-      message: `Limpeza Geral em ${dateLabel} na semana de ${weekLabel}: a Limpeza Semanal (${dayLabel}) será cancelada nessa semana.`,
+      message: `Limpeza Geral em ${dateLabel} na semana de ${weekLabel}: a Limpeza Semanal será cancelada nessa semana.`,
       level: "warning",
     });
     conflicts.push({

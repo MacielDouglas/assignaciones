@@ -96,6 +96,7 @@ export const LIMITED_PER_YEAR: Record<string, number> = {
 export interface CleaningSectorData {
   id: string;
   name: string;
+  task: string;
   peopleNeeded: number;
   allowsYouth: boolean;
   allowedSex: AllowedSex;
@@ -103,10 +104,25 @@ export interface CleaningSectorData {
   updatedAt: string;
 }
 
+export interface WeeklySectorData {
+  id: string;
+  name: string;
+  task: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface GeneralSectorData {
+  id: string;
+  name: string;
+  task: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface WeeklyCleaningData {
-  enabled: boolean;
-  day: WeekDay | null;
   time: string | null;
+  dates: string[];
 }
 
 export interface GeneralCleaningData {
@@ -126,7 +142,6 @@ export const ALLOWED_SEX_LABELS: Record<AllowedSex, string> = {
 export const ALLOWED_SEX_ORDER: AllowedSex[] = ["MALE", "FEMALE", "BOTH"];
 
 export const EMPTY_WEEKLY_CLEANING: WeeklyCleaningData = {
-  enabled: false,
-  day: null,
   time: null,
+  dates: [],
 };

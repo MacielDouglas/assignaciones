@@ -1,8 +1,9 @@
 "use client";
 
+import { X } from "lucide-react";
 import { useState } from "react";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
 import {
   Dialog,
   DialogContent,
@@ -13,35 +14,40 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { formatDay, parseIsoDay } from "@/features/settings/lib/schedule";
 import type { WeeklyCleaningData } from "@/features/settings/lib/types";
-import type { WeekDay } from "@/generated/prisma/enums";
 import type { CleaningWeeklyInput } from "../schemas";
-import { DayPicker } from "./day-picker";
+import { CleaningDatePicker } from "./cleaning-date-picker";
 
 export function WeeklyCleaningDialog({
   weekly,
+  scheduled,
   saving,
   onSave,
   onClose,
 }: {
   weekly: WeeklyCleaningData;
+  scheduled: string[];
   saving: boolean;
   onSave: (payload: CleaningWeeklyInput) => Promise<void>;
   onClose: () => void;
 }) {
-  const [enabled, setEnabled] = useState(weekly.enabled);
-  const [day, setDay] = useState<WeekDay>(weekly.day ?? "SATURDAY");
+  const [dates, setDates] = useState<string[]>(weekly.dates);
   const [time, setTime] = useState(weekly.time ?? "09:00");
   const [clientError, setClientError] = useState<string | null>(null);
 
   function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
-    if (enabled && time === "") {
+    if (dates.length === 0) {
+      setClientError("Selecione ao menos uma data no calendário.");
+      return;
+    }
+    if (time === "") {
       setClientError("Informe o horário da Limpeza Semanal.");
       return;
     }
     setClientError(null);
-    onSave(enabled ? { enabled: true, day, time } : { enabled: false, day: null, time: null });
+    onSave({ time, dates });
   }
 
   return (
@@ -54,27 +60,45 @@ export function WeeklyCleaningDialog({
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>Limpeza Semanal</DialogTitle>
-          <DialogDescription>Configure a limpeza recorrente da semana.</DialogDescription>
+          <DialogDescription>
+            Escolha no calendário as datas em que a limpeza ocorrerá. Apenas um dia por semana.
+          </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="flex items-center gap-2">
-            <Checkbox
-              id="weekly-enabled"
-              checked={enabled}
-              onCheckedChange={(checked) => {
-                setEnabled(checked === true);
-                setClientError(null);
-              }}
-              disabled={saving}
-            />
-            <Label htmlFor="weekly-enabled" className="text-sm font-normal">
-              Ativada
-            </Label>
-          </div>
-
           <div className="space-y-2">
-            <Label>Dia da semana</Label>
-            <DayPicker value={day} onChange={setDay} disabled={saving || !enabled} />
+            <Label>Datas</Label>
+            <div className="flex justify-center rounded-lg border">
+              <CleaningDatePicker
+                mode="weekly"
+                selected={dates}
+                scheduled={scheduled}
+                onSelect={(picked) => {
+                  setDates(picked);
+                  setClientError(null);
+                }}
+              />
+            </div>
+            {dates.length > 0 && (
+              <div className="flex flex-wrap gap-1.5">
+                {dates.map((date) => (
+                  <Badge key={date} variant="secondary" className="gap-1">
+                    {formatDay(parseIsoDay(date))}
+                    <button
+                      type="button"
+                      aria-label={`Remover ${formatDay(parseIsoDay(date))}`}
+                      disabled={saving}
+                      onClick={() => {
+                        setDates((current) => current.filter((item) => item !== date));
+                        setClientError(null);
+                      }}
+                      className="text-muted-foreground hover:text-foreground"
+                    >
+                      <X className="size-3" aria-hidden="true" />
+                    </button>
+                  </Badge>
+                ))}
+              </div>
+            )}
           </div>
 
           <div className="space-y-2">
@@ -87,14 +111,10 @@ export function WeeklyCleaningDialog({
                 setTime(event.target.value);
                 setClientError(null);
               }}
-              disabled={saving || !enabled}
+              disabled={saving}
               className="w-full"
             />
           </div>
-
-          {!enabled && (
-            <p className="text-muted-foreground text-sm">A Limpeza Semanal ficará desativada.</p>
-          )}
 
           {clientError && <p className="text-destructive text-sm">{clientError}</p>}
 

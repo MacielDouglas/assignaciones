@@ -85,9 +85,12 @@ model Organization {
   inviteTokens     InviteToken[]
   meetingSchedule  MeetingSchedule?
   specialEvents    SpecialEvent[]
-  cleaningSectors  CleaningSector[]
-  cleaningWeekly   CleaningWeekly?
-  cleaningGeneral  CleaningGeneral[]
+  cleaningSectors       CleaningSector[]
+  cleaningWeekly        CleaningWeekly?
+  cleaningWeeklyDates   CleaningWeeklyDate[]
+  cleaningWeeklySectors CleaningWeeklySector[]
+  cleaningGeneral       CleaningGeneral[]
+  cleaningGeneralSectors CleaningGeneralSector[]
 }
 
 model OrganizationMember {
@@ -182,6 +185,7 @@ model CleaningSector {
   id             String     @id @default(cuid())
   organizationId String
   name           String
+  task           String     @default("")
   peopleNeeded   Int
   allowsYouth    Boolean    @default(true)
   allowedSex     AllowedSex @default(BOTH)
@@ -193,16 +197,52 @@ model CleaningSector {
   @@index([organizationId])
 }
 
-model CleaningWeekly {
+model CleaningWeeklySector {
   id             String   @id @default(cuid())
-  organizationId String   @unique
-  enabled        Boolean  @default(false)
-  day            WeekDay?
-  time           String?
+  organizationId String
+  name           String
+  task           String   @default("")
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 
   organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId])
+}
+
+model CleaningGeneralSector {
+  id             String   @id @default(cuid())
+  organizationId String
+  name           String
+  task           String   @default("")
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId])
+}
+
+model CleaningWeekly {
+  id             String   @id @default(cuid())
+  organizationId String   @unique
+  time           String
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+}
+
+model CleaningWeeklyDate {
+  id             String   @id @default(cuid())
+  organizationId String
+  date           DateTime
+  createdAt      DateTime @default(now())
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@unique([organizationId, date])
+  @@index([organizationId])
 }
 
 model CleaningGeneral {

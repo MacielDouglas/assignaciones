@@ -8,17 +8,27 @@ import { formatDay } from "@/features/settings/lib/schedule";
 import type {
   CleaningSectorData,
   GeneralCleaningData,
+  GeneralSectorData,
   ScheduleData,
   SpecialEventData,
   WeeklyCleaningData,
+  WeeklySectorData,
 } from "@/features/settings/lib/types";
 import { apiFetch, getErrorMessage } from "@/lib/api-client";
-import type { CleaningGeneralInput, CleaningSectorInput, CleaningWeeklyInput } from "../schemas";
+import type {
+  CleaningGeneralInput,
+  CleaningGeneralUpdateInput,
+  CleaningListSectorInput,
+  CleaningSectorInput,
+  CleaningWeeklyInput,
+} from "../schemas";
 import { CleaningPreview } from "./cleaning-preview";
 import { CleaningSectorsCard } from "./cleaning-sectors-card";
 import { GeneralCleaningCard } from "./general-cleaning-card";
 import { GeneralCleaningDialog } from "./general-cleaning-dialog";
 import { SectorDialog } from "./sector-dialog";
+import { SectorListCard } from "./sector-list-card";
+import { SectorTaskDialog } from "./sector-task-dialog";
 import { WeeklyCleaningCard } from "./weekly-cleaning-card";
 import { WeeklyCleaningDialog } from "./weekly-cleaning-dialog";
 
@@ -29,7 +39,9 @@ export function CleaningManager({
   today,
   initialSectors,
   initialWeekly,
+  initialWeeklySectors,
   initialGeneral,
+  initialGeneralSectors,
   canEdit,
 }: {
   organizationId: string;
@@ -38,18 +50,31 @@ export function CleaningManager({
   today: string;
   initialSectors: CleaningSectorData[];
   initialWeekly: WeeklyCleaningData;
+  initialWeeklySectors: WeeklySectorData[];
   initialGeneral: GeneralCleaningData[];
+  initialGeneralSectors: GeneralSectorData[];
   canEdit: boolean;
 }) {
   const [sectors, setSectors] = useState<CleaningSectorData[]>(initialSectors);
   const [weekly, setWeekly] = useState<WeeklyCleaningData>(initialWeekly);
+  const [weeklySectors, setWeeklySectors] = useState<WeeklySectorData[]>(initialWeeklySectors);
   const [general, setGeneral] = useState<GeneralCleaningData[]>(initialGeneral);
+  const [generalSectors, setGeneralSectors] = useState<GeneralSectorData[]>(initialGeneralSectors);
   const [editingSector, setEditingSector] = useState<CleaningSectorData | "new" | null>(null);
   const [editingWeekly, setEditingWeekly] = useState(false);
+  const [editingWeeklySector, setEditingWeeklySector] = useState<WeeklySectorData | "new" | null>(
+    null,
+  );
   const [editingGeneral, setEditingGeneral] = useState<GeneralCleaningData | "new" | null>(null);
+  const [editingGeneralSector, setEditingGeneralSector] = useState<
+    GeneralSectorData | "new" | null
+  >(null);
   const [saving, setSaving] = useState(false);
   const [deletingSectorId, setDeletingSectorId] = useState<string | null>(null);
+  const [deletingWeeklySectorId, setDeletingWeeklySectorId] = useState<string | null>(null);
+  const [deletingWeekly, setDeletingWeekly] = useState(false);
   const [deletingGeneralId, setDeletingGeneralId] = useState<string | null>(null);
+  const [deletingGeneralSectorId, setDeletingGeneralSectorId] = useState<string | null>(null);
 
   const context: CleaningContext = useMemo(
     () => ({
@@ -64,6 +89,13 @@ export function CleaningManager({
 
   const conflicts = useMemo(() => findCleaningConflicts(context), [context]);
   const previewWeeks = useMemo(() => cleaningPreview(context), [context]);
+
+  const weeklyActive = weekly.time !== null && weekly.dates.length > 0;
+
+  const scheduledDates = useMemo(
+    () => [...weekly.dates, ...general.map((item) => item.date)],
+    [weekly.dates, general],
+  );
 
   async function handleSaveSector(payload: CleaningSectorInput) {
     setSaving(true);
@@ -125,23 +157,90 @@ export function CleaningManager({
     }
   }
 
-  async function handleSaveGeneral(payload: CleaningGeneralInput) {
+  async function handleDisableWeekly() {
+    if (!confirm("Desativar a Limpeza Semanal? As datas programadas serão removidas.")) return;
+    setDeletingWeekly(true);
+    try {
+      await apiFetch(`/api/organizations/${organizationId}/settings/cleaning/weekly`, {
+        method: "DELETE",
+      });
+      setWeekly({ time: null, dates: [] });
+      toast.success("Limpeza Semanal desativada.");
+    } catch (error) {
+      toast.error(getErrorMessage(error));
+    } finally {
+      setDeletingWeekly(false);
+    }
+  }
+
+  async function handleSaveWeeklySector(payload: CleaningListSectorInput) {
     setSaving(true);
     try {
-      const { cleaning } = await apiFetch<{ cleaning: GeneralCleaningData }>(
-        editingGeneral && editingGeneral !== "new"
-          ? `/api/organizations/${organizationId}/settings/cleaning/general/${editingGeneral.id}`
-          : `/api/organizations/${organizationId}/settings/cleaning/general`,
+      const { sector } = await apiFetch<{ sector: WeeklySectorData }>(
+        editingWeeklySector && editingWeeklySector !== "new"
+          ? `/api/organizations/${organizationId}/settings/cleaning/weekly-sectors/${editingWeeklySector.id}`
+          : `/api/organizations/${organizationId}/settings/cleaning/weekly-sectors`,
         {
-          method: editingGeneral && editingGeneral !== "new" ? "PATCH" : "POST",
+          method: editingWeeklySector && editingWeeklySector !== "new" ? "PATCH" : "POST",
           body: JSON.stringify(payload),
         },
       );
-      setGeneral((current) =>
-        [...current.filter((item) => item.id !== cleaning.id), cleaning].sort((a, b) =>
-          a.date.localeCompare(b.date),
-        ),
+      setWeeklySectors((current) =>
+        editingWeeklySector && editingWeeklySector !== "new"
+          ? current.map((item) => (item.id === sector.id ? sector : item))
+          : [...current, sector],
       );
+      setEditingWeeklySector(null);
+      toast.success("Setor salvo!");
+    } catch (error) {
+      toast.error(getErrorMessage(error));
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function handleDeleteWeeklySector(sector: WeeklySectorData) {
+    if (!confirm(`Excluir o setor "${sector.name}" da Limpeza Semanal?`)) return;
+    setDeletingWeeklySectorId(sector.id);
+    try {
+      await apiFetch(
+        `/api/organizations/${organizationId}/settings/cleaning/weekly-sectors/${sector.id}`,
+        { method: "DELETE" },
+      );
+      setWeeklySectors((current) => current.filter((item) => item.id !== sector.id));
+      toast.success("Setor excluído.");
+    } catch (error) {
+      toast.error(getErrorMessage(error));
+    } finally {
+      setDeletingWeeklySectorId(null);
+    }
+  }
+
+  async function handleSaveGeneral(payload: CleaningGeneralInput | CleaningGeneralUpdateInput) {
+    setSaving(true);
+    try {
+      if (editingGeneral && editingGeneral !== "new") {
+        const { cleaning } = await apiFetch<{ cleaning: GeneralCleaningData }>(
+          `/api/organizations/${organizationId}/settings/cleaning/general/${editingGeneral.id}`,
+          { method: "PATCH", body: JSON.stringify(payload) },
+        );
+        setGeneral((current) =>
+          [...current.filter((item) => item.id !== cleaning.id), cleaning].sort((a, b) =>
+            a.date.localeCompare(b.date),
+          ),
+        );
+      } else {
+        const { cleanings } = await apiFetch<{ cleanings: GeneralCleaningData[] }>(
+          `/api/organizations/${organizationId}/settings/cleaning/general`,
+          { method: "POST", body: JSON.stringify(payload) },
+        );
+        setGeneral((current) =>
+          [
+            ...current.filter((item) => !cleanings.some((c) => c.id === item.id)),
+            ...cleanings,
+          ].sort((a, b) => a.date.localeCompare(b.date)),
+        );
+      }
       setEditingGeneral(null);
       toast.success("Limpeza Geral salva!");
     } catch (error) {
@@ -168,6 +267,49 @@ export function CleaningManager({
     }
   }
 
+  async function handleSaveGeneralSector(payload: CleaningListSectorInput) {
+    setSaving(true);
+    try {
+      const { sector } = await apiFetch<{ sector: GeneralSectorData }>(
+        editingGeneralSector && editingGeneralSector !== "new"
+          ? `/api/organizations/${organizationId}/settings/cleaning/general-sectors/${editingGeneralSector.id}`
+          : `/api/organizations/${organizationId}/settings/cleaning/general-sectors`,
+        {
+          method: editingGeneralSector && editingGeneralSector !== "new" ? "PATCH" : "POST",
+          body: JSON.stringify(payload),
+        },
+      );
+      setGeneralSectors((current) =>
+        editingGeneralSector && editingGeneralSector !== "new"
+          ? current.map((item) => (item.id === sector.id ? sector : item))
+          : [...current, sector],
+      );
+      setEditingGeneralSector(null);
+      toast.success("Setor salvo!");
+    } catch (error) {
+      toast.error(getErrorMessage(error));
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function handleDeleteGeneralSector(sector: GeneralSectorData) {
+    if (!confirm(`Excluir o setor "${sector.name}" da Limpeza Geral?`)) return;
+    setDeletingGeneralSectorId(sector.id);
+    try {
+      await apiFetch(
+        `/api/organizations/${organizationId}/settings/cleaning/general-sectors/${sector.id}`,
+        { method: "DELETE" },
+      );
+      setGeneralSectors((current) => current.filter((item) => item.id !== sector.id));
+      toast.success("Setor excluído.");
+    } catch (error) {
+      toast.error(getErrorMessage(error));
+    } finally {
+      setDeletingGeneralSectorId(null);
+    }
+  }
+
   return (
     <div className="space-y-4">
       <CleaningSectorsCard
@@ -182,8 +324,23 @@ export function CleaningManager({
         weekly={weekly}
         conflicts={conflicts}
         canEdit={canEdit}
+        deleting={deletingWeekly}
         onConfigure={() => setEditingWeekly(true)}
+        onDisable={handleDisableWeekly}
       />
+      {weeklyActive && (
+        <SectorListCard
+          title="Setores da Limpeza Semanal"
+          description="Setores e tarefas executados nas datas programadas da limpeza semanal."
+          addLabel="Adicionar setor"
+          sectors={weeklySectors}
+          canEdit={canEdit}
+          deletingId={deletingWeeklySectorId}
+          onAdd={() => setEditingWeeklySector("new")}
+          onEdit={(sector) => setEditingWeeklySector(sector)}
+          onDelete={handleDeleteWeeklySector}
+        />
+      )}
       <GeneralCleaningCard
         cleaning={general}
         conflicts={conflicts}
@@ -193,7 +350,20 @@ export function CleaningManager({
         onEdit={(item) => setEditingGeneral(item)}
         onDelete={handleDeleteGeneral}
       />
-      <CleaningPreview weeks={previewWeeks} weeklyDay={weekly.day} weeklyTime={weekly.time} />
+      {general.length > 0 && (
+        <SectorListCard
+          title="Setores da Limpeza Geral"
+          description="Setores e tarefas executados nas datas programadas da limpeza geral."
+          addLabel="Adicionar setor"
+          sectors={generalSectors}
+          canEdit={canEdit}
+          deletingId={deletingGeneralSectorId}
+          onAdd={() => setEditingGeneralSector("new")}
+          onEdit={(sector) => setEditingGeneralSector(sector)}
+          onDelete={handleDeleteGeneralSector}
+        />
+      )}
+      <CleaningPreview weeks={previewWeeks} weekly={weekly} />
 
       {editingSector && (
         <SectorDialog
@@ -206,18 +376,40 @@ export function CleaningManager({
       {editingWeekly && (
         <WeeklyCleaningDialog
           weekly={weekly}
+          scheduled={scheduledDates}
           saving={saving}
           onSave={handleSaveWeekly}
           onClose={() => setEditingWeekly(false)}
         />
       )}
+      {editingWeeklySector && (
+        <SectorTaskDialog
+          sector={editingWeeklySector === "new" ? null : editingWeeklySector}
+          title="Limpeza Semanal"
+          description="Configure os setores e tarefas da limpeza semanal."
+          saving={saving}
+          onSave={handleSaveWeeklySector}
+          onClose={() => setEditingWeeklySector(null)}
+        />
+      )}
       {editingGeneral && (
         <GeneralCleaningDialog
           cleaning={editingGeneral === "new" ? null : editingGeneral}
-          weeklyEnabled={weekly.enabled}
+          weekly={weekly}
+          scheduled={scheduledDates}
           saving={saving}
           onSave={handleSaveGeneral}
           onClose={() => setEditingGeneral(null)}
+        />
+      )}
+      {editingGeneralSector && (
+        <SectorTaskDialog
+          sector={editingGeneralSector === "new" ? null : editingGeneralSector}
+          title="Limpeza Geral"
+          description="Configure os setores e tarefas da limpeza geral."
+          saving={saving}
+          onSave={handleSaveGeneralSector}
+          onClose={() => setEditingGeneralSector(null)}
         />
       )}
     </div>

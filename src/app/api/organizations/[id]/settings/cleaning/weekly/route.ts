@@ -1,4 +1,8 @@
-import { getWeeklyCleaning, saveWeeklyCleaning } from "@/features/settings/lib/cleaning-data";
+import {
+  deleteWeeklyCleaning,
+  getWeeklyCleaning,
+  saveWeeklyCleaning,
+} from "@/features/settings/lib/cleaning-data";
 import { cleaningWeeklySchema } from "@/features/settings/schemas";
 import { getErrorMessage, jsonError, jsonOk } from "@/lib/api";
 import { requireOrganizationAccess } from "@/lib/organizations";
@@ -46,6 +50,27 @@ export async function PUT(
 
     const weekly = await saveWeeklyCleaning(id, parsed.data);
     return jsonOk(weekly);
+  } catch (error) {
+    return jsonError(500, getErrorMessage(error));
+  }
+}
+
+export async function DELETE(
+  request: Request,
+  ctx: RouteContext<"/api/organizations/[id]/settings/cleaning/weekly">,
+) {
+  try {
+    const { id } = await ctx.params;
+    const user = await getSessionUser(request);
+    if (!user) return jsonError(401, "Não autenticado.");
+
+    const membership = await requireOrganizationAccess(id, user.id, user.isSubUser);
+    if (!membership || !canManageSettings(membership.role)) {
+      return jsonError(403, "Apenas owners e admins podem desativar a Limpeza Semanal.");
+    }
+
+    await deleteWeeklyCleaning(id);
+    return jsonOk({ deleted: true });
   } catch (error) {
     return jsonError(500, getErrorMessage(error));
   }

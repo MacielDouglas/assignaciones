@@ -1,8 +1,5 @@
-import {
-  createGeneralCleanings,
-  listGeneralCleanings,
-} from "@/features/settings/lib/cleaning-data";
-import { cleaningGeneralInputSchema } from "@/features/settings/schemas";
+import { getGeneralSectors, upsertGeneralSector } from "@/features/settings/lib/cleaning-data";
+import { cleaningListSectorSchema } from "@/features/settings/schemas";
 import { getErrorMessage, jsonError, jsonOk } from "@/lib/api";
 import { requireOrganizationAccess } from "@/lib/organizations";
 import { canManageSettings } from "@/lib/roles";
@@ -10,7 +7,7 @@ import { getSessionUser } from "@/lib/session";
 
 export async function GET(
   request: Request,
-  ctx: RouteContext<"/api/organizations/[id]/settings/cleaning/general">,
+  ctx: RouteContext<"/api/organizations/[id]/settings/cleaning/general-sectors">,
 ) {
   try {
     const { id } = await ctx.params;
@@ -20,8 +17,8 @@ export async function GET(
     const membership = await requireOrganizationAccess(id, user.id, user.isSubUser);
     if (!membership) return jsonError(403, "Você não pertence a esta organização.");
 
-    const cleaning = await listGeneralCleanings(id);
-    return jsonOk(cleaning);
+    const sectors = await getGeneralSectors(id);
+    return jsonOk(sectors);
   } catch (error) {
     return jsonError(500, getErrorMessage(error));
   }
@@ -29,7 +26,7 @@ export async function GET(
 
 export async function POST(
   request: Request,
-  ctx: RouteContext<"/api/organizations/[id]/settings/cleaning/general">,
+  ctx: RouteContext<"/api/organizations/[id]/settings/cleaning/general-sectors">,
 ) {
   try {
     const { id } = await ctx.params;
@@ -38,19 +35,19 @@ export async function POST(
 
     const membership = await requireOrganizationAccess(id, user.id, user.isSubUser);
     if (!membership || !canManageSettings(membership.role)) {
-      return jsonError(403, "Apenas owners e admins podem cadastrar Limpezas Gerais.");
+      return jsonError(403, "Apenas owners e admins podem cadastrar setores de limpeza.");
     }
 
     const body = await request.json().catch(() => null);
-    const parsed = cleaningGeneralInputSchema.safeParse(body);
+    const parsed = cleaningListSectorSchema.safeParse(body);
     if (!parsed.success) {
       return jsonError(400, parsed.error.issues[0]?.message ?? "Dados inválidos.");
     }
 
-    const result = await createGeneralCleanings(id, parsed.data);
-    if (result.error) return jsonError(400, result.error);
+    const result = await upsertGeneralSector(id, parsed.data);
+    if (!result.sector) return jsonError(400, result.error ?? "Erro ao salvar.");
 
-    return jsonOk({ cleanings: result.cleanings }, 201);
+    return jsonOk({ sector: result.sector }, 201);
   } catch (error) {
     return jsonError(500, getErrorMessage(error));
   }

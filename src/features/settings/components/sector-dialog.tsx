@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import type { CleaningSectorData } from "@/features/settings/lib/types";
 import { ALLOWED_SEX_LABELS, ALLOWED_SEX_ORDER } from "@/features/settings/lib/types";
 import type { AllowedSex } from "@/generated/prisma/enums";
@@ -31,6 +32,7 @@ export function SectorDialog({
   onClose: () => void;
 }) {
   const [name, setName] = useState(sector?.name ?? "");
+  const [task, setTask] = useState(sector?.task ?? "");
   const [peopleNeeded, setPeopleNeeded] = useState(String(sector?.peopleNeeded ?? ""));
   const [allowsYouth, setAllowsYouth] = useState(sector?.allowsYouth ?? true);
   const [allowedSex, setAllowedSex] = useState<AllowedSex>(sector?.allowedSex ?? "BOTH");
@@ -43,12 +45,16 @@ export function SectorDialog({
       setClientError("Informe o nome do setor.");
       return;
     }
+    if (task.trim() === "") {
+      setClientError("Informe a tarefa do setor.");
+      return;
+    }
     if (!Number.isInteger(people) || people < 1 || people > 50) {
       setClientError("Informe a quantidade de pessoas (de 1 a 50).");
       return;
     }
     setClientError(null);
-    onSave({ name: name.trim(), peopleNeeded: people, allowsYouth, allowedSex });
+    onSave({ name: name.trim(), task: task.trim(), peopleNeeded: people, allowsYouth, allowedSex });
   }
 
   return (
@@ -74,6 +80,22 @@ export function SectorDialog({
                 setClientError(null);
               }}
               placeholder="Ex.: Banheiro Masculino"
+              disabled={saving}
+              className="w-full"
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="sector-task">Tarefa</Label>
+            <Textarea
+              id="sector-task"
+              value={task}
+              onChange={(event) => {
+                setTask(event.target.value);
+                setClientError(null);
+              }}
+              placeholder="Descreva o que deve ser feito neste setor."
+              rows={5}
               disabled={saving}
               className="w-full"
             />

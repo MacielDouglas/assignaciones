@@ -3,18 +3,15 @@
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import type { WeekCleaning } from "@/features/settings/lib/cleaning";
-import { formatDay } from "@/features/settings/lib/schedule";
-import { WEEKDAY_FULL_LABELS } from "@/features/settings/lib/types";
-import type { WeekDay } from "@/generated/prisma/enums";
+import { formatDay, parseIsoDay } from "@/features/settings/lib/schedule";
+import type { WeeklyCleaningData } from "@/features/settings/lib/types";
 
 export function CleaningPreview({
   weeks,
-  weeklyDay,
-  weeklyTime,
+  weekly,
 }: {
   weeks: WeekCleaning[];
-  weeklyDay: WeekDay | null;
-  weeklyTime: string | null;
+  weekly: WeeklyCleaningData;
 }) {
   return (
     <Card>
@@ -32,22 +29,24 @@ export function CleaningPreview({
           } else if (week.afterMeeting && week.reasonLabel) {
             badges.push(`Limpeza após reunião (${week.reasonLabel})`);
           }
-          if (week.weekly && !week.weeklyCancelled && weeklyDay && weeklyTime) {
-            badges.push(`Limpeza Semanal ${WEEKDAY_FULL_LABELS[weeklyDay]} às ${weeklyTime}`);
+          if (week.weekly && !week.weeklyCancelled && weekly.time) {
+            for (const date of week.weeklyDatesInWeek) {
+              badges.push(`Limpeza Semanal ${formatDay(parseIsoDay(date))} às ${weekly.time}`);
+            }
           }
-          if (week.weekly && week.weeklyCancelled && weeklyDay && weeklyTime) {
+          if (week.weekly && week.weeklyCancelled && weekly.time) {
             badges.push("Semanal cancelada (Limpeza Geral)");
           }
           if (week.general) {
             badges.push(
-              `Limpeza Geral ${formatDay(new Date(`${week.general.date}T00:00:00.000Z`))} às ${week.general.time}`,
+              `Limpeza Geral ${formatDay(parseIsoDay(week.general.date))} às ${week.general.time}`,
             );
           }
 
           return (
             <div key={week.weekStart} className="rounded-lg border px-3 py-2.5">
               <p className="text-sm font-medium">
-                Semana de {formatDay(new Date(`${week.weekStart}T00:00:00.000Z`))}
+                Semana de {formatDay(parseIsoDay(week.weekStart))}
               </p>
               <div className="mt-1.5 flex flex-wrap gap-1.5">
                 {badges.length === 0 ? (
