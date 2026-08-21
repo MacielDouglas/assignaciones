@@ -133,7 +133,7 @@ export default async function MeetingContentPage() {
   return (
     <main className="mx-auto w-full max-w-4xl flex-1 px-5 py-10 sm:px-6 sm:py-16">
       <div className="space-y-8">
-        <header className="space-y-3">
+        <header className="space-y-1">
           <Button
             variant="ghost"
             size="sm"
@@ -146,7 +146,7 @@ export default async function MeetingContentPage() {
             </Link>
           </Button>
           <div className="space-y-2">
-            <h1 className="text-3xl font-semibold tracking-tight text-balance sm:text-4xl">
+            <h1 className="text-3xl font-bold tracking-tight text-balance sm:text-4xl">
               Conteúdo das reuniões
             </h1>
             <p className="text-muted-foreground max-w-md text-base">

@@ -79,7 +79,7 @@ export function MeetingScheduleTable({
   return (
     <Card>
       <CardHeader className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-        <CardTitle className="text-lg">{title}</CardTitle>
+        <CardTitle className="text-xl tracking-tight">{title}</CardTitle>
         <div className="flex flex-wrap items-center gap-2">
           <Badge variant="secondary">
             {dayLabel} · {timeLabel}

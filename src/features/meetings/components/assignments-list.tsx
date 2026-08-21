@@ -49,7 +49,7 @@ export function AssignmentsList({
   const renderSections = (title: string, sections: MeetingSection[]) => (
     <Card>
       <CardHeader>
-        <CardTitle className="text-lg">{title}</CardTitle>
+        <CardTitle className="text-xl tracking-tight">{title}</CardTitle>
       </CardHeader>
       <CardContent className="p-0">
         {sections.map((section) => {

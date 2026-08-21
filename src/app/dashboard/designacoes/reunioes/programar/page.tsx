@@ -149,7 +149,7 @@ export default async function ProgramMeetingPage({
             </Link>
           </Button>
           <div className="space-y-2">
-            <h1 className="text-3xl font-semibold tracking-tight text-balance sm:text-4xl">
+            <h1 className="text-3xl font-bold tracking-tight text-balance sm:text-4xl">
               Programar reunião
             </h1>
             <p className="text-muted-foreground max-w-md text-base">

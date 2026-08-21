@@ -56,16 +56,19 @@ export default async function MeetingsPage({
   return (
     <main className="mx-auto w-full max-w-4xl flex-1 space-y-8 px-5 py-10 sm:px-6 sm:py-16">
       <header className="space-y-1">
-        <Button variant="ghost" size="sm" className="-ml-2 w-fit" asChild>
+        <Button
+          variant="ghost"
+          size="sm"
+          className="rounded-full text-muted-foreground hover:text-foreground"
+          asChild
+        >
           <Link href="/dashboard/designacoes">
             <ArrowLeft aria-hidden="true" />
             Designações
           </Link>
         </Button>
         <div className="space-y-2">
-          <h1 className="text-3xl font-semibold tracking-tight text-balance sm:text-4xl">
-            Reuniões
-          </h1>
+          <h1 className="text-3xl font-bold tracking-tight text-balance sm:text-4xl">Reuniões</h1>
           <p className="text-muted-foreground max-w-md text-base">
             Programação semanal gerada a partir da apostila e das configurações.
           </p>

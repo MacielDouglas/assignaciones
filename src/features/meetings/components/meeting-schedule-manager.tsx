@@ -368,8 +368,8 @@ export function MeetingScheduleManager({
           {midweekWorkbooks.length === 0 && (
             <Card>
               <CardContent className="flex flex-col items-center gap-3 py-10 text-center">
-                <div className="bg-primary/10 text-primary flex size-11 items-center justify-center rounded-xl">
-                  <BookOpen className="size-5" aria-hidden="true" />
+                <div className="bg-primary/10 text-primary flex size-14 items-center justify-center rounded-2xl">
+                  <BookOpen className="size-6" aria-hidden="true" />
                 </div>
                 <div className="space-y-1">
                   <p className="text-sm font-medium">Nenhuma apostila importada</p>
@@ -420,7 +420,14 @@ export function MeetingScheduleManager({
               ))}
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <p className="text-muted-foreground text-sm">
-                  Duração total: {midweekSummary.total} min · término às {midweekSummary.endTime}
+                  Duração total:{" "}
+                  <span className="text-foreground font-medium tabular-nums">
+                    {midweekSummary.total} min
+                  </span>{" "}
+                  · término às{" "}
+                  <span className="text-foreground font-medium tabular-nums">
+                    {midweekSummary.endTime}
+                  </span>
                 </p>
                 {canEdit && (
                   <Button
@@ -461,7 +468,14 @@ export function MeetingScheduleManager({
           ))}
           <div className="flex flex-wrap items-center justify-between gap-3">
             <p className="text-muted-foreground text-sm">
-              Duração total: {weekendSummary.total} min · término às {weekendSummary.endTime}
+              Duração total:{" "}
+              <span className="text-foreground font-medium tabular-nums">
+                {weekendSummary.total} min
+              </span>{" "}
+              · término às{" "}
+              <span className="text-foreground font-medium tabular-nums">
+                {weekendSummary.endTime}
+              </span>
             </p>
             {canEdit && (
               <Button
