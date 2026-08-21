@@ -1,4 +1,5 @@
 import type { NextRequest } from "next/server";
+import { validateScheduledAssignments } from "@/features/meetings/lib/schedule-validation";
 import {
   deleteScheduledWeek,
   listScheduledMeetings,
@@ -49,8 +50,14 @@ export async function PUT(
       return jsonError(400, parsed.error.issues[0]?.message ?? "Dados inválidos.");
     }
 
+    // Regras de designação aplicadas exclusivamente no backend.
+    const { errors, warnings } = await validateScheduledAssignments(id, parsed.data);
+    if (errors.length > 0) {
+      return jsonError(422, errors[0].message, { issues: [...errors, ...warnings] });
+    }
+
     const meeting = await saveScheduledMeeting(id, parsed.data);
-    return jsonOk(meeting);
+    return jsonOk({ ...meeting, warnings });
   } catch (error) {
     return jsonError(500, getErrorMessage(error));
   }

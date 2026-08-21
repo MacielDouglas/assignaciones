@@ -40,7 +40,10 @@ export interface SchedulePerson {
   estudante: boolean;
   batizado: boolean;
   sexo: string;
+  familiaId: string;
   privilegiosServico: boolean;
+  anciao: boolean;
+  oQueVoceDiria: boolean;
   presidenteNossaVida: boolean;
   discursoTesouros: boolean;
   joiasEspirituais: boolean;
@@ -60,9 +63,19 @@ export type AssignmentKind =
   | "discursoTesouros"
   | "joiasEspirituais"
   | "leituraBiblia"
-  | "estudante"
-  | "ajudante"
+  | "discursoMinisterio"
+  | "estudanteIniciando"
+  | "ajudanteIniciando"
+  | "estudanteCultivando"
+  | "ajudanteCultivando"
+  | "estudanteFazendo"
+  | "ajudanteFazendo"
+  | "oQueVoceDiria"
+  | "estudanteExplicandoDiscurso"
+  | "estudanteExplicandoDemonstracao"
+  | "ajudanteExplicandoDemonstracao"
   | "partesNossaVidaCrista"
+  | "necessidadesLocais"
   | "dirigenteEstudoBiblico"
   | "leitorEstudoBiblico"
   | "oracao"
@@ -70,6 +83,8 @@ export type AssignmentKind =
   | "discursoPublico"
   | "dirigenteSentinela"
   | "leitorSentinela";
+
+export type SectionAccent = "neutral" | "treasures" | "ministry" | "living";
 
 export interface AssignmentSlot {
   id: string;
@@ -98,25 +113,9 @@ export interface MeetingSection {
   id: string;
   title: string;
   subtitle?: string;
+  accent: SectionAccent;
   parts: MeetingPart[];
 }
-
-export const ASSIGNMENT_FILTERS: Record<AssignmentKind, (person: SchedulePerson) => boolean> = {
-  presidente: (p) => p.ativo && p.presidenteNossaVida,
-  discursoTesouros: (p) => p.ativo && p.discursoTesouros,
-  joiasEspirituais: (p) => p.ativo && p.joiasEspirituais,
-  leituraBiblia: (p) => p.ativo && p.leituraBiblia,
-  estudante: (p) => p.ativo && p.estudante,
-  ajudante: (p) => p.ativo && p.estudante,
-  partesNossaVidaCrista: (p) => p.ativo && p.partesNossaVidaCrista,
-  dirigenteEstudoBiblico: (p) => p.ativo && p.estudoBiblicoCongregacao,
-  leitorEstudoBiblico: (p) => p.ativo && p.leitorEstudoBiblico,
-  oracao: (p) => p.ativo && p.oracao,
-  presidenteReuniaoPublica: (p) => p.ativo && p.presidenteReuniaoPublica,
-  discursoPublico: (p) => p.ativo && p.discursoPublico,
-  dirigenteSentinela: (p) => p.ativo && p.dirigenteEstudoSentinela,
-  leitorSentinela: (p) => p.ativo && p.leitorEstudoSentinela,
-};
 
 const MONTH_NUMBERS: Record<string, number> = {
   enero: 1,
@@ -294,6 +293,82 @@ function sectionTotal(parts: MeetingPart[]): string | undefined {
   return total > 0 ? `Total: ${minutesLabel(total)}` : undefined;
 }
 
+export type MinistryPartType =
+  | "iniciando"
+  | "cultivando"
+  | "fazendo"
+  | "oQueVoceDiria"
+  | "explicando"
+  | "discurso";
+
+/**
+ * Classifica uma parte de "Faça Seu Melhor no Ministério" pelo título
+ * (as apostilas são importadas em espanhol ou português; cobre gerúndio e
+ * imperativo/subjuntivo dos títulos).
+ */
+export function classifyMinistryPart(part: WorkbookPart): MinistryPartType {
+  const haystack = `${part.title} ${part.assignment ?? ""}`;
+  if (/inici\w*\s+conversa/i.test(haystack)) return "iniciando";
+  if (/cultiv\w*\s+((el|o)\s+)?inter[eé](ss|s)e?\b/i.test(haystack)) {
+    return "cultivando";
+  }
+  if (/(haciendo|hagamos|fazendo)\s+disc/i.test(haystack)) return "fazendo";
+  if (/qu[eé]\s+dir[ií]a[sx]?|o\s+que\s+voc[êe]\s+diria/i.test(haystack)) return "oQueVoceDiria";
+  if (/expli[cq]\w*\s+((lo\s+que)|(suas))\s+cre/i.test(haystack)) {
+    return "explicando";
+  }
+  return "discurso";
+}
+
+/** Detecta se a parte "Explicando Suas Crenças" é discurso ou demonstração. */
+export function isMinistryDemonstration(part: WorkbookPart): boolean {
+  const haystack = `${part.title} ${part.assignment ?? ""} ${part.format ?? ""}`;
+  // Discurso tem precedência: quando o texto cita discurso, não é demonstração.
+  if (/\bdiscurso\b/i.test(haystack)) return false;
+  return /demonstra|demuestre|conversaci[oó]n|conversa\b/i.test(haystack);
+}
+
+interface MinistrySlotKinds {
+  studentKind: AssignmentKind;
+  helperKind?: AssignmentKind;
+  slotLabel: string;
+}
+
+function ministrySlotKinds(type: MinistryPartType, demonstration: boolean): MinistrySlotKinds {
+  switch (type) {
+    case "iniciando":
+      return {
+        studentKind: "estudanteIniciando",
+        helperKind: "ajudanteIniciando",
+        slotLabel: "Estudante",
+      };
+    case "cultivando":
+      return {
+        studentKind: "estudanteCultivando",
+        helperKind: "ajudanteCultivando",
+        slotLabel: "Estudante",
+      };
+    case "fazendo":
+      return {
+        studentKind: "estudanteFazendo",
+        helperKind: "ajudanteFazendo",
+        slotLabel: "Estudante",
+      };
+    case "oQueVoceDiria":
+      return { studentKind: "oQueVoceDiria", slotLabel: "Designado" };
+    case "explicando":
+      return demonstration
+        ? {
+            studentKind: "estudanteExplicandoDemonstracao",
+            helperKind: "ajudanteExplicandoDemonstracao",
+            slotLabel: "Estudante",
+          }
+        : { studentKind: "estudanteExplicandoDiscurso", slotLabel: "Designado" };
+    default:
+      return { studentKind: "discursoMinisterio", slotLabel: "Designado" };
+  }
+}
+
 export interface MidweekMeetingInput {
   week: WorkbookWeek;
   startTime: string;
@@ -398,24 +473,28 @@ export function buildMidweekMeeting(input: MidweekMeetingInput): MeetingSection[
 
   const ministryParts: MeetingPart[] = ministry.map((part, index) => {
     const duration = partDuration(part) + 1;
+    const kinds = ministrySlotKinds(classifyMinistryPart(part), isMinistryDemonstration(part));
+    const slots: AssignmentSlot[] = [
+      {
+        id: `ministry-${part.number ?? index}-student`,
+        label: kinds.slotLabel,
+        kind: kinds.studentKind,
+      },
+    ];
+    if (kinds.helperKind) {
+      slots.push({
+        id: `ministry-${part.number ?? index}-helper`,
+        label: "Ajudante",
+        kind: kinds.helperKind,
+      });
+    }
     const partRow: MeetingPart = {
       id: `ministry-${part.number ?? index}`,
       time: clock,
       duration,
       title: part.title,
       subtitle: [part.territory, part.assignment].filter(Boolean).join(" · "),
-      slots: [
-        {
-          id: `ministry-${part.number ?? index}-student`,
-          label: "Estudante",
-          kind: "estudante",
-        },
-        {
-          id: `ministry-${part.number ?? index}-helper`,
-          label: "Ajudante",
-          kind: "ajudante",
-        },
-      ],
+      slots,
     };
     clock = addMinutesToTime(clock, duration);
     return partRow;
@@ -440,6 +519,7 @@ export function buildMidweekMeeting(input: MidweekMeetingInput): MeetingSection[
 
   for (const [index, part] of livingParts.entries()) {
     const duration = partDuration(part);
+    const localNeeds = /necesidades\s+locales|necessidades?\s+locais/i.test(part.title);
     livingSectionsParts.push({
       id: `living-${part.number ?? index}`,
       time: clock,
@@ -450,7 +530,7 @@ export function buildMidweekMeeting(input: MidweekMeetingInput): MeetingSection[
         {
           id: `living-${part.number ?? index}-speaker`,
           label: "Designado",
-          kind: "partesNossaVidaCrista",
+          kind: localNeeds ? "necessidadesLocais" : "partesNossaVidaCrista",
         },
       ],
     });
@@ -497,26 +577,41 @@ export function buildMidweekMeeting(input: MidweekMeetingInput): MeetingSection[
   clock = addMinutesToTime(clock, 5);
 
   return [
-    { id: "initial", title: "Inicial", subtitle: sectionTotal(initialParts), parts: initialParts },
+    {
+      id: "initial",
+      title: "Abertura",
+      accent: "neutral",
+      subtitle: sectionTotal(initialParts),
+      parts: initialParts,
+    },
     {
       id: "treasures",
       title: "Tesouros da Palavra de Deus",
+      accent: "treasures",
       subtitle: sectionTotal(treasuresParts),
       parts: treasuresParts,
     },
     {
       id: "ministry",
       title: "Faça Seu Melhor no Ministério",
+      accent: "ministry",
       subtitle: sectionTotal(ministryParts),
       parts: ministryParts,
     },
     {
       id: "living",
       title: "Nossa Vida Cristã",
+      accent: "living",
       subtitle: sectionTotal(livingSectionsParts),
       parts: livingSectionsParts,
     },
-    { id: "final", title: "Final", subtitle: sectionTotal(finalParts), parts: finalParts },
+    {
+      id: "final",
+      title: "Encerramento",
+      accent: "neutral",
+      subtitle: sectionTotal(finalParts),
+      parts: finalParts,
+    },
   ];
 }
 
@@ -666,28 +761,38 @@ export function buildWeekendMeeting(input: WeekendMeetingInput): MeetingSection[
   return [
     {
       id: "weekend-initial",
-      title: "Inicial",
+      title: "Abertura",
+      accent: "neutral",
       subtitle: sectionTotal(initialParts),
       parts: initialParts,
     },
     {
       id: "weekend-talk-section",
       title: "Discurso Público",
+      accent: "neutral",
       subtitle: sectionTotal(publicTalkParts),
       parts: publicTalkParts,
     },
     {
       id: "weekend-middle",
       title: "Cântico do meio",
+      accent: "neutral",
       subtitle: sectionTotal(middleParts),
       parts: middleParts,
     },
     {
       id: "weekend-watchtower-section",
       title: "Estudo de A Sentinela",
+      accent: "neutral",
       subtitle: sectionTotal(watchtowerParts),
       parts: watchtowerParts,
     },
-    { id: "weekend-final", title: "Final", subtitle: sectionTotal(finalParts), parts: finalParts },
+    {
+      id: "weekend-final",
+      title: "Encerramento",
+      accent: "neutral",
+      subtitle: sectionTotal(finalParts),
+      parts: finalParts,
+    },
   ];
 }

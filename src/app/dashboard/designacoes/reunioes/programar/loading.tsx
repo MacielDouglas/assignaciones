@@ -1,19 +1,59 @@
 import { Skeleton } from "@/components/ui/skeleton";
 
-function SectionSkeleton() {
+function AccentSectionSkeleton({ tint }: { tint: string }) {
+  return (
+    <div
+      className="space-y-4 rounded-2xl border p-4 sm:p-5"
+      style={{
+        backgroundColor: `color-mix(in srgb, ${tint} 8%, var(--card))`,
+        borderColor: `color-mix(in srgb, ${tint} 28%, transparent)`,
+      }}
+    >
+      <div className="flex items-center gap-3">
+        <Skeleton className="size-10 rounded-xl" style={{ backgroundColor: tint }} />
+        <div className="min-w-0 flex-1 space-y-1.5">
+          <Skeleton className="h-4 w-56 max-w-full" />
+          <Skeleton className="h-3 w-24" />
+        </div>
+        <Skeleton className="h-5 w-12 rounded-full" />
+      </div>
+      <div className="space-y-3">
+        {Array.from({ length: 2 }).map((_, index) => (
+          // biome-ignore lint/suspicious/noArrayIndexKey: static skeleton, items never reorder
+          <div key={index} className="grid gap-2 py-1 sm:grid-cols-[3.5rem_1fr_13rem] sm:gap-4">
+            <Skeleton className="h-4 w-10" />
+            <div className="space-y-1.5">
+              <Skeleton className="h-4 w-52 max-w-full" />
+              <Skeleton className="h-3 w-72 max-w-full" />
+            </div>
+            <div className="space-y-1.5">
+              <Skeleton className="h-3 w-16" />
+              <Skeleton className="h-10 w-full rounded-lg" />
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function PlainSectionSkeleton() {
   return (
     <div className="space-y-3 rounded-2xl border p-6">
       <Skeleton className="h-5 w-44" />
       <div className="space-y-3">
-        {Array.from({ length: 3 }).map((_, index) => (
+        {Array.from({ length: 2 }).map((_, index) => (
           // biome-ignore lint/suspicious/noArrayIndexKey: static skeleton, items never reorder
-          <div key={index} className="grid gap-1.5 py-1 sm:grid-cols-[4.5rem_1fr_14rem] sm:gap-4">
-            <Skeleton className="h-4 w-12" />
+          <div key={index} className="grid gap-2 py-1 sm:grid-cols-[3.5rem_1fr_13rem] sm:gap-4">
+            <Skeleton className="h-4 w-10" />
             <div className="space-y-1.5">
-              <Skeleton className="h-4 w-56 max-w-full" />
-              <Skeleton className="h-3.5 w-72 max-w-full" />
+              <Skeleton className="h-4 w-52 max-w-full" />
+              <Skeleton className="h-3 w-72 max-w-full" />
             </div>
-            <Skeleton className="h-8 w-full" />
+            <div className="space-y-1.5">
+              <Skeleton className="h-3 w-16" />
+              <Skeleton className="h-10 w-full rounded-lg" />
+            </div>
           </div>
         ))}
       </div>
@@ -43,8 +83,10 @@ export default function Loading() {
           <Skeleton className="h-6 w-32 rounded-full" />
         </div>
 
-        <SectionSkeleton />
-        <SectionSkeleton />
+        <AccentSectionSkeleton tint="#3c7f8b" />
+        <AccentSectionSkeleton tint="#d68f00" />
+        <AccentSectionSkeleton tint="#bf2f13" />
+        <PlainSectionSkeleton />
       </div>
     </main>
   );

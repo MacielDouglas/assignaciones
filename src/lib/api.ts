@@ -1,7 +1,11 @@
 import { NextResponse } from "next/server";
 
-export function jsonError(status: number, message: string): NextResponse {
-  return NextResponse.json({ error: message }, { status });
+export function jsonError(
+  status: number,
+  message: string,
+  extra?: Record<string, unknown>,
+): NextResponse {
+  return NextResponse.json({ error: message, ...extra }, { status });
 }
 
 export function jsonOk<T>(data: T, status = 200): NextResponse {

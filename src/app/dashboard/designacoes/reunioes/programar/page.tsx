@@ -4,8 +4,8 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { MeetingScheduleManager } from "@/features/meetings/components/meeting-schedule-manager";
+import { getScheduleRoster } from "@/features/meetings/lib/candidates";
 import type { WorkbookContent } from "@/features/meetings/lib/jwpub";
-import type { SchedulePerson } from "@/features/meetings/lib/meeting-builder";
 import { listScheduledMeetings } from "@/features/meetings/lib/scheduled-meetings";
 import { workbookIssueKey } from "@/features/meetings/lib/workbook-meta";
 import type { MemberRole } from "@/generated/prisma/enums";
@@ -59,7 +59,7 @@ export default async function ProgramMeetingPage({
   const weekParam =
     params.week && /^\d{4}-\d{2}-\d{2}$/.test(params.week) ? params.week : undefined;
 
-  const [midweekRows, watchtowers, songs, talks, people, scheduleRow, saved] = await Promise.all([
+  const [midweekRows, watchtowers, songs, talks, roster, scheduleRow, saved] = await Promise.all([
     prisma.meetingWorkbook.findMany({
       where: { organizationId, meetingType: "MIDWEEK" },
       orderBy: { updatedAt: "desc" },
@@ -79,31 +79,7 @@ export default async function ProgramMeetingPage({
       select: { number: true, theme: true },
       orderBy: { number: "asc" },
     }),
-    prisma.person.findMany({
-      where: { organizationId, ativo: true },
-      select: {
-        id: true,
-        nome: true,
-        ativo: true,
-        estudante: true,
-        batizado: true,
-        sexo: true,
-        privilegiosServico: true,
-        presidenteNossaVida: true,
-        discursoTesouros: true,
-        joiasEspirituais: true,
-        leituraBiblia: true,
-        partesNossaVidaCrista: true,
-        estudoBiblicoCongregacao: true,
-        leitorEstudoBiblico: true,
-        oracao: true,
-        presidenteReuniaoPublica: true,
-        discursoPublico: true,
-        dirigenteEstudoSentinela: true,
-        leitorEstudoSentinela: true,
-      },
-      orderBy: { nome: "asc" },
-    }),
+    getScheduleRoster(organizationId),
     prisma.meetingSchedule.findUnique({
       where: { organizationId },
     }),
@@ -166,7 +142,7 @@ export default async function ProgramMeetingPage({
           schedule={schedule}
           songs={songs}
           talks={talks}
-          people={people as SchedulePerson[]}
+          roster={roster}
           canEdit={canEdit}
           today={new Date().toISOString()}
           saved={saved}

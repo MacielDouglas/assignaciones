@@ -1,6 +1,10 @@
 ﻿import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { type MembersTab, MembersTabs } from "@/components/members-tabs";
+import {
+  getPeopleAssignmentHistory,
+  PERSON_HISTORY_LIMIT,
+} from "@/features/meetings/lib/person-history";
 import { type MemberRow, MembersManager } from "@/features/members/components/members-manager";
 import { PeopleManager, type PersonRow } from "@/features/people/components/people-manager";
 import { type TokenRow, TokensManager } from "@/features/tokens/components/tokens-manager";
@@ -62,52 +66,67 @@ export default async function MembersPage({
     actorRole = membership.role;
   }
 
-  const [members, tokens, families, availablePeople, people] = await Promise.all([
-    prisma.organizationMember.findMany({
-      where: { organizationId },
-      include: {
-        user: { select: { id: true, name: true, email: true, image: true } },
-        person: { select: { id: true, nome: true, sexo: true } },
-      },
-      orderBy: { createdAt: "asc" },
-    }),
-    prisma.inviteToken.findMany({
-      where: { organizationId },
-      orderBy: { createdAt: "desc" },
-      include: {
-        organization: { select: { id: true, name: true } },
-        createdBy: { select: { id: true, name: true, email: true } },
-        usedBy: { select: { id: true, name: true, email: true } },
-        person: { select: { id: true, nome: true } },
-      },
-    }),
-    prisma.family.findMany({
-      where: { organizationId },
-      orderBy: { name: "asc" },
-      select: { id: true, name: true },
-    }),
-    prisma.person.findMany({
-      where: {
-        organizationId,
-        member: { is: null },
-        inviteToken: { is: null },
-      },
-      include: {
-        familia: { select: { id: true, name: true } },
-      },
-      orderBy: { nome: "asc" },
-    }),
-    prisma.person.findMany({
-      where: { organizationId },
-      include: {
-        familia: { select: { id: true, name: true } },
-        spouse: { select: { id: true, nome: true } },
-        marriedTo: { select: { id: true, nome: true } },
-        member: { select: { id: true, userId: true, role: true } },
-      },
-      orderBy: [{ familia: { name: "asc" } }, { nome: "asc" }],
-    }),
-  ]);
+  const [members, tokens, families, availablePeople, people, assignmentHistory] = await Promise.all(
+    [
+      prisma.organizationMember.findMany({
+        where: { organizationId },
+        include: {
+          user: { select: { id: true, name: true, email: true, image: true } },
+          person: { select: { id: true, nome: true, sexo: true } },
+        },
+        orderBy: { createdAt: "asc" },
+      }),
+      prisma.inviteToken.findMany({
+        where: { organizationId },
+        orderBy: { createdAt: "desc" },
+        include: {
+          organization: { select: { id: true, name: true } },
+          createdBy: { select: { id: true, name: true, email: true } },
+          usedBy: { select: { id: true, name: true, email: true } },
+          person: { select: { id: true, nome: true } },
+        },
+      }),
+      prisma.family.findMany({
+        where: { organizationId },
+        orderBy: { name: "asc" },
+        select: { id: true, name: true },
+      }),
+      prisma.person.findMany({
+        where: {
+          organizationId,
+          member: { is: null },
+          inviteToken: { is: null },
+        },
+        include: {
+          familia: { select: { id: true, name: true } },
+        },
+        orderBy: { nome: "asc" },
+      }),
+      prisma.person.findMany({
+        where: { organizationId },
+        include: {
+          familia: { select: { id: true, name: true } },
+          spouse: { select: { id: true, nome: true } },
+          marriedTo: { select: { id: true, nome: true } },
+          member: { select: { id: true, userId: true, role: true } },
+        },
+        orderBy: [{ familia: { name: "asc" } }, { nome: "asc" }],
+      }),
+      getPeopleAssignmentHistory(organizationId),
+    ],
+  );
+
+  const historyByPerson = Object.fromEntries(
+    Array.from(assignmentHistory.entries()).map(([personId, entries]) => [
+      personId,
+      entries.slice(0, PERSON_HISTORY_LIMIT).map((entry) => ({
+        weekStart: entry.weekStart,
+        dateLabel: entry.dateLabel,
+        label: entry.label,
+        isMidweek: entry.meetingType === "MIDWEEK",
+      })),
+    ]),
+  );
 
   return (
     <main className="mx-auto w-full max-w-4xl flex-1 space-y-8 px-5 py-10 sm:px-6 sm:py-16">
@@ -156,6 +175,7 @@ export default async function MembersPage({
             initialPeople={people as PersonRow[]}
             families={families}
             canEdit
+            assignmentHistory={historyByPerson}
           />
         }
       />

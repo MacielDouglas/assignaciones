@@ -32,6 +32,13 @@ export interface FamilyOption {
   name: string;
 }
 
+export interface PersonHistoryItem {
+  weekStart: string;
+  dateLabel: string;
+  label: string;
+  isMidweek: boolean;
+}
+
 export interface PersonRow {
   id: string;
   nome: string;
@@ -271,16 +278,51 @@ const GENERAL_KEYS: (keyof PersonFormState)[] = [
   "limpeza",
 ];
 
+function PersonHistory({ history }: { history: PersonHistoryItem[] }) {
+  if (history.length === 0) return null;
+  const latest = history[0];
+  const older = history.length - 1;
+  return (
+    <details className="group/history">
+      <summary className="text-muted-foreground hover:text-foreground cursor-pointer list-none text-xs marker:hidden [&::-webkit-details-marker]:hidden">
+        <span className="inline-flex items-center gap-1">
+          Última parte: {latest.label} · {latest.dateLabel}
+          {older > 0 && (
+            <span className="text-muted-foreground/70 group-open/history:hidden">
+              (+{older} anterior{older > 1 ? "es" : ""})
+            </span>
+          )}
+        </span>
+      </summary>
+      <ul className="border-border/60 mt-1 space-y-0.5 border-l pl-3">
+        {history.map((item, index) => (
+          <li
+            key={`${item.weekStart}-${item.label}-${index}`}
+            className="text-muted-foreground text-xs"
+          >
+            {item.dateLabel}
+            {" · "}
+            {item.label}
+            {item.isMidweek ? " · meio de semana" : " · fim de semana"}
+          </li>
+        ))}
+      </ul>
+    </details>
+  );
+}
+
 export function PeopleManager({
   organizationId,
   initialPeople,
   families,
   canEdit,
+  assignmentHistory = {},
 }: {
   organizationId: string;
   initialPeople: PersonRow[];
   families: FamilyOption[];
   canEdit: boolean;
+  assignmentHistory?: Record<string, PersonHistoryItem[]>;
 }) {
   const router = useRouter();
   const [people, setPeople] = useState(initialPeople);
@@ -720,6 +762,7 @@ export function PeopleManager({
                       {person.batizado ? "Batizado · " : ""}
                       {person.limpeza ? "Limpeza" : "Sem limpeza"}
                     </p>
+                    <PersonHistory history={assignmentHistory[person.id] ?? []} />
                   </div>
                   {canEdit && (
                     <div className="flex shrink-0 gap-2">

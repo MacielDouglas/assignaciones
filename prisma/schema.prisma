@@ -334,6 +334,8 @@ model Person {
   limpeza        Boolean  @default(true)
   casado         Boolean  @default(false)
   spouseId       String?  @unique
+  // Data da designação mais recente (denormalizada, mantida pelo serviço de programação)
+  lastAssignmentDate DateTime?
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 

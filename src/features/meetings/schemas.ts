@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { ASSIGNMENT_KINDS } from "@/features/meetings/lib/schedule-rules";
 import { MeetingType } from "@/generated/prisma/enums";
 
 const workbookPartSchema = z
@@ -120,6 +121,7 @@ export const scheduledAssignmentSchema = z.object({
   partId: z.string().min(1, "Identificador da parte é obrigatório."),
   label: z.string().min(1, "Rótulo da designação é obrigatório."),
   personId: z.string().min(1, "Pessoa designada é obrigatória."),
+  kind: z.enum(ASSIGNMENT_KINDS as unknown as [string, ...string[]]),
 });
 
 export const scheduledMeetingSchema = z.object({

@@ -16,8 +16,10 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import type { CandidatePerson } from "@/features/meetings/lib/candidates";
 import type { WorkbookContent } from "@/features/meetings/lib/jwpub";
 import {
+  type AssignmentKind,
   addMinutesToTime,
   articleStartDate,
   buildMidweekMeeting,
@@ -26,16 +28,17 @@ import {
   isoDay,
   listWorkbookWeeks,
   parseIsoDay,
-  type SchedulePerson,
   type SongItem,
   type TalkItem,
   type WatchtowerArticleItem,
   weekStartUtc,
 } from "@/features/meetings/lib/meeting-builder";
+import { helperMatchesStudent, SLOT_RULES } from "@/features/meetings/lib/schedule-rules";
+import type { ScheduleIssue } from "@/features/meetings/lib/schedule-validation";
 import type { ScheduledMeetingData } from "@/features/meetings/lib/scheduled-meetings";
 import type { ScheduledMeetingInput } from "@/features/meetings/schemas";
 import type { MeetingType } from "@/generated/prisma/enums";
-import { MeetingSectionCard } from "./meeting-section-card";
+import { ScheduleSectionCard } from "./schedule-section-card";
 import { WeekPicker } from "./week-picker";
 
 const WEEKDAY_LABELS: Record<string, string> = {
@@ -80,7 +83,7 @@ export function MeetingScheduleManager({
   schedule,
   songs,
   talks,
-  people,
+  roster,
   canEdit,
   today,
   saved,
@@ -92,7 +95,7 @@ export function MeetingScheduleManager({
   schedule: MeetingSchedule;
   songs: SongItem[];
   talks: TalkItem[];
-  people: SchedulePerson[];
+  roster: CandidatePerson[];
   canEdit: boolean;
   today: string;
   saved: ScheduledMeetingData[];
@@ -110,6 +113,7 @@ export function MeetingScheduleManager({
   });
   const [assignments, setAssignments] = useState<Record<string, string>>({});
   const [savedMeetings, setSavedMeetings] = useState<ScheduledMeetingData[]>(saved);
+  const [remoteIssues, setRemoteIssues] = useState<ScheduleIssue[]>([]);
   const [saving, setSaving] = useState<MeetingType | null>(null);
   const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
@@ -163,6 +167,14 @@ export function MeetingScheduleManager({
     );
   }, [weekStartIso, savedMeetings, talks, defaultArticleId]);
 
+  // Avisos do backend ficam obsoletos ao trocar de semana ou aba.
+  const issueContextKey = `${weekStartIso}-${tab}`;
+  const [prevIssueContextKey, setPrevIssueContextKey] = useState(issueContextKey);
+  if (prevIssueContextKey !== issueContextKey) {
+    setPrevIssueContextKey(issueContextKey);
+    setRemoteIssues([]);
+  }
+
   const midweekStartTime = schedule.midweekTime ?? "19:30";
   const weekendStartTime = schedule.weekendTime ?? "09:30";
 
@@ -194,8 +206,7 @@ export function MeetingScheduleManager({
     [weekendStartTime, songs, talks, watchtower, weekendSelections, defaultArticleId],
   );
 
-  const midweekSummary = midweekSections ? meetingSummary(midweekSections) : null;
-  const weekendSummary = meetingSummary(weekendSections);
+  const activeSections = tab === "midweek" ? (midweekSections ?? []) : weekendSections;
 
   const slotLabels = useMemo(() => {
     const map: Record<string, string> = {};
@@ -208,6 +219,126 @@ export function MeetingScheduleManager({
     }
     return map;
   }, [midweekSections, weekendSections]);
+
+  const slotKinds = useMemo(() => {
+    const map: Record<string, AssignmentKind> = {};
+    for (const section of [...(midweekSections ?? []), ...weekendSections]) {
+      for (const part of section.parts) {
+        for (const slot of part.slots) {
+          map[slot.id] = slot.kind;
+        }
+      }
+    }
+    return map;
+  }, [midweekSections, weekendSections]);
+
+  /**
+   * Verificações instantâneas no cliente (espelham o backend, que revalida
+   * tudo no salvamento): duplicidade na mesma reunião, regra do ajudante e
+   * conflito com a outra reunião da mesma semana.
+   */
+  const localIssues = useMemo(() => {
+    const issues: ScheduleIssue[] = [];
+
+    const slotsByPerson = new Map<string, string[]>();
+    for (const section of activeSections) {
+      for (const part of section.parts) {
+        for (const slot of part.slots) {
+          const personId = assignments[slot.id];
+          if (!personId) continue;
+          slotsByPerson.set(personId, [...(slotsByPerson.get(personId) ?? []), slot.id]);
+        }
+      }
+    }
+    for (const [personId, slotIds] of slotsByPerson) {
+      if (slotIds.length < 2) continue;
+      const name = roster.find((person) => person.id === personId)?.nome ?? "Publicador";
+      for (const slotId of slotIds) {
+        issues.push({
+          partId: slotId,
+          slotId,
+          level: "warning",
+          message: `${name} já possui outra designação nesta reunião.`,
+        });
+      }
+    }
+
+    const siblingType: MeetingType = tab === "midweek" ? "WEEKEND" : "MIDWEEK";
+    const siblingPersonIds = new Set(
+      savedMeetings
+        .find(
+          (meeting) => meeting.weekStart === weekStartIso && meeting.meetingType === siblingType,
+        )
+        ?.assignments.map((assignment) => assignment.personId) ?? [],
+    );
+    if (siblingPersonIds.size > 0) {
+      const siblingLabel = siblingType === "WEEKEND" ? "fim de semana" : "meio de semana";
+      const warned = new Set<string>();
+      for (const section of activeSections) {
+        for (const part of section.parts) {
+          for (const slot of part.slots) {
+            const personId = assignments[slot.id];
+            if (!personId || !siblingPersonIds.has(personId) || warned.has(personId)) continue;
+            warned.add(personId);
+            const name = roster.find((person) => person.id === personId)?.nome ?? "Publicador";
+            issues.push({
+              partId: slot.id,
+              slotId: null,
+              level: "warning",
+              message: `${name} também está designado na reunião de ${siblingLabel} desta semana.`,
+            });
+          }
+        }
+      }
+    }
+
+    for (const section of activeSections) {
+      for (const part of section.parts) {
+        const helperSlot = part.slots.find((slot) => SLOT_RULES[slot.kind]?.helper);
+        if (!helperSlot) continue;
+        const studentSlot = part.slots.find((slot) => slot.id !== helperSlot.id);
+        const studentId = studentSlot ? assignments[studentSlot.id] : undefined;
+        const helperId = assignments[helperSlot.id];
+        if (!helperId || !studentId) continue;
+        const student = roster.find((person) => person.id === studentId);
+        const helper = roster.find((person) => person.id === helperId);
+        if (!student || !helper) continue;
+        const check = helperMatchesStudent(helper, student);
+        if (!check.eligible) {
+          issues.push({
+            partId: helperSlot.id,
+            slotId: helperSlot.id,
+            level: "error",
+            message:
+              check.reason ??
+              "Ajudante precisa possuir o mesmo sexo do estudante ou ser da família.",
+          });
+        }
+      }
+    }
+
+    return issues;
+  }, [activeSections, assignments, roster, savedMeetings, weekStartIso, tab]);
+
+  const allIssues = useMemo(() => {
+    const seen = new Set<string>();
+    const merged: ScheduleIssue[] = [];
+    for (const issue of [...localIssues, ...remoteIssues]) {
+      const key = `${issue.slotId ?? ""}|${issue.partId ?? ""}|${issue.level}|${issue.message}`;
+      if (seen.has(key)) continue;
+      seen.add(key);
+      merged.push(issue);
+    }
+    return merged;
+  }, [localIssues, remoteIssues]);
+
+  const blockingErrors = allIssues.filter((issue) => issue.level === "error");
+  const globalWarnings = allIssues.filter(
+    (issue) => issue.level === "warning" && !issue.slotId && !issue.partId,
+  );
+
+  const midweekSummary = midweekSections ? meetingSummary(midweekSections) : null;
+  const weekendSummary = meetingSummary(weekendSections);
 
   function handleControlChange(partId: string, value: string) {
     if (tab === "midweek") {
@@ -248,10 +379,11 @@ export function MeetingScheduleManager({
         talkNumber: meetingType === "WEEKEND" ? weekendSelections.talk : null,
         articleId: meetingType === "WEEKEND" ? weekendSelections.articleId : null,
         assignments: Object.entries(assignments)
-          .filter(([, personId]) => personId !== "")
-          .map(([partId, personId]) => ({
-            partId,
-            label: slotLabels[partId] ?? partId,
+          .filter(([slotId, personId]) => personId !== "" && slotKinds[slotId])
+          .map(([slotId, personId]) => ({
+            partId: slotId,
+            label: slotLabels[slotId] ?? slotId,
+            kind: slotKinds[slotId],
             personId,
           })),
       };
@@ -263,9 +395,12 @@ export function MeetingScheduleManager({
       });
       const data = await response.json().catch(() => null);
       if (!response.ok) {
+        const issues = Array.isArray(data?.issues) ? (data.issues as ScheduleIssue[]) : [];
+        setRemoteIssues(issues);
         throw new Error(data?.error ?? "Erro ao salvar a programação.");
       }
 
+      setRemoteIssues(Array.isArray(data?.warnings) ? (data.warnings as ScheduleIssue[]) : []);
       setSavedMeetings((current) => {
         const next = current.filter(
           (entry) => !(entry.weekStart === weekStartIso && entry.meetingType === meetingType),
@@ -307,6 +442,7 @@ export function MeetingScheduleManager({
         articleId: defaultArticleId,
       }));
       setAssignments({});
+      setRemoteIssues([]);
       setConfirmDeleteOpen(false);
       toast.success("Programação da semana excluída.");
     } catch (error) {
@@ -318,6 +454,16 @@ export function MeetingScheduleManager({
 
   const midweekSaved = savedFor(savedMeetings, weekStartIso, "MIDWEEK") !== null;
   const weekendSaved = savedFor(savedMeetings, weekStartIso, "WEEKEND") !== null;
+
+  const sharedCardProps = {
+    roster,
+    assignments,
+    disabled: !canEdit,
+    weekStartIso,
+    issues: allIssues,
+    onAssign: handleAssign,
+    onControlChange: handleControlChange,
+  };
 
   return (
     <div className="space-y-6">
@@ -405,18 +551,22 @@ export function MeetingScheduleManager({
             </div>
           )}
 
+          {globalWarnings.length > 0 && (
+            <div className="rounded-2xl border border-warning/30 bg-warning/10 px-4 py-3 text-sm">
+              {globalWarnings.map((issue, index) => (
+                // biome-ignore lint/suspicious/noArrayIndexKey: avisos estáticos por render
+                <p key={index} className="flex items-start gap-2 text-warning">
+                  <AlertTriangle className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
+                  {issue.message}
+                </p>
+              ))}
+            </div>
+          )}
+
           {midweekSections && midweekSummary && (
             <>
               {midweekSections.map((section) => (
-                <MeetingSectionCard
-                  key={section.id}
-                  section={section}
-                  people={people}
-                  assignments={assignments}
-                  disabled={!canEdit}
-                  onAssign={handleAssign}
-                  onControlChange={handleControlChange}
-                />
+                <ScheduleSectionCard key={section.id} section={section} {...sharedCardProps} />
               ))}
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <p className="text-muted-foreground text-sm">
@@ -429,16 +579,23 @@ export function MeetingScheduleManager({
                     {midweekSummary.endTime}
                   </span>
                 </p>
-                {canEdit && (
-                  <Button
-                    type="button"
-                    onClick={() => handleSave("MIDWEEK")}
-                    disabled={saving !== null}
-                  >
-                    <Save aria-hidden="true" />
-                    {saving === "MIDWEEK" ? "Salvando..." : "Salvar"}
-                  </Button>
-                )}
+                <div className="space-y-1 text-right">
+                  {blockingErrors.length > 0 && canEdit && (
+                    <p className="text-destructive text-xs">
+                      Corrija as inconsistências destacadas para salvar.
+                    </p>
+                  )}
+                  {canEdit && (
+                    <Button
+                      type="button"
+                      onClick={() => handleSave("MIDWEEK")}
+                      disabled={saving !== null || blockingErrors.length > 0}
+                    >
+                      <Save aria-hidden="true" />
+                      {saving === "MIDWEEK" ? "Salvando..." : "Salvar"}
+                    </Button>
+                  )}
+                </div>
               </div>
             </>
           )}
@@ -456,15 +613,7 @@ export function MeetingScheduleManager({
           )}
 
           {weekendSections.map((section) => (
-            <MeetingSectionCard
-              key={section.id}
-              section={section}
-              people={people}
-              assignments={assignments}
-              disabled={!canEdit}
-              onAssign={handleAssign}
-              onControlChange={handleControlChange}
-            />
+            <ScheduleSectionCard key={section.id} section={section} {...sharedCardProps} />
           ))}
           <div className="flex flex-wrap items-center justify-between gap-3">
             <p className="text-muted-foreground text-sm">
@@ -477,16 +626,23 @@ export function MeetingScheduleManager({
                 {weekendSummary.endTime}
               </span>
             </p>
-            {canEdit && (
-              <Button
-                type="button"
-                onClick={() => handleSave("WEEKEND")}
-                disabled={saving !== null}
-              >
-                <Save aria-hidden="true" />
-                {saving === "WEEKEND" ? "Salvando..." : "Salvar"}
-              </Button>
-            )}
+            <div className="space-y-1 text-right">
+              {blockingErrors.length > 0 && canEdit && (
+                <p className="text-destructive text-xs">
+                  Corrija as inconsistências destacadas para salvar.
+                </p>
+              )}
+              {canEdit && (
+                <Button
+                  type="button"
+                  onClick={() => handleSave("WEEKEND")}
+                  disabled={saving !== null || blockingErrors.length > 0}
+                >
+                  <Save aria-hidden="true" />
+                  {saving === "WEEKEND" ? "Salvando..." : "Salvar"}
+                </Button>
+              )}
+            </div>
           </div>
         </TabsContent>
       </Tabs>
