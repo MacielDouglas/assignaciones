@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 import { createContext, type ReactNode, useContext, useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
-export type MembersTab = "pessoas" | "irmaos" | "convites";
+export type MembersTab = "pessoas" | "convites";
 
 const MembersTabsContext = createContext<{ setValue: (tab: MembersTab) => void } | null>(null);
 
@@ -17,12 +17,10 @@ export function useMembersTabs() {
 export function MembersTabs({
   defaultValue,
   convites,
-  irmaos,
   pessoas,
 }: {
   defaultValue: MembersTab;
   convites: ReactNode;
-  irmaos: ReactNode;
   pessoas: ReactNode;
 }) {
   const router = useRouter();
@@ -42,11 +40,9 @@ export function MembersTabs({
       >
         <TabsList>
           <TabsTrigger value="pessoas">Pessoas</TabsTrigger>
-          <TabsTrigger value="irmaos">Irmãos</TabsTrigger>
           <TabsTrigger value="convites">Convites</TabsTrigger>
         </TabsList>
         <TabsContent value="pessoas">{pessoas}</TabsContent>
-        <TabsContent value="irmaos">{irmaos}</TabsContent>
         <TabsContent value="convites" forceMount>
           {convites}
         </TabsContent>

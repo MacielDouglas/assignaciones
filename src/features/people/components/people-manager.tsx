@@ -1,12 +1,13 @@
 ﻿"use client";
 
-import { Pencil, Plus, Trash2 } from "lucide-react";
+import { Plus, Search, Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useId, useMemo, useState } from "react";
 import { toast } from "sonner";
 
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
   Dialog,
@@ -24,19 +25,27 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Sex } from "@/generated/prisma/enums";
+import { type MemberRole, Sex } from "@/generated/prisma/enums";
 import { apiFetch, getErrorMessage } from "@/lib/api-client";
+import { cn } from "@/lib/utils";
+import { PRIVILEGE_LABEL } from "../lib/person-labels";
+import { PersonCard } from "./person-card";
+import { RoleBadge } from "./role-badge";
+import { RoleSelector } from "./role-selector";
 
 export interface FamilyOption {
   id: string;
   name: string;
 }
 
-export interface PersonHistoryItem {
-  weekStart: string;
-  dateLabel: string;
-  label: string;
-  isMidweek: boolean;
+/** Usuário vinculado à pessoa (acesso ao sistema). */
+export interface MemberLink {
+  memberId: string;
+  userId: string;
+  role: MemberRole;
+  /** Rótulo da data de vínculo, formatado no servidor. */
+  sinceLabel: string | null;
+  user: { name: string | null; email: string | null; image: string | null };
 }
 
 export interface PersonRow {
@@ -74,7 +83,70 @@ export interface PersonRow {
   familia: { id: string; name: string };
   spouse: { id: string; nome: string } | null;
   marriedTo: { id: string; nome: string } | null;
-  member: { id: string; userId: string; role: string } | null;
+  member: MemberLink | null;
+}
+
+export interface UnlinkedMemberRow {
+  memberId: string;
+  role: MemberRole;
+  user: { id: string; name: string | null; email: string | null; image: string | null };
+}
+
+type PersonFilter =
+  | "all"
+  | "linked"
+  | "unlinked"
+  | "owners"
+  | "admins"
+  | "members"
+  | "active"
+  | "inactive";
+
+const FILTERS: { key: PersonFilter; label: string }[] = [
+  { key: "all", label: "Todos" },
+  { key: "linked", label: "Com usuário" },
+  { key: "unlinked", label: "Sem usuário" },
+  { key: "owners", label: "Owners" },
+  { key: "admins", label: "Admins" },
+  { key: "members", label: "Members" },
+  { key: "active", label: "Ativos" },
+  { key: "inactive", label: "Inativos" },
+];
+
+function normalize(value: string): string {
+  return value
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase();
+}
+
+function matchesFilter(person: PersonRow, filter: PersonFilter): boolean {
+  switch (filter) {
+    case "all":
+      return true;
+    case "linked":
+      return person.member !== null;
+    case "unlinked":
+      return person.member === null;
+    case "owners":
+      return person.member?.role === "OWNER";
+    case "admins":
+      return person.member?.role === "ADMIN";
+    case "members":
+      return person.member?.role === "MEMBER";
+    case "active":
+      return person.ativo;
+    case "inactive":
+      return !person.ativo;
+  }
+}
+
+function matchesQuery(person: PersonRow, query: string): boolean {
+  if (!query) return true;
+  const haystack = normalize(
+    [person.nome, person.member?.user.name ?? "", person.member?.user.email ?? ""].join(" "),
+  );
+  return haystack.includes(query);
 }
 
 interface PersonFormState {
@@ -228,29 +300,6 @@ function PrivilegeGroup({
   );
 }
 
-const PRIVILEGE_LABEL: Record<string, string> = {
-  anciao: "Ancião",
-  oQueVoceDiria: "'O que você diria?'",
-  presidenteNossaVida: "Presidente de 'Nossa Vida Cristã'",
-  discursoTesouros: "Discurso de tesouros",
-  joiasEspirituais: "Joias espirituais",
-  partesNossaVidaCrista: "Partes de 'Nossa Vida Cristã'",
-  estudoBiblicoCongregacao: "Estudo bíblico de congregação",
-  leitorEstudoBiblico: "Leitor do estudo bíblico",
-  presidenteReuniaoPublica: "Presidente da reunião pública",
-  discursoPublico: "Discurso público",
-  dirigenteEstudoSentinela: "Dirigente do estudo de Sentinela",
-  leitorEstudoSentinela: "Leitor do estudo de Sentinela",
-  iniciandoConversa: "Iniciando conversas",
-  cultivandoInteresse: "Cultivando interesse",
-  fazendoDiscipulos: "Fazendo discípulos",
-  explicandoCrencas: "Explicando crenças",
-  discursoFacaseuMelhor: "'Faça o seu melhor'",
-  leituraBiblia: "Leitura da Bíblia",
-  privilegiosServico: "Privilégios de serviço",
-  oracao: "Oração",
-};
-
 const MIDWEEK_PRIVILEGES: (keyof PersonFormState)[] = [
   "anciao",
   "oQueVoceDiria",
@@ -278,61 +327,46 @@ const GENERAL_KEYS: (keyof PersonFormState)[] = [
   "limpeza",
 ];
 
-function PersonHistory({ history }: { history: PersonHistoryItem[] }) {
-  if (history.length === 0) return null;
-  const latest = history[0];
-  const older = history.length - 1;
-  return (
-    <details className="group/history">
-      <summary className="text-muted-foreground hover:text-foreground cursor-pointer list-none text-xs marker:hidden [&::-webkit-details-marker]:hidden">
-        <span className="inline-flex items-center gap-1">
-          Última parte: {latest.label} · {latest.dateLabel}
-          {older > 0 && (
-            <span className="text-muted-foreground/70 group-open/history:hidden">
-              (+{older} anterior{older > 1 ? "es" : ""})
-            </span>
-          )}
-        </span>
-      </summary>
-      <ul className="border-border/60 mt-1 space-y-0.5 border-l pl-3">
-        {history.map((item, index) => (
-          <li
-            key={`${item.weekStart}-${item.label}-${index}`}
-            className="text-muted-foreground text-xs"
-          >
-            {item.dateLabel}
-            {" · "}
-            {item.label}
-            {item.isMidweek ? " · meio de semana" : " · fim de semana"}
-          </li>
-        ))}
-      </ul>
-    </details>
-  );
-}
-
 export function PeopleManager({
   organizationId,
   initialPeople,
   families,
   canEdit,
   assignmentHistory = {},
+  actorRole,
+  currentUserId,
+  initialUnlinkedMembers = [],
 }: {
   organizationId: string;
   initialPeople: PersonRow[];
   families: FamilyOption[];
   canEdit: boolean;
-  assignmentHistory?: Record<string, PersonHistoryItem[]>;
+  assignmentHistory?: Record<
+    string,
+    { weekStart: string; dateLabel: string; label: string; isMidweek: boolean }[]
+  >;
+  /** Função do administrador logado — espelha as regras aplicadas no backend. */
+  actorRole: MemberRole;
+  currentUserId: string | null;
+  initialUnlinkedMembers?: UnlinkedMemberRow[];
 }) {
   const router = useRouter();
   const [people, setPeople] = useState(initialPeople);
   const [familyOptions, setFamilyOptions] = useState(families);
+  const [unlinkedMembers, setUnlinkedMembers] = useState(initialUnlinkedMembers);
   const [form, setForm] = useState<PersonFormState | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [pendingDelete, setPendingDelete] = useState<PersonRow | null>(null);
   const [pendingDeleteFamily, setPendingDeleteFamily] = useState<FamilyOption | null>(null);
   const [confirmDiscard, setConfirmDiscard] = useState(false);
+  const [filter, setFilter] = useState<PersonFilter>("all");
+  const [query, setQuery] = useState("");
+
+  const actorIsOwner = actorRole === "OWNER";
+  const _allowedUnlinkedRoles: MemberRole[] = actorIsOwner
+    ? ["OWNER", "ADMIN", "MEMBER"]
+    : ["ADMIN", "MEMBER"];
 
   const dirty = useMemo(
     () => form !== null && JSON.stringify(form) !== JSON.stringify(emptyForm),
@@ -348,21 +382,35 @@ export function PeopleManager({
     }
   }
 
+  const normalizedQuery = normalize(query.trim());
+
+  const visiblePeople = useMemo(
+    () =>
+      people.filter(
+        (person) =>
+          matchesFilter(person, filter) &&
+          (normalizedQuery.length === 0 || matchesQuery(person, normalizedQuery)),
+      ),
+    [people, filter, normalizedQuery],
+  );
+
   const grouped = useMemo(() => {
     const map = new Map<string, PersonRow[]>();
-    for (const person of people) {
+    for (const person of visiblePeople) {
       const key = person.familia.name;
       const list = map.get(key) ?? [];
       list.push(person);
       map.set(key, list);
     }
     return Array.from(map.entries()).sort(([a], [b]) => a.localeCompare(b));
-  }, [people]);
+  }, [visiblePeople]);
 
   const emptyFamilies = useMemo(() => {
-    const names = new Set(grouped.map(([name]) => name));
+    const names = new Set(people.map((person) => person.familia.name));
     return familyOptions.filter((family) => !names.has(family.name));
-  }, [familyOptions, grouped]);
+  }, [familyOptions, people]);
+
+  const resultCount = visiblePeople.length;
 
   function set<K extends keyof PersonFormState>(key: K, value: PersonFormState[K]) {
     setForm((current) => (current ? { ...current, [key]: value } : current));
@@ -481,7 +529,49 @@ export function PeopleManager({
 
   return (
     <div className="space-y-6">
-      {canEdit && (
+      <div className="space-y-3">
+        <div className="relative">
+          <Search
+            className="text-muted-foreground pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2"
+            aria-hidden="true"
+          />
+          <Input
+            value={query}
+            onChange={(event) => setQuery(event.target.value)}
+            placeholder="Buscar por pessoa, nome do usuário ou e-mail…"
+            aria-label="Buscar pessoas"
+            className="pl-9"
+          />
+        </div>
+        <fieldset>
+          <legend className="sr-only">Filtros rápidos</legend>
+          <div className="flex flex-wrap gap-1.5">
+            {FILTERS.map((item) => (
+              <button
+                key={item.key}
+                type="button"
+                aria-pressed={filter === item.key}
+                onClick={() => setFilter(item.key)}
+                className={cn(
+                  "rounded-full border px-3 py-1 text-xs font-medium transition-colors",
+                  filter === item.key
+                    ? "border-primary bg-primary text-primary-foreground"
+                    : "text-muted-foreground hover:bg-accent hover:text-foreground border-border bg-card",
+                )}
+              >
+                {item.label}
+              </button>
+            ))}
+          </div>
+        </fieldset>
+        {(filter !== "all" || query.trim().length > 0) && (
+          <p className="text-muted-foreground text-xs" aria-live="polite">
+            {resultCount} {resultCount === 1 ? "pessoa encontrada" : "pessoas encontradas"}.
+          </p>
+        )}
+      </div>
+
+      {!canEdit ? null : (
         <Button
           onClick={() => {
             setForm(emptyForm);
@@ -719,7 +809,23 @@ export function PeopleManager({
         </DialogContent>
       </Dialog>
 
-      {grouped.length === 0 ? (
+      {people.length > 0 && visiblePeople.length === 0 ? (
+        <Card>
+          <CardContent className="py-10 text-center">
+            <p className="text-sm">Nenhuma pessoa corresponde aos filtros selecionados.</p>
+            <Button
+              variant="outline"
+              className="mt-3"
+              onClick={() => {
+                setFilter("all");
+                setQuery("");
+              }}
+            >
+              Limpar filtros
+            </Button>
+          </CardContent>
+        </Card>
+      ) : people.length === 0 ? (
         <Card>
           <CardContent className="py-10 text-center">
             <p className="text-sm">Nenhuma pessoa cadastrada ainda.</p>
@@ -736,63 +842,111 @@ export function PeopleManager({
             <CardHeader>
               <CardTitle>{familyName}</CardTitle>
             </CardHeader>
-            <CardContent className="space-y-2">
+            <CardContent className="grid grid-cols-1 gap-3 lg:grid-cols-2">
               {members.map((person) => (
-                <div
+                <PersonCard
                   key={person.id}
-                  className="flex items-center justify-between gap-3 rounded-lg border px-3 py-2"
-                >
-                  <div className="min-w-0 space-y-0.5">
-                    <p className="truncate text-sm font-medium" title={person.nome}>
-                      {person.nome}
-                    </p>
-                    {(person.casado || person.member || !person.ativo) && (
-                      <p className="flex flex-wrap items-center gap-2 text-xs">
-                        {!person.ativo && <span className="text-muted-foreground">(inativo)</span>}
-                        {person.casado && <span className="text-muted-foreground">casado(a)</span>}
-                        {person.member && (
-                          <span className="text-muted-foreground">irmão com acesso</span>
-                        )}
-                      </p>
-                    )}
-                    <p className="text-muted-foreground text-xs">
-                      {person.chefeFamilia ? "Chefe de família · " : ""}
-                      {person.jovem ? "Jovem · " : ""}
-                      {person.estudante ? "Estudante · " : ""}
-                      {person.batizado ? "Batizado · " : ""}
-                      {person.limpeza ? "Limpeza" : "Sem limpeza"}
-                    </p>
-                    <PersonHistory history={assignmentHistory[person.id] ?? []} />
-                  </div>
-                  {canEdit && (
-                    <div className="flex shrink-0 gap-2">
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        aria-label={`Editar ${person.nome}`}
-                        onClick={() => {
+                  person={{
+                    ...person,
+                    history: assignmentHistory[person.id],
+                    member: person.member
+                      ? {
+                          memberId: person.member.memberId,
+                          userId: person.member.userId,
+                          role: person.member.role,
+                          sinceLabel: person.member.sinceLabel,
+                          name: person.member.user.name,
+                          email: person.member.user.email,
+                          image: person.member.user.image,
+                        }
+                      : null,
+                  }}
+                  organizationId={organizationId}
+                  canEdit={canEdit}
+                  actorIsOwner={actorIsOwner}
+                  currentUserId={currentUserId}
+                  onEdit={
+                    canEdit
+                      ? () => {
                           setForm(toForm(person));
                           setEditingId(person.id);
-                        }}
-                      >
-                        <Pencil />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        aria-label={`Excluir ${person.nome}`}
-                        disabled={pendingDelete?.id === person.id}
-                        onClick={() => setPendingDelete(person)}
-                      >
-                        <Trash2 />
-                      </Button>
-                    </div>
-                  )}
-                </div>
+                        }
+                      : undefined
+                  }
+                  onDelete={canEdit ? () => setPendingDelete(person) : undefined}
+                  onRoleChanged={(nextRole) => {
+                    setPeople((current) =>
+                      current.map((item) =>
+                        item.id === person.id && item.member
+                          ? { ...item, member: { ...item.member, role: nextRole } }
+                          : item,
+                      ),
+                    );
+                  }}
+                />
               ))}
             </CardContent>
           </Card>
         ))
+      )}
+
+      {canEdit && unlinkedMembers.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Acessos sem pessoa vinculada</CardTitle>
+            <CardDescription>
+              Usuários com acesso ao sistema que ainda não estão ligados a uma pessoa da
+              congregação. A função pode ser ajustada aqui.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            {unlinkedMembers.map((member) => {
+              const displayName = member.user.name ?? member.user.email ?? "Usuário";
+              const allowed: MemberRole[] = actorIsOwner
+                ? ["OWNER", "ADMIN", "MEMBER"]
+                : member.role === "OWNER"
+                  ? []
+                  : ["ADMIN", "MEMBER"];
+              return (
+                <div
+                  key={member.memberId}
+                  className="flex flex-wrap items-center gap-3 rounded-xl border p-3"
+                >
+                  <Avatar className="size-9 shrink-0">
+                    {member.user.image ? <AvatarImage src={member.user.image} alt="" /> : null}
+                    <AvatarFallback className="text-xs font-semibold">
+                      {displayName.slice(0, 2).toUpperCase()}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="min-w-0 flex-1 leading-tight">
+                    <p className="truncate text-sm font-medium">{displayName}</p>
+                    <p className="text-muted-foreground truncate text-xs">
+                      {member.user.email ?? "Sem e-mail"}
+                    </p>
+                  </div>
+                  <RoleBadge role={member.role} />
+                  {allowed.length > 0 && (
+                    <RoleSelector
+                      organizationId={organizationId}
+                      memberId={member.memberId}
+                      role={member.role}
+                      userName={displayName}
+                      allowedRoles={allowed}
+                      isSelf={member.user.id === currentUserId}
+                      onRoleChanged={(nextRole) => {
+                        setUnlinkedMembers((current) =>
+                          current.map((item) =>
+                            item.memberId === member.memberId ? { ...item, role: nextRole } : item,
+                          ),
+                        );
+                      }}
+                    />
+                  )}
+                </div>
+              );
+            })}
+          </CardContent>
+        </Card>
       )}
 
       {canEdit &&

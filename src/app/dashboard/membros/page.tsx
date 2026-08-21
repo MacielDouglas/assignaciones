@@ -5,7 +5,6 @@ import {
   getPeopleAssignmentHistory,
   PERSON_HISTORY_LIMIT,
 } from "@/features/meetings/lib/person-history";
-import { type MemberRow, MembersManager } from "@/features/members/components/members-manager";
 import { PeopleManager, type PersonRow } from "@/features/people/components/people-manager";
 import { type TokenRow, TokensManager } from "@/features/tokens/components/tokens-manager";
 import { isTokenExpired, isTokenUsed } from "@/features/tokens/lib/tokens";
@@ -18,6 +17,12 @@ function statusOf(usedAt: Date | null, expiresAt: Date) {
   if (isTokenUsed(usedAt)) return "USED" as const;
   if (isTokenExpired(expiresAt)) return "EXPIRED" as const;
   return "ACTIVE" as const;
+}
+
+function formatDateBr(date: Date): string {
+  const day = String(date.getUTCDate()).padStart(2, "0");
+  const month = String(date.getUTCMonth() + 1).padStart(2, "0");
+  return `${day}/${month}/${date.getUTCFullYear()}`;
 }
 
 export default async function MembersPage({
@@ -37,11 +42,7 @@ export default async function MembersPage({
   const subUser = isSubUser(user.email);
   const params = await searchParams;
   const tab: MembersTab =
-    params.tab === "irmaos"
-      ? "irmaos"
-      : params.tab === "convites" || params.tab === "tokens"
-        ? "convites"
-        : "pessoas";
+    params.tab === "convites" || params.tab === "tokens" ? "convites" : "pessoas";
 
   let organizationId: string;
   let actorRole: MemberRole;
@@ -66,13 +67,13 @@ export default async function MembersPage({
     actorRole = membership.role;
   }
 
-  const [members, tokens, families, availablePeople, people, assignmentHistory] = await Promise.all(
-    [
+  const [unlinkedMembers, tokens, families, availablePeople, people, assignmentHistory] =
+    await Promise.all([
+      // Acessos sem pessoa vinculada: gerenciados dentro da aba Pessoas.
       prisma.organizationMember.findMany({
-        where: { organizationId },
+        where: { organizationId, personId: null },
         include: {
           user: { select: { id: true, name: true, email: true, image: true } },
-          person: { select: { id: true, nome: true, sexo: true } },
         },
         orderBy: { createdAt: "asc" },
       }),
@@ -102,19 +103,27 @@ export default async function MembersPage({
         },
         orderBy: { nome: "asc" },
       }),
+      // Consulta única: pessoa + usuário vinculado + função + datas (sem N+1).
       prisma.person.findMany({
         where: { organizationId },
         include: {
           familia: { select: { id: true, name: true } },
           spouse: { select: { id: true, nome: true } },
           marriedTo: { select: { id: true, nome: true } },
-          member: { select: { id: true, userId: true, role: true } },
+          member: {
+            select: {
+              id: true,
+              userId: true,
+              role: true,
+              createdAt: true,
+              user: { select: { id: true, name: true, email: true, image: true } },
+            },
+          },
         },
         orderBy: [{ familia: { name: "asc" } }, { nome: "asc" }],
       }),
       getPeopleAssignmentHistory(organizationId),
-    ],
-  );
+    ]);
 
   const historyByPerson = Object.fromEntries(
     Array.from(assignmentHistory.entries()).map(([personId, entries]) => [
@@ -128,12 +137,25 @@ export default async function MembersPage({
     ]),
   );
 
+  const peopleRows: PersonRow[] = people.map((person) => ({
+    ...person,
+    member: person.member
+      ? {
+          memberId: person.member.id,
+          userId: person.member.userId,
+          role: person.member.role,
+          sinceLabel: formatDateBr(person.member.createdAt),
+          user: person.member.user,
+        }
+      : null,
+  }));
+
   return (
     <main className="mx-auto w-full max-w-4xl flex-1 space-y-8 px-5 py-10 sm:px-6 sm:py-16">
       <header className="space-y-2">
         <h1 className="text-3xl font-semibold tracking-tight text-balance sm:text-4xl">Membros</h1>
         <p className="text-muted-foreground max-w-md text-base">
-          Pessoas da congregação, irmãos com acesso e convites.
+          Pessoas da congregação, acessos e convites em um só lugar.
         </p>
       </header>
 
@@ -161,21 +183,20 @@ export default async function MembersPage({
             }
           />
         }
-        irmaos={
-          <MembersManager
-            organizationId={organizationId}
-            actorRole={actorRole}
-            currentUserId={user.id}
-            initialMembers={members as MemberRow[]}
-          />
-        }
         pessoas={
           <PeopleManager
             organizationId={organizationId}
-            initialPeople={people as PersonRow[]}
+            initialPeople={peopleRows}
             families={families}
             canEdit
             assignmentHistory={historyByPerson}
+            actorRole={actorRole}
+            currentUserId={user.id}
+            initialUnlinkedMembers={unlinkedMembers.map((member) => ({
+              memberId: member.id,
+              role: member.role,
+              user: member.user,
+            }))}
           />
         }
       />
