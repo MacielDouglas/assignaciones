@@ -1,5 +1,7 @@
 "use client";
 
+import { Loader2 } from "lucide-react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { authClient } from "@/lib/auth-client";
 
@@ -31,8 +33,12 @@ function GoogleIcon() {
   );
 }
 
-export function GoogleSignInButton() {
+export function GoogleSignInButton({ className }: { className?: string }) {
+  const [pending, setPending] = useState(false);
+
   const handleSignIn = () => {
+    if (pending) return;
+    setPending(true);
     void authClient.signIn.social({
       provider: "google",
       callbackURL: "/dashboard",
@@ -44,10 +50,12 @@ export function GoogleSignInButton() {
       type="button"
       variant="outline"
       size="lg"
-      className="w-full gap-3"
+      className={`w-full gap-3 ${className ?? ""}`}
       onClick={handleSignIn}
+      disabled={pending}
+      aria-busy={pending}
     >
-      <GoogleIcon />
+      {pending ? <Loader2 className="size-5 animate-spin" aria-hidden="true" /> : <GoogleIcon />}
       Continuar com o Google
     </Button>
   );
