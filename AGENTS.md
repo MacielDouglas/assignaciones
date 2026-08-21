@@ -32,3 +32,4 @@ Regras ao escrever código:
 4. Validação sempre no back-end com zod no `schemas.ts` da feature; nunca confie só no cliente.
 5. Supressão de lint de chave de array somente com comentário `// biome-ignore lint/suspicious/noArrayIndexKey: ...`.
 6. Antes de entregar, rode `bun run format`, `bun run lint`, `bun run typecheck` e `bun run build`.
+7. Sempre use o máximo de server-side: componentes e componentes de página server-side por padrão (`"use client"` apenas em managers, formulários e botões), estado que altera conteúdo na URL (`searchParams`) em vez de `useState`, dados buscados no servidor (Server Components/Route Handlers) e autorização/validação resolvidas exclusivamente no back-end — o cliente só consome o resultado já validado. Minimize estados e JavaScript do cliente.
