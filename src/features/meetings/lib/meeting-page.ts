@@ -14,6 +14,11 @@ import {
   weekStartUtc,
 } from "@/features/meetings/lib/meeting-builder";
 import { listScheduledMeetingsWithNames } from "@/features/meetings/lib/scheduled-meetings";
+import {
+  effectiveScheduleDays,
+  type MeetingSpecialEvent,
+} from "@/features/meetings/lib/special-events";
+import { findSpecialEventForWeek } from "@/features/meetings/lib/special-events-service";
 import { workbookIssueKey } from "@/features/meetings/lib/workbook-meta";
 import type { WeekDay } from "@/generated/prisma/enums";
 import { prisma } from "@/lib/prisma";
@@ -31,6 +36,8 @@ export interface MeetingSchedulePageData {
     week: WorkbookWeek;
   } | null;
   scheduleRow: ScheduleSettingsRow | null;
+  /** Dias efetivos das reuniões (visita do superintendente move para terça). */
+  effectiveDays: { midweekDay: WeekDay | null; weekendDay: WeekDay | null };
   midweekSections: MeetingSection[];
   weekendSections: MeetingSection[];
   assignedNames: Record<string, string>;
@@ -38,6 +45,8 @@ export interface MeetingSchedulePageData {
   articleId: string | null;
   weekStartIso: string;
   availableWeeks: { title: string; date: string }[];
+  /** Evento especial da semana (congresso, assembleia ou visita). */
+  specialEvent: MeetingSpecialEvent | null;
 }
 
 export async function getMeetingSchedulePageData(
@@ -92,6 +101,9 @@ export async function getMeetingSchedulePageData(
     ? isoDay(weekStartUtc(parseIsoDay(requestedWeekIso)))
     : isoDay(weekStartUtc(new Date()));
 
+  const specialEvent = await findSpecialEventForWeek(organizationId, weekIso);
+  const hideMeetings = specialEvent?.behavior === "hideMeetings";
+
   const weekEntry =
     midweekWorkbooks
       .map((workbook) => ({
@@ -118,28 +130,37 @@ export async function getMeetingSchedulePageData(
   const songItems = songs as SongItem[];
   const talkItems = talks as TalkItem[];
 
-  const midweekSections = weekEntry
-    ? buildMidweekMeeting({
-        week: weekEntry.week,
-        startTime: scheduleRow?.midweekTime ?? "19:30",
-        songs: songItems,
-        middleSong: null,
-      })
-    : [];
+  const midweekSections =
+    weekEntry && !hideMeetings
+      ? buildMidweekMeeting(
+          {
+            week: weekEntry.week,
+            startTime: scheduleRow?.midweekTime ?? "19:30",
+            songs: songItems,
+            middleSong: null,
+          },
+          { specialEvent },
+        )
+      : [];
 
-  const weekendSections = buildWeekendMeeting({
-    startTime: scheduleRow?.weekendTime ?? "09:30",
-    songs: songItems,
-    talks: talkItems,
-    articles,
-    selections: {
-      openingSong: selectedArticle?.openingSong ?? null,
-      middleSong: null,
-      closingSong: selectedArticle?.closingSong ?? null,
-      talk: talkItems[0]?.number ?? null,
-      articleId,
-    },
-  });
+  const weekendSections = hideMeetings
+    ? []
+    : buildWeekendMeeting(
+        {
+          startTime: scheduleRow?.weekendTime ?? "09:30",
+          songs: songItems,
+          talks: talkItems,
+          articles,
+          selections: {
+            openingSong: selectedArticle?.openingSong ?? null,
+            middleSong: null,
+            closingSong: selectedArticle?.closingSong ?? null,
+            talk: talkItems[0]?.number ?? null,
+            articleId,
+          },
+        },
+        { specialEvent },
+      );
 
   const savedWeek = savedMeetings.filter((meeting) => meeting.weekStart === weekIso);
   const assignedNames = new Map<string, string>();
@@ -152,6 +173,13 @@ export async function getMeetingSchedulePageData(
   return {
     weekEntry,
     scheduleRow,
+    effectiveDays: effectiveScheduleDays(
+      {
+        midweekDay: scheduleRow?.midweekDay ?? null,
+        weekendDay: scheduleRow?.weekendDay ?? null,
+      },
+      specialEvent,
+    ),
     midweekSections,
     weekendSections,
     assignedNames: Object.fromEntries(assignedNames),
@@ -159,5 +187,6 @@ export async function getMeetingSchedulePageData(
     articleId,
     weekStartIso: weekIso,
     availableWeeks: midweekWorkbooks.flatMap((wb) => listWorkbookWeeks(wb.content, wb.symbol)),
+    specialEvent,
   };
 }

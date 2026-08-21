@@ -25,6 +25,7 @@ function makeRosterPerson(overrides: Partial<CandidatePerson> = {}): CandidatePe
     privilegiosServico: true,
     anciao: false,
     oQueVoceDiria: false,
+    visitante: false,
     presidenteNossaVida: false,
     discursoTesouros: false,
     joiasEspirituais: false,

@@ -22,6 +22,11 @@ export interface SlotRule {
    * (mesmo sexo OU membro da mesma família).
    */
   helper?: boolean;
+  /**
+   * Parte da visita do superintendente: apenas publicadores visitantes
+   * (o viajante) podem ser designados.
+   */
+  requiresVisitor?: boolean;
 }
 
 export type SkillField =
@@ -62,6 +67,11 @@ export const SLOT_RULES: Record<AssignmentKind, SlotRule> = {
   necessidadesLocais: { requiresElder: true },
   dirigenteEstudoBiblico: { skill: "estudoBiblicoCongregacao" },
   leitorEstudoBiblico: { skill: "leitorEstudoBiblico" },
+  // Partes da visita do superintendente: oradas pelo viajante, sem exigências
+  // locais (ele normalmente não possui habilitações cadastradas na congregação).
+  discursoServicoVisita: { requiresVisitor: true },
+  discursoPublicoVisita: { requiresVisitor: true },
+  discursoFinalVisita: { requiresVisitor: true },
   oracao: { requiresMale: true, skill: "oracao" },
   presidenteReuniaoPublica: { requiresMale: true, skill: "presidenteReuniaoPublica" },
   discursoPublico: { requiresMale: true, skill: "discursoPublico" },
@@ -83,6 +93,17 @@ export function personMatchesRule(
   rule: SlotRule,
 ): { eligible: boolean; reason: string | null } {
   if (!person.ativo) return { eligible: false, reason: "Pessoa inativa." };
+  if (rule.requiresVisitor) {
+    return person.visitante
+      ? { eligible: true, reason: null }
+      : { eligible: false, reason: "Parte reservada ao viajante." };
+  }
+  if (person.visitante) {
+    return {
+      eligible: false,
+      reason: "Visitante só pode ser designado nas partes da visita.",
+    };
+  }
   if (rule.requiresMale && person.sexo !== "MALE") {
     return { eligible: false, reason: "Parte destinada a homens." };
   }
@@ -153,6 +174,16 @@ export function compareCandidates(
 }
 
 const MS_PER_WEEK = 7 * 24 * 60 * 60 * 1000;
+
+/** Normaliza nome para comparação (acentos, caixa e espaços). */
+export function normalizePersonName(value: string): string {
+  return value
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/\s+/g, " ")
+    .trim();
+}
 
 /** Rótulo amigável do tempo desde a última designação. */
 export function timeSinceAssignment(

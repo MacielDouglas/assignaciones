@@ -1,13 +1,15 @@
 import type { WorkbookContent, WorkbookPart, WorkbookWeek } from "@/features/meetings/lib/jwpub";
+import type { MeetingSpecialEvent } from "@/features/meetings/lib/special-events";
+import { CO_VISIT_RULES } from "@/features/meetings/lib/special-events";
 import type { WeekDay } from "@/generated/prisma/enums";
 
 const DAY_LABELS: Record<WeekDay, string> = {
   MONDAY: "Segunda",
-  TUESDAY: "Terça",
+  TUESDAY: "Terca",
   WEDNESDAY: "Quarta",
   THURSDAY: "Quinta",
   FRIDAY: "Sexta",
-  SATURDAY: "Sábado",
+  SATURDAY: "Sabado",
   SUNDAY: "Domingo",
 };
 
@@ -44,6 +46,7 @@ export interface SchedulePerson {
   privilegiosServico: boolean;
   anciao: boolean;
   oQueVoceDiria: boolean;
+  visitante: boolean;
   presidenteNossaVida: boolean;
   discursoTesouros: boolean;
   joiasEspirituais: boolean;
@@ -78,6 +81,9 @@ export type AssignmentKind =
   | "necessidadesLocais"
   | "dirigenteEstudoBiblico"
   | "leitorEstudoBiblico"
+  | "discursoServicoVisita"
+  | "discursoPublicoVisita"
+  | "discursoFinalVisita"
   | "oracao"
   | "presidenteReuniaoPublica"
   | "discursoPublico"
@@ -211,7 +217,7 @@ interface ParsedDateRange {
 
 function parseDateRange(text: string, yearHint?: string): ParsedDateRange | null {
   const match = text.match(
-    /(\d{1,2})(?:\s*[-–]\s*\d{1,2})?\s+de\s+([a-záéíóúñ]+)(?:\s+de\s+(\d{4}))?/i,
+    /(\d{1,2})(?:\s*[-–]\s*\d{1,2})?\s+de\s+([a-zá«©ó«±«n]+)(?:\s+de\s+(\d{4}))?/i,
   );
   if (!match) return null;
   const month = monthNumber(match[2]);
@@ -275,7 +281,7 @@ export function listWorkbookWeeks(
 function songSelectOptions(songs: SongItem[]): SelectControl["options"] {
   return songs.map((song) => ({
     value: String(song.number),
-    label: `Cântico ${song.number} — ${song.theme}`,
+    label: `Cantico ${song.number} — ${song.theme}`,
   }));
 }
 
@@ -376,8 +382,18 @@ export interface MidweekMeetingInput {
   middleSong: number | null;
 }
 
-export function buildMidweekMeeting(input: MidweekMeetingInput): MeetingSection[] {
+export interface MeetingBuildOptions {
+  /** Evento especial da semana resolve substituições na programação. */
+  specialEvent?: MeetingSpecialEvent | null;
+}
+
+export function buildMidweekMeeting(
+  input: MidweekMeetingInput,
+  options?: MeetingBuildOptions,
+): MeetingSection[] {
   const { week, startTime, songs, middleSong } = input;
+  const coVisit = options?.specialEvent?.behavior === "circuitOverseerVisit";
+  const event = coVisit ? options?.specialEvent : undefined;
   const meeting = week.meeting;
   const treasures = meeting["TREASURES FROM GODS WORD"] ?? [];
   const ministry = meeting["APPLY YOURSELF TO THE FIELD MINISTRY"] ?? [];
@@ -538,19 +554,43 @@ export function buildMidweekMeeting(input: MidweekMeetingInput): MeetingSection[
   }
 
   if (bibleStudy) {
-    const duration = partDuration(bibleStudy);
-    livingSectionsParts.push({
-      id: "living-study",
-      time: clock,
-      duration,
-      title: bibleStudy.title,
-      subtitle: bibleStudy.assignment,
-      slots: [
-        { id: "living-study-director", label: "Dirigente", kind: "dirigenteEstudoBiblico" },
-        { id: "living-study-reader", label: "Leitor", kind: "leitorEstudoBiblico" },
-      ],
-    });
-    clock = addMinutesToTime(clock, duration);
+    if (coVisit && event) {
+      // Visita do superintendente: o estudo bíblico dá lugar ao discurso de serviço.
+      const duration = CO_VISIT_RULES.serviceTalkDuration;
+      livingSectionsParts.push({
+        id: "living-study",
+        time: clock,
+        duration,
+        title: "Discurso de Serviço",
+        subtitle:
+          event.serviceTalkTheme ??
+          (event.travelerName
+            ? `Superintendente de Circuito · ${event.travelerName}`
+            : "Superintendente de Circuito"),
+        slots: [
+          {
+            id: "living-study-speaker",
+            label: "Orador (Viajante)",
+            kind: "discursoServicoVisita",
+          },
+        ],
+      });
+      clock = addMinutesToTime(clock, duration);
+    } else {
+      const duration = partDuration(bibleStudy);
+      livingSectionsParts.push({
+        id: "living-study",
+        time: clock,
+        duration,
+        title: bibleStudy.title,
+        subtitle: bibleStudy.assignment,
+        slots: [
+          { id: "living-study-director", label: "Dirigente", kind: "dirigenteEstudoBiblico" },
+          { id: "living-study-reader", label: "Leitor", kind: "leitorEstudoBiblico" },
+        ],
+      });
+      clock = addMinutesToTime(clock, duration);
+    }
   }
 
   const finalParts: MeetingPart[] = [
@@ -629,8 +669,13 @@ export interface WeekendMeetingInput {
   };
 }
 
-export function buildWeekendMeeting(input: WeekendMeetingInput): MeetingSection[] {
+export function buildWeekendMeeting(
+  input: WeekendMeetingInput,
+  options?: MeetingBuildOptions,
+): MeetingSection[] {
   const { startTime, songs, talks, articles, selections } = input;
+  const coVisit = options?.specialEvent?.behavior === "circuitOverseerVisit";
+  const event = coVisit ? options?.specialEvent : undefined;
 
   const talkSelect: SelectControl = {
     kind: "talk",
@@ -688,17 +733,35 @@ export function buildWeekendMeeting(input: WeekendMeetingInput): MeetingSection[
 
   const selectedArticle = articles.find((article) => article.id === selections.articleId);
 
+  const speakerLabel = event?.travelerName ? `Viajante · ${event.travelerName}` : "Viajante";
+
   const publicTalkParts: MeetingPart[] = [
-    {
-      id: "weekend-talk",
-      time: clock,
-      duration: 30,
-      title: "Discurso Público",
-      subtitle: selectedArticle ? undefined : "Selecione o discurso do catálogo.",
-      song: undefined,
-      select: talkSelect,
-      slots: [{ id: "weekend-talk-slot", label: "Designado", kind: "discursoPublico" }],
-    },
+    coVisit && event
+      ? {
+          // Discurso público da visita do superintendente de circuito, logo após o Cântico inicial.
+          id: "weekend-talk",
+          time: clock,
+          duration: 30,
+          title: `${event.publicTalkTheme}`,
+          subtitle: speakerLabel,
+          slots: [
+            {
+              id: "weekend-talk-slot",
+              label: "Orador (Viajante)",
+              kind: "discursoPublicoVisita",
+            },
+          ],
+        }
+      : {
+          id: "weekend-talk",
+          time: clock,
+          duration: 30,
+          title: "Discurso Público",
+          subtitle: selectedArticle ? undefined : "Selecione o discurso do catálogo.",
+          song: undefined,
+          select: talkSelect,
+          slots: [{ id: "weekend-talk-slot", label: "Designado", kind: "discursoPublico" }],
+        },
   ];
   clock = addMinutesToTime(clock, 30);
 
@@ -725,19 +788,41 @@ export function buildWeekendMeeting(input: WeekendMeetingInput): MeetingSection[
     {
       id: "weekend-watchtower",
       time: clock,
-      duration: 60,
+      duration: coVisit ? CO_VISIT_RULES.watchtowerDuration : 60,
       title: "Estudo de A Sentinela",
       subtitle: selectedArticle
         ? `${selectedArticle.title}${selectedArticle.dates ? ` · ${selectedArticle.dates}` : ""}`
         : "Selecione o artigo de A Sentinela.",
       select: articleSelect,
-      slots: [
-        { id: "weekend-watchtower-director", label: "Dirigente", kind: "dirigenteSentinela" },
-        { id: "weekend-watchtower-reader", label: "Leitor", kind: "leitorSentinela" },
-      ],
+      slots: coVisit
+        ? [{ id: "weekend-watchtower-director", label: "Dirigente", kind: "dirigenteSentinela" }]
+        : [
+            { id: "weekend-watchtower-director", label: "Dirigente", kind: "dirigenteSentinela" },
+            { id: "weekend-watchtower-reader", label: "Leitor", kind: "leitorSentinela" },
+          ],
     },
   ];
-  clock = addMinutesToTime(clock, 60);
+  clock = addMinutesToTime(clock, coVisit ? CO_VISIT_RULES.watchtowerDuration : 60);
+
+  // Discurso final da visita (apenas em visita do superintendente de circuito)
+  const finalTalkParts: MeetingPart[] = [];
+  if (coVisit && event) {
+    finalTalkParts.push({
+      id: "weekend-final-talk",
+      time: clock,
+      duration: CO_VISIT_RULES.finalTalkDuration,
+      title: event?.finalTalkTheme ?? "Discurso final",
+      subtitle: event?.finalTalkTheme ? `${event.finalTalkTheme} · ${speakerLabel}` : speakerLabel,
+      slots: [
+        {
+          id: "weekend-final-talk-speaker",
+          label: "Orador (Viajante)",
+          kind: "discursoFinalVisita",
+        },
+      ],
+    });
+    clock = addMinutesToTime(clock, CO_VISIT_RULES.finalTalkDuration);
+  }
 
   const finalParts: MeetingPart[] = [
     {
@@ -758,7 +843,7 @@ export function buildWeekendMeeting(input: WeekendMeetingInput): MeetingSection[
     },
   ];
 
-  return [
+  const sections: MeetingSection[] = [
     {
       id: "weekend-initial",
       title: "Abertura",
@@ -787,12 +872,26 @@ export function buildWeekendMeeting(input: WeekendMeetingInput): MeetingSection[
       subtitle: sectionTotal(watchtowerParts),
       parts: watchtowerParts,
     },
-    {
-      id: "weekend-final",
-      title: "Encerramento",
-      accent: "neutral",
-      subtitle: sectionTotal(finalParts),
-      parts: finalParts,
-    },
   ];
+
+  // Adiciona seção do discurso final apenas se houver visita do superintendente
+  if (finalTalkParts.length > 0) {
+    sections.push({
+      id: "weekend-final-talk-section",
+      title: "Discurso Final",
+      accent: "neutral",
+      subtitle: sectionTotal(finalTalkParts),
+      parts: finalTalkParts,
+    });
+  }
+
+  sections.push({
+    id: "weekend-final",
+    title: "Encerramento",
+    accent: "neutral",
+    subtitle: sectionTotal(finalParts),
+    parts: finalParts,
+  });
+
+  return sections;
 }

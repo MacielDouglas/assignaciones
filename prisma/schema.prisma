@@ -367,6 +367,10 @@ model Person {
   dirigenteEstudoSentinela   Boolean @default(false)
   leitorEstudoSentinela      Boolean @default(false)
 
+  // Publicador externo (ex.: superintendente de circuito/viajante):
+  // aparece apenas nas partes da visita, fora das demais listas.
+  visitante                  Boolean @default(false)
+
   familia Family           @relation(fields: [familiaId], references: [id], onDelete: Cascade)
   spouse  Person?          @relation("Marriage", fields: [spouseId], references: [id], onDelete: SetNull)
   marriedTo Person?        @relation("Marriage")

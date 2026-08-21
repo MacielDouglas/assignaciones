@@ -24,6 +24,7 @@ function makePerson(overrides: Partial<SchedulePerson> = {}): SchedulePerson {
     privilegiosServico: true,
     anciao: false,
     oQueVoceDiria: false,
+    visitante: false,
     presidenteNossaVida: false,
     discursoTesouros: false,
     joiasEspirituais: false,
@@ -94,6 +95,23 @@ describe("personMatchesRule", () => {
   it("rejeita pessoa inativa", () => {
     const result = personMatchesRule(makePerson({ ativo: false }), SLOT_RULES.estudanteIniciando);
     expect(result.eligible).toBe(false);
+  });
+
+  it("partes da visita aceitam apenas publicadores visitantes (o viajante)", () => {
+    const local = makePerson({ batizado: false, privilegiosServico: false });
+    const visitor = makePerson({ id: "v1", nome: "Carlos Mendes", visitante: true });
+
+    expect(personMatchesRule(local, SLOT_RULES.discursoServicoVisita).eligible).toBe(false);
+    expect(personMatchesRule(visitor, SLOT_RULES.discursoServicoVisita).eligible).toBe(true);
+    expect(personMatchesRule(visitor, SLOT_RULES.discursoPublicoVisita).eligible).toBe(true);
+    expect(personMatchesRule(visitor, SLOT_RULES.discursoFinalVisita).eligible).toBe(true);
+  });
+
+  it("visitante não pode ser designado em partes regulares", () => {
+    const visitor = makePerson({ id: "v1", nome: "Carlos Mendes", visitante: true, oracao: true });
+    const result = personMatchesRule(visitor, SLOT_RULES.oracao);
+    expect(result.eligible).toBe(false);
+    expect(result.reason).toContain("Visitante");
   });
 });
 

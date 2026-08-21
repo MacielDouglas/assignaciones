@@ -78,9 +78,9 @@ export default function Loading() {
           <Skeleton className="h-6 w-48 rounded-full" />
         </div>
 
-        <div className="flex items-center justify-between">
-          <Skeleton className="h-9 w-72" />
-          <Skeleton className="h-6 w-32 rounded-full" />
+        <div className="flex flex-wrap items-center gap-2">
+          <Skeleton className="h-13 w-full rounded-2xl sm:flex-1" />
+          <Skeleton className="h-11 w-full rounded-xl sm:w-64" />
         </div>
 
         <AccentSectionSkeleton tint="#3c7f8b" />

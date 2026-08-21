@@ -40,6 +40,7 @@ function normalize(value: string): string {
 /** Badges de qualificação exibidos nos candidatos (máx. 3). */
 function qualificationBadges(person: CandidatePerson, skill: SkillField | undefined): string[] {
   const badges: string[] = [];
+  if (person.visitante) badges.push("Viajante");
   if (person.estudante) badges.push("Estudante");
   if (person.batizado) badges.push("Batizado(a)");
   if (person.anciao) badges.push("Ancião");
@@ -99,6 +100,8 @@ function useSlotCandidates(
     const eligible: CandidatePerson[] = [];
     const others: PickerCandidate[] = [];
     for (const person of roster) {
+      // Visitantes só concorrem às partes da visita; nas demais, nem aparecem.
+      if (person.visitante && !rule.requiresVisitor) continue;
       const base = personMatchesRule(person, rule);
       const helperCheck =
         base.eligible && rule.helper ? helperMatchesStudent(person, student) : null;
@@ -203,7 +206,9 @@ export function PeoplePicker({
           {eligible.length === 0 && (
             <p className="flex items-start gap-2 px-2 py-2 text-xs text-warning">
               <TriangleAlert className="mt-0.5 size-3.5 shrink-0" aria-hidden="true" />
-              Não existem publicadores qualificados para esta parte.
+              {rule.requiresVisitor
+                ? "Nenhum viajante disponível. Verifique o nome configurado no evento."
+                : "Não existem publicadores qualificados para esta parte."}
             </p>
           )}
 

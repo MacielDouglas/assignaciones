@@ -8,6 +8,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { AssignmentsList } from "@/features/meetings/components/assignments-list";
 import { DesignacoesAreaSwitcher } from "@/features/meetings/components/designacoes-area-switcher";
 import { MeetingScheduleTable } from "@/features/meetings/components/meeting-schedule-table";
+import { SpecialEventBanner } from "@/features/meetings/components/special-event-banner";
+import { SpecialEventCard } from "@/features/meetings/components/special-event-card";
 import type { DesignacoesArea } from "@/features/meetings/components/types";
 import { WeekNav } from "@/features/meetings/components/week-nav";
 import { isoDay, weekStartUtc } from "@/features/meetings/lib/meeting-builder";
@@ -96,7 +98,18 @@ export default async function DesignacoesPage({
       <DesignacoesAreaSwitcher active={area} makeHref={areaHref} />
 
       {area === "reunioes" &&
-        (weekEntry ? (
+        (data.specialEvent?.behavior === "hideMeetings" && data.specialEvent ? (
+          <section aria-label="Evento especial da semana">
+            <div key={`reunioes-${data.weekStartIso}`} className="anim-rise-in space-y-6">
+              <WeekNav
+                weekStartIso={data.weekStartIso}
+                makeHref={weekHref}
+                currentWeekIso={currentWeekIso}
+              />
+              <SpecialEventCard event={data.specialEvent} />
+            </div>
+          </section>
+        ) : weekEntry ? (
           <section aria-label="Programação da semana">
             <div key={`reunioes-${data.weekStartIso}`} className="anim-rise-in space-y-6">
               {(savedCount > 0 || !scheduleRow?.midweekTime || !scheduleRow?.weekendTime) && (
@@ -122,22 +135,29 @@ export default async function DesignacoesPage({
                 currentWeekIso={currentWeekIso}
               />
 
-              <MeetingScheduleTable
-                title="Reunião do Meio de Semana"
-                day={scheduleRow?.midweekDay ?? null}
-                time={scheduleRow?.midweekTime ?? null}
-                fallbackTime="19:30"
-                sections={data.midweekSections}
-                assignments={data.assignedNames}
-              />
-              <MeetingScheduleTable
-                title="Reunião do Fim de Semana"
-                day={scheduleRow?.weekendDay ?? null}
-                time={scheduleRow?.weekendTime ?? null}
-                fallbackTime="09:30"
-                sections={data.weekendSections}
-                assignments={data.assignedNames}
-              />
+              {data.specialEvent?.behavior === "hideMeetings" ? (
+                <SpecialEventCard event={data.specialEvent} />
+              ) : (
+                <>
+                  {data.specialEvent && <SpecialEventBanner event={data.specialEvent} />}
+                  <MeetingScheduleTable
+                    title="Reunião do Meio de Semana"
+                    day={data.effectiveDays.midweekDay}
+                    time={scheduleRow?.midweekTime ?? null}
+                    fallbackTime="19:30"
+                    sections={data.midweekSections}
+                    assignments={data.assignedNames}
+                  />
+                  <MeetingScheduleTable
+                    title="Reunião do Fim de Semana"
+                    day={data.effectiveDays.weekendDay}
+                    time={scheduleRow?.weekendTime ?? null}
+                    fallbackTime="09:30"
+                    sections={data.weekendSections}
+                    assignments={data.assignedNames}
+                  />
+                </>
+              )}
             </div>
           </section>
         ) : (
@@ -169,12 +189,19 @@ export default async function DesignacoesPage({
               makeHref={weekHref}
               currentWeekIso={currentWeekIso}
             />
-            <AssignmentsList
-              midweekSections={data.midweekSections}
-              weekendSections={data.weekendSections}
-              assignedNames={data.assignedNames}
-              canEdit={canEdit}
-            />
+            {data.specialEvent?.behavior === "hideMeetings" ? (
+              <SpecialEventCard event={data.specialEvent} />
+            ) : (
+              <>
+                {data.specialEvent && <SpecialEventBanner event={data.specialEvent} />}
+                <AssignmentsList
+                  midweekSections={data.midweekSections}
+                  weekendSections={data.weekendSections}
+                  assignedNames={data.assignedNames}
+                  canEdit={canEdit}
+                />
+              </>
+            )}
           </div>
         </section>
       )}

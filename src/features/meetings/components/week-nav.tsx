@@ -1,4 +1,4 @@
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { CalendarDays, ChevronLeft, ChevronRight } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import {
@@ -7,6 +7,7 @@ import {
   isoDay,
   parseIsoDay,
 } from "@/features/meetings/lib/meeting-builder";
+import { cn } from "@/lib/utils";
 
 function relativeWeekLabel(viewedIso: string, currentIso: string): string | null {
   if (viewedIso === currentIso) return "semana atual";
@@ -29,11 +30,15 @@ export function WeekNav({
   const weekStart = parseIsoDay(weekStartIso);
   const weekEnd = addDaysUtc(weekStart, 6);
   const relative = currentWeekIso ? relativeWeekLabel(weekStartIso, currentWeekIso) : null;
+  const isCurrentWeek = !currentWeekIso || weekStartIso === currentWeekIso;
 
   return (
     <nav
       aria-label="Navegação entre semanas"
-      className="flex items-center justify-between gap-2 rounded-2xl border bg-card px-2 py-2"
+      className={cn(
+        "flex items-center justify-between gap-2 rounded-2xl border bg-card px-2 py-2 transition-colors",
+        !isCurrentWeek && "border-warning/40 bg-warning/5",
+      )}
     >
       <Button variant="ghost" size="icon" className="rounded-full" asChild>
         <Link
@@ -44,10 +49,26 @@ export function WeekNav({
           <ChevronLeft />
         </Link>
       </Button>
-      <p className="text-sm font-medium tabular-nums" aria-live="polite">
+      <p
+        className={cn("text-sm font-medium tabular-nums", !isCurrentWeek && "text-warning")}
+        aria-live="polite"
+      >
         Semana de {formatDateBR(weekStart)} a {formatDateBR(weekEnd)}
         {relative && <span className="text-muted-foreground font-normal"> · {relative}</span>}
       </p>
+      {!isCurrentWeek && currentWeekIso && (
+        <Button
+          variant="outline"
+          size="sm"
+          className="border-warning/40 text-warning hover:bg-warning/10 hover:text-warning rounded-full"
+          asChild
+        >
+          <Link href={makeHref(currentWeekIso)} prefetch aria-label="Voltar para a semana atual">
+            <CalendarDays aria-hidden="true" />
+            Semana Atual
+          </Link>
+        </Button>
+      )}
       <Button variant="ghost" size="icon" className="rounded-full" asChild>
         <Link
           href={makeHref(isoDay(addDaysUtc(weekStart, 7)))}

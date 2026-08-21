@@ -6,7 +6,9 @@ import { Button } from "@/components/ui/button";
 import { MeetingScheduleManager } from "@/features/meetings/components/meeting-schedule-manager";
 import { getScheduleRoster } from "@/features/meetings/lib/candidates";
 import type { WorkbookContent } from "@/features/meetings/lib/jwpub";
+import { isoDay, parseIsoDay, weekStartUtc } from "@/features/meetings/lib/meeting-builder";
 import { listScheduledMeetings } from "@/features/meetings/lib/scheduled-meetings";
+import { findSpecialEventForWeek } from "@/features/meetings/lib/special-events-service";
 import { workbookIssueKey } from "@/features/meetings/lib/workbook-meta";
 import type { MemberRole } from "@/generated/prisma/enums";
 import { auth } from "@/lib/auth";
@@ -58,33 +60,39 @@ export default async function ProgramMeetingPage({
   const params = await searchParams;
   const weekParam =
     params.week && /^\d{4}-\d{2}-\d{2}$/.test(params.week) ? params.week : undefined;
+  // Semana normalizada no servidor: a navegação entre semanas acontece pela URL.
+  const weekStartIso = weekParam
+    ? isoDay(weekStartUtc(parseIsoDay(weekParam)))
+    : isoDay(weekStartUtc(new Date()));
 
-  const [midweekRows, watchtowers, songs, talks, roster, scheduleRow, saved] = await Promise.all([
-    prisma.meetingWorkbook.findMany({
-      where: { organizationId, meetingType: "MIDWEEK" },
-      orderBy: { updatedAt: "desc" },
-    }),
-    prisma.watchtower.findMany({
-      where: { organizationId },
-      include: { articles: { orderBy: { order: "asc" } } },
-      orderBy: { updatedAt: "desc" },
-    }),
-    prisma.song.findMany({
-      where: { organizationId },
-      select: { number: true, theme: true },
-      orderBy: { number: "asc" },
-    }),
-    prisma.talk.findMany({
-      where: { organizationId },
-      select: { number: true, theme: true },
-      orderBy: { number: "asc" },
-    }),
-    getScheduleRoster(organizationId),
-    prisma.meetingSchedule.findUnique({
-      where: { organizationId },
-    }),
-    listScheduledMeetings(organizationId),
-  ]);
+  const [midweekRows, watchtowers, songs, talks, roster, scheduleRow, saved, specialEvent] =
+    await Promise.all([
+      prisma.meetingWorkbook.findMany({
+        where: { organizationId, meetingType: "MIDWEEK" },
+        orderBy: { updatedAt: "desc" },
+      }),
+      prisma.watchtower.findMany({
+        where: { organizationId },
+        include: { articles: { orderBy: { order: "asc" } } },
+        orderBy: { updatedAt: "desc" },
+      }),
+      prisma.song.findMany({
+        where: { organizationId },
+        select: { number: true, theme: true },
+        orderBy: { number: "asc" },
+      }),
+      prisma.talk.findMany({
+        where: { organizationId },
+        select: { number: true, theme: true },
+        orderBy: { number: "asc" },
+      }),
+      getScheduleRoster(organizationId),
+      prisma.meetingSchedule.findUnique({
+        where: { organizationId },
+      }),
+      listScheduledMeetings(organizationId),
+      findSpecialEventForWeek(organizationId, weekStartIso),
+    ]);
 
   const midweekWorkbooks = midweekRows
     .map((row) => ({ symbol: row.symbol, content: row.content as unknown as WorkbookContent }))
@@ -144,9 +152,9 @@ export default async function ProgramMeetingPage({
           talks={talks}
           roster={roster}
           canEdit={canEdit}
-          today={new Date().toISOString()}
+          weekStartIso={weekStartIso}
           saved={saved}
-          initialDate={weekParam}
+          specialEvent={specialEvent}
         />
       </div>
     </main>
