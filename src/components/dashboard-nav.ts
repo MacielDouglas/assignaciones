@@ -30,7 +30,10 @@ export function isNavActive(pathname: string, href: string, itemHrefs: string[])
   if (pathname === href) return true;
   if (!pathname.startsWith(`${href}/`)) return false;
   return !itemHrefs.some(
-    (other) => other !== href && other.length > href.length && pathname.startsWith(`${other}/`),
+    (other) =>
+      other !== href &&
+      other.length > href.length &&
+      (pathname === other || pathname.startsWith(`${other}/`)),
   );
 }
 
