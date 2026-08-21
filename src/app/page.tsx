@@ -15,20 +15,22 @@ export default async function HomePage() {
   }
 
   return (
-    <main className="flex flex-1 items-center justify-center px-6">
+    <main className="flex flex-1 items-center justify-center px-6 py-12">
       <Card className="w-full max-w-sm border-0 shadow-none sm:border sm:shadow-sm">
-        <CardHeader className="items-center gap-4 text-center">
-          <div className="anim-stamp-in bg-primary/10 text-primary flex size-14 items-center justify-center rounded-2xl">
-            <CalendarDays className="size-7" aria-hidden="true" />
+        <CardHeader className="items-center gap-5 text-center">
+          <div className="anim-stamp-in bg-primary/10 text-primary flex size-16 items-center justify-center rounded-2xl">
+            <CalendarDays className="size-8" aria-hidden="true" />
           </div>
           <div className="anim-rise-in space-y-2 [animation-delay:110ms]">
-            <CardTitle className="text-2xl">Asignaciones</CardTitle>
+            <CardTitle className="text-[2rem] font-bold tracking-tight leading-[1.15]">
+              Asignaciones
+            </CardTitle>
             <CardDescription>
               Organize as designações da sua congregação de forma simples e colaborativa.
             </CardDescription>
           </div>
         </CardHeader>
-        <CardContent className="space-y-4">
+        <CardContent className="space-y-3">
           <GoogleSignInButton className="anim-rise-in [animation-delay:220ms]" />
           <p className="anim-rise-in text-muted-foreground text-center text-xs leading-relaxed [animation-delay:300ms]">
             Ao continuar, você concorda com os nossos termos de uso e política de privacidade.
