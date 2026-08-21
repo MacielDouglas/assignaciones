@@ -138,7 +138,7 @@ export default async function DashboardPage() {
           </Link>
         ) : null}
 
-        <Link href="/dashboard/designacoes/reunioes" className="block">
+        <Link href="/dashboard/designacoes?tab=reunioes" className="block">
           <Card className="h-full transition-colors hover:bg-muted/40">
             <CardContent className="flex items-center gap-3">
               <div className="bg-primary/10 text-primary flex size-11 items-center justify-center rounded-xl">
