@@ -81,7 +81,8 @@ export function CatalogEditor({
               <div className="space-y-3">
                 {draft.items.map((item, index) => (
                   <div
-                    key={`${item.number}-${index}`}
+                    // biome-ignore lint/suspicious/noArrayIndexKey: editable list, items never reorder
+                    key={index}
                     className="flex items-center gap-2.5 rounded-xl border p-3 sm:gap-3 sm:p-3.5"
                   >
                     <Input

@@ -99,7 +99,8 @@ export function WatchtowerEditor({
               <div className="space-y-3">
                 {draft.articles.map((article, articleIndex) => (
                   <WatchtowerArticleCard
-                    key={article.title || `article-${articleIndex}`}
+                    // biome-ignore lint/suspicious/noArrayIndexKey: editable list, items never reorder
+                    key={`article-${articleIndex}`}
                     article={article}
                     colorOptions={articleColors}
                     onChange={(nextArticle) => updateArticle(articleIndex, nextArticle)}

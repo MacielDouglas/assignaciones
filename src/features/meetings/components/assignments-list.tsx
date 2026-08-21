@@ -3,17 +3,22 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import type { MeetingSection } from "@/features/meetings/lib/meeting-builder";
+import { ScheduleWeekNav } from "./schedule-week-nav";
 
 export function AssignmentsList({
   midweekSections,
   weekendSections,
   assignedNames,
   canEdit,
+  weekStartIso,
+  availableWeeks,
 }: {
   midweekSections: MeetingSection[];
   weekendSections: MeetingSection[];
   assignedNames: Record<string, string>;
   canEdit: boolean;
+  weekStartIso: string;
+  availableWeeks: { title: string; date: string }[];
 }) {
   const assignedCount = Object.keys(assignedNames).length;
 
@@ -96,8 +101,11 @@ export function AssignmentsList({
 
   return (
     <div className="space-y-6">
+      <ScheduleWeekNav weekStartIso={weekStartIso} weeks={availableWeeks} />
       {renderSections("Meio de Semana", midweekSections)}
-      {renderSections("Fim de Semana", weekendSections)}
+      {weekendSections.some((section) =>
+        section.parts.some((part) => part.slots.some((slot) => assignedNames[slot.id])),
+      ) && renderSections("Fim de Semana", weekendSections)}
     </div>
   );
 }

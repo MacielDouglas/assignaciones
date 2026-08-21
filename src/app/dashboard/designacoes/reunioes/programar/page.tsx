@@ -13,7 +13,11 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { canManagePeople, isSubUser } from "@/lib/roles";
 
-export default async function ProgramMeetingPage() {
+export default async function ProgramMeetingPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ week?: string }>;
+}) {
   const session = await auth.api.getSession({
     headers: await headers(),
   });
@@ -50,6 +54,10 @@ export default async function ProgramMeetingPage() {
   if (!canEdit) {
     redirect("/dashboard/designacoes");
   }
+
+  const params = await searchParams;
+  const weekParam =
+    params.week && /^\d{4}-\d{2}-\d{2}$/.test(params.week) ? params.week : undefined;
 
   const [midweekRows, watchtowers, songs, talks, people, scheduleRow, saved] = await Promise.all([
     prisma.meetingWorkbook.findMany({
@@ -162,6 +170,7 @@ export default async function ProgramMeetingPage() {
           canEdit={canEdit}
           today={new Date().toISOString()}
           saved={saved}
+          initialDate={weekParam}
         />
       </div>
     </main>

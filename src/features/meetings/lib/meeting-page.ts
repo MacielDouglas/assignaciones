@@ -5,7 +5,9 @@ import {
   buildWeekendMeeting,
   findWorkbookWeek,
   isoDay,
+  listWorkbookWeeks,
   type MeetingSection,
+  parseIsoDay,
   type SongItem,
   type TalkItem,
   type WatchtowerArticleItem,
@@ -34,10 +36,13 @@ export interface MeetingSchedulePageData {
   assignedNames: Record<string, string>;
   savedCount: number;
   articleId: string | null;
+  weekStartIso: string;
+  availableWeeks: { title: string; date: string }[];
 }
 
 export async function getMeetingSchedulePageData(
   organizationId: string,
+  requestedWeekIso?: string,
 ): Promise<MeetingSchedulePageData> {
   const [midweekRows, watchtowers, songs, talks, scheduleRow, savedMeetings] = await Promise.all([
     prisma.meetingWorkbook.findMany({
@@ -83,7 +88,9 @@ export async function getMeetingSchedulePageData(
       }))
       .sort((a, b) => workbookIssueKey(b.symbol) - workbookIssueKey(a.symbol))[0] ?? null;
 
-  const weekIso = isoDay(weekStartUtc(new Date()));
+  const weekIso = requestedWeekIso
+    ? isoDay(weekStartUtc(parseIsoDay(requestedWeekIso)))
+    : isoDay(weekStartUtc(new Date()));
 
   const weekEntry =
     midweekWorkbooks
@@ -150,5 +157,7 @@ export async function getMeetingSchedulePageData(
     assignedNames: Object.fromEntries(assignedNames),
     savedCount: savedWeek.length,
     articleId,
+    weekStartIso: weekIso,
+    availableWeeks: midweekWorkbooks.flatMap((wb) => listWorkbookWeeks(wb.content, wb.symbol)),
   };
 }

@@ -1,4 +1,5 @@
 import { ChevronDown, Loader2, Plus, Trash2, X } from "lucide-react";
+import { useId } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -256,6 +257,8 @@ function WeekCard({
   onChange: (week: WorkbookWeek) => void;
   onRemove: () => void;
 }) {
+  const openingPrayerId = useId();
+  const closingPrayerId = useId();
   const partCount = [
     week.meeting["TREASURES FROM GODS WORD"],
     week.meeting["APPLY YOURSELF TO THE FIELD MINISTRY"],
@@ -321,7 +324,7 @@ function WeekCard({
           <div className="flex items-end pb-1">
             <div className="flex items-center gap-2">
               <Checkbox
-                id="opening-prayer"
+                id={openingPrayerId}
                 checked={week.meeting.openingPrayer ?? false}
                 onCheckedChange={(checked) =>
                   onChange({
@@ -331,7 +334,7 @@ function WeekCard({
                 }
               />
               <Label
-                htmlFor="opening-prayer"
+                htmlFor={openingPrayerId}
                 className="text-muted-foreground cursor-pointer text-sm font-medium"
               >
                 Oração inicial
@@ -371,7 +374,8 @@ function WeekCard({
               </p>
               {parts.map((part, partIndex) => (
                 <PartEditor
-                  key={`${sectionKey}-${part.number ?? ""}-${part.title}`}
+                  // biome-ignore lint/suspicious/noArrayIndexKey: editable list, items never reorder
+                  key={`${sectionKey}-${partIndex}`}
                   part={part}
                   onChange={(nextPart) => {
                     const next = parts.map((p, i) => (i === partIndex ? nextPart : p));
@@ -417,7 +421,7 @@ function WeekCard({
           <div className="flex items-end pb-1">
             <div className="flex items-center gap-2">
               <Checkbox
-                id="closing-prayer"
+                id={closingPrayerId}
                 checked={week.meeting.closingPrayer ?? false}
                 onCheckedChange={(checked) =>
                   onChange({
@@ -427,7 +431,7 @@ function WeekCard({
                 }
               />
               <Label
-                htmlFor="closing-prayer"
+                htmlFor={closingPrayerId}
                 className="text-muted-foreground cursor-pointer text-sm font-medium"
               >
                 Oração final

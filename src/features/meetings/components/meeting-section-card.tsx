@@ -37,7 +37,7 @@ function SlotSelect({
       <p className="text-muted-foreground text-xs">{slot.label}</p>
       <Select value={value} onValueChange={onSelect} disabled={disabled || candidates.length === 0}>
         <SelectTrigger
-          className="h-8 w-full text-sm"
+          className="h-9 w-full text-sm"
           aria-label={
             candidates.length === 0 ? `${slot.label}: nenhuma pessoa habilitada` : slot.label
           }
@@ -75,7 +75,7 @@ function PartRow({
 }) {
   return (
     <li className="grid gap-1.5 py-3 sm:grid-cols-[4.5rem_1fr_14rem] sm:items-start sm:gap-4">
-      <p className="font-mono text-muted-foreground text-sm tabular-nums">{part.time ?? "—"}</p>
+      <p className="text-muted-foreground text-sm tabular-nums">{part.time ?? "—"}</p>
       <div className="min-w-0 space-y-1">
         <div className="flex flex-wrap items-center gap-1.5">
           <p className="text-sm font-medium">{part.title}</p>
@@ -94,7 +94,7 @@ function PartRow({
             onValueChange={(value) => onControlChange(part.id, value)}
             disabled={disabled || part.select.options.length === 0}
           >
-            <SelectTrigger className="h-8 w-full max-w-md text-sm" aria-label={part.title}>
+            <SelectTrigger className="h-9 w-full max-w-md text-sm" aria-label={part.title}>
               <SelectValue placeholder="Selecionar..." />
             </SelectTrigger>
             <SelectContent>

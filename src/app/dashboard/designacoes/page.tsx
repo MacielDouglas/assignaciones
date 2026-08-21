@@ -1,7 +1,11 @@
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
+import { Suspense } from "react";
 import { AssignmentsList } from "@/features/meetings/components/assignments-list";
-import { DesignacoesTabs } from "@/features/meetings/components/designacoes-tabs";
+import {
+  type DesignacoesTab,
+  DesignacoesTabs,
+} from "@/features/meetings/components/designacoes-tabs";
 import { MeetingScheduleContent } from "@/features/meetings/components/meeting-schedule-content";
 import { getMeetingSchedulePageData } from "@/features/meetings/lib/meeting-page";
 import type { MemberRole } from "@/generated/prisma/enums";
@@ -9,7 +13,11 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { canManagePeople, isSubUser } from "@/lib/roles";
 
-export default async function DesignacoesPage() {
+export default async function DesignacoesPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ tab?: string; week?: string }>;
+}) {
   const session = await auth.api.getSession({
     headers: await headers(),
   });
@@ -18,8 +26,10 @@ export default async function DesignacoesPage() {
     redirect("/");
   }
 
+  const params = await searchParams;
   const user = session.user as { id: string; email: string | null };
   const subUser = isSubUser(user.email);
+  const tab: DesignacoesTab = params.tab === "designacoes" ? "designacoes" : "reunioes";
 
   let organizationId: string;
   let role: MemberRole;
@@ -43,7 +53,9 @@ export default async function DesignacoesPage() {
   }
 
   const canEdit = subUser || canManagePeople(role);
-  const data = await getMeetingSchedulePageData(organizationId);
+  const weekParam =
+    params.week && /^\d{4}-\d{2}-\d{2}$/.test(params.week) ? params.week : undefined;
+  const data = await getMeetingSchedulePageData(organizationId, weekParam);
 
   return (
     <main className="mx-auto w-full max-w-4xl flex-1 space-y-8 px-5 py-10 sm:px-6 sm:py-16">
@@ -56,17 +68,29 @@ export default async function DesignacoesPage() {
         </p>
       </header>
 
-      <DesignacoesTabs
-        reunioes={<MeetingScheduleContent data={data} canEdit={canEdit} />}
-        designacoes={
-          <AssignmentsList
-            midweekSections={data.midweekSections}
-            weekendSections={data.weekendSections}
-            assignedNames={data.assignedNames}
-            canEdit={canEdit}
-          />
-        }
-      />
+      <Suspense>
+        <DesignacoesTabs
+          defaultValue={tab}
+          reunioes={
+            <MeetingScheduleContent
+              data={data}
+              canEdit={canEdit}
+              weekStartIso={data.weekStartIso}
+              availableWeeks={data.availableWeeks}
+            />
+          }
+          designacoes={
+            <AssignmentsList
+              midweekSections={data.midweekSections}
+              weekendSections={data.weekendSections}
+              assignedNames={data.assignedNames}
+              canEdit={canEdit}
+              weekStartIso={data.weekStartIso}
+              availableWeeks={data.availableWeeks}
+            />
+          }
+        />
+      </Suspense>
     </main>
   );
 }

@@ -10,7 +10,11 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { canManagePeople, isSubUser } from "@/lib/roles";
 
-export default async function MeetingsPage() {
+export default async function MeetingsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ week?: string }>;
+}) {
   const session = await auth.api.getSession({
     headers: await headers(),
   });
@@ -44,7 +48,10 @@ export default async function MeetingsPage() {
   }
 
   const canEdit = subUser || canManagePeople(role);
-  const data = await getMeetingSchedulePageData(organizationId);
+  const params = await searchParams;
+  const weekParam =
+    params.week && /^\d{4}-\d{2}-\d{2}$/.test(params.week) ? params.week : undefined;
+  const data = await getMeetingSchedulePageData(organizationId, weekParam);
 
   return (
     <main className="mx-auto w-full max-w-4xl flex-1 space-y-8 px-5 py-10 sm:px-6 sm:py-16">
@@ -65,7 +72,12 @@ export default async function MeetingsPage() {
         </div>
       </header>
 
-      <MeetingScheduleContent data={data} canEdit={canEdit} />
+      <MeetingScheduleContent
+        data={data}
+        canEdit={canEdit}
+        weekStartIso={data.weekStartIso}
+        availableWeeks={data.availableWeeks}
+      />
     </main>
   );
 }

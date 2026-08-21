@@ -84,6 +84,7 @@ export function MeetingScheduleManager({
   canEdit,
   today,
   saved,
+  initialDate,
 }: {
   organizationId: string;
   midweekWorkbooks: { symbol: string; content: WorkbookContent }[];
@@ -95,9 +96,10 @@ export function MeetingScheduleManager({
   canEdit: boolean;
   today: string;
   saved: ScheduledMeetingData[];
+  initialDate?: string;
 }) {
   const [tab, setTab] = useState<"midweek" | "weekend">("midweek");
-  const [selectedDate, setSelectedDate] = useState(today.slice(0, 10));
+  const [selectedDate, setSelectedDate] = useState(initialDate ?? today.slice(0, 10));
   const [middleSong, setMiddleSong] = useState<number | null>(null);
   const [weekendSelections, setWeekendSelections] = useState({
     openingSong: null as number | null,
@@ -358,7 +360,7 @@ export function MeetingScheduleManager({
           <WeekPicker
             weekStartIso={weekStartIso}
             onChange={setSelectedDate}
-            weeks={tab === "midweek" ? availableWeeks : []}
+            weeks={availableWeeks}
           />
         </div>
 
@@ -385,7 +387,7 @@ export function MeetingScheduleManager({
 
           {midweekWorkbooks.length > 0 && !midweekMatch && (
             <div className="flex items-center gap-2 rounded-2xl border px-4 py-3 text-sm">
-              <AlertTriangle className="text-amber-500 size-4 shrink-0" aria-hidden="true" />
+              <AlertTriangle className="text-muted-foreground size-4 shrink-0" aria-hidden="true" />
               <p className="text-muted-foreground">
                 Nenhuma semana encontrada na apostila para a semana selecionada. Use o seletor
                 &quot;Semana da apostila&quot; acima.
@@ -394,8 +396,8 @@ export function MeetingScheduleManager({
           )}
 
           {!schedule.midweekTime && (
-            <div className="flex items-center gap-2 rounded-2xl border border-amber-500/30 bg-amber-500/5 px-4 py-3 text-sm">
-              <AlertTriangle className="text-amber-500 size-4 shrink-0" aria-hidden="true" />
+            <div className="flex items-center gap-2 rounded-2xl border px-4 py-3 text-sm">
+              <AlertTriangle className="text-muted-foreground size-4 shrink-0" aria-hidden="true" />
               <p className="text-muted-foreground">
                 O horário da reunião de meio de semana não está configurado. Use o horário
                 provisório das {midweekStartTime}.
@@ -437,8 +439,8 @@ export function MeetingScheduleManager({
 
         <TabsContent value="weekend" className="space-y-4">
           {!schedule.weekendTime && (
-            <div className="flex items-center gap-2 rounded-2xl border border-amber-500/30 bg-amber-500/5 px-4 py-3 text-sm">
-              <AlertTriangle className="text-amber-500 size-4 shrink-0" aria-hidden="true" />
+            <div className="flex items-center gap-2 rounded-2xl border px-4 py-3 text-sm">
+              <AlertTriangle className="text-muted-foreground size-4 shrink-0" aria-hidden="true" />
               <p className="text-muted-foreground">
                 O horário da reunião de fim de semana não está configurado. Use o horário provisório
                 das {weekendStartTime}.

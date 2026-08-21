@@ -5,14 +5,19 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { MeetingScheduleTable } from "@/features/meetings/components/meeting-schedule-table";
 import { MeetingTabs } from "@/features/meetings/components/meeting-tabs";
+import { ScheduleWeekNav } from "@/features/meetings/components/schedule-week-nav";
 import type { MeetingSchedulePageData } from "@/features/meetings/lib/meeting-page";
 
 export function MeetingScheduleContent({
   data,
   canEdit,
+  weekStartIso,
+  availableWeeks,
 }: {
   data: MeetingSchedulePageData;
   canEdit: boolean;
+  weekStartIso: string;
+  availableWeeks: { title: string; date: string }[];
 }) {
   const { weekEntry, scheduleRow, savedCount } = data;
 
@@ -74,6 +79,8 @@ export function MeetingScheduleContent({
           </Button>
         )}
       </div>
+
+      <ScheduleWeekNav weekStartIso={weekStartIso} weeks={availableWeeks} />
 
       <MeetingTabs midweek={midweekTable} weekend={weekendTable} />
     </div>

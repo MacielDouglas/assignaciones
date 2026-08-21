@@ -44,8 +44,8 @@ export default function Loading() {
 
       <div className="space-y-6">
         <div className="flex gap-1">
-          <Skeleton className="h-9 w-28 rounded-lg" />
-          <Skeleton className="h-9 w-32 rounded-lg" />
+          <Skeleton className="h-10 w-28 rounded-full" />
+          <Skeleton className="h-10 w-32 rounded-full" />
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <Skeleton className="h-6 w-44 rounded-full" />

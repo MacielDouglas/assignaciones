@@ -40,8 +40,8 @@ export function ContentList<T extends ContentRow>({
     return (
       <Card className="overflow-hidden rounded-2xl border">
         <CardContent className="flex flex-col items-center gap-4 px-5 py-10 text-center sm:px-6 sm:py-20">
-          <div className="bg-muted flex size-14 items-center justify-center rounded-2xl">
-            <CalendarDays className="text-muted-foreground size-6" aria-hidden="true" />
+          <div className="bg-primary/10 flex size-14 items-center justify-center rounded-2xl">
+            <CalendarDays className="size-6" aria-hidden="true" />
           </div>
           <div className="space-y-1.5">
             <p className="text-lg font-semibold tracking-tight">
@@ -151,8 +151,8 @@ export function CatalogList({
     return (
       <Card className="overflow-hidden rounded-2xl border">
         <CardContent className="flex flex-col items-center gap-4 px-5 py-10 text-center sm:px-6 sm:py-20">
-          <div className="bg-muted flex size-14 items-center justify-center rounded-2xl">
-            <CalendarDays className="text-muted-foreground size-6" aria-hidden="true" />
+          <div className="bg-primary/10 flex size-14 items-center justify-center rounded-2xl">
+            <CalendarDays className="size-6" aria-hidden="true" />
           </div>
           <div className="space-y-1.5">
             <p className="text-lg font-semibold tracking-tight">{emptyLabel}</p>

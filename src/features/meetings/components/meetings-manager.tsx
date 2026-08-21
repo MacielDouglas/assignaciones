@@ -5,7 +5,13 @@ import { useRef, useState } from "react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import type { WorkbookLanguage } from "@/features/meetings/lib/workbook-meta";
 import { workbookIssueKey } from "@/features/meetings/lib/workbook-meta";
@@ -27,6 +33,11 @@ import type {
   WatchtowerRow,
 } from "./types";
 import { WatchtowerEditor } from "./watchtower-editor";
+
+type PendingDelete =
+  | { kind: "workbook"; row: MeetingWorkbookRow }
+  | { kind: "watchtower"; row: WatchtowerRow }
+  | null;
 
 interface MeetingsManagerProps {
   organizationId: string;
@@ -60,6 +71,7 @@ export function MeetingsManager({
   const [importing, setImporting] = useState(false);
   const [saving, setSaving] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [pendingDelete, setPendingDelete] = useState<PendingDelete>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   function upsertWorkbookRow(row: MeetingWorkbookRow) {
@@ -210,14 +222,27 @@ export function MeetingsManager({
   }
 
   async function handleDeleteWorkbook(row: MeetingWorkbookRow) {
-    if (!window.confirm(`Excluir a apostila "${row.name}"?`)) return;
+    setPendingDelete({ kind: "workbook", row });
+  }
+
+  async function performDelete() {
+    if (!pendingDelete) return;
+    const { kind, row } = pendingDelete;
+    setPendingDelete(null);
     setDeletingId(row.id);
     try {
-      await apiFetch(`/api/organizations/${organizationId}/meetings/${row.id}`, {
-        method: "DELETE",
-      });
-      setWorkbooks((prev) => prev.filter((item) => item.id !== row.id));
-      toast.success("Apostila excluída.");
+      const endpoint =
+        kind === "workbook"
+          ? `/api/organizations/${organizationId}/meetings/${row.id}`
+          : `/api/organizations/${organizationId}/watchtowers/${row.id}`;
+      await apiFetch(endpoint, { method: "DELETE" });
+      if (kind === "workbook") {
+        setWorkbooks((prev) => prev.filter((item) => item.id !== row.id));
+        toast.success("Apostila excluída.");
+      } else {
+        setWatchtowers((prev) => prev.filter((item) => item.id !== row.id));
+        toast.success("Sentinela excluída.");
+      }
     } catch (error) {
       toast.error(getErrorMessage(error));
     } finally {
@@ -225,20 +250,8 @@ export function MeetingsManager({
     }
   }
 
-  async function handleDeleteWatchtower(row: WatchtowerRow) {
-    if (!window.confirm(`Excluir a Sentinela "${row.name}"?`)) return;
-    setDeletingId(row.id);
-    try {
-      await apiFetch(`/api/organizations/${organizationId}/watchtowers/${row.id}`, {
-        method: "DELETE",
-      });
-      setWatchtowers((prev) => prev.filter((item) => item.id !== row.id));
-      toast.success("Sentinela excluída.");
-    } catch (error) {
-      toast.error(getErrorMessage(error));
-    } finally {
-      setDeletingId(null);
-    }
+  function handleDeleteWatchtower(row: WatchtowerRow) {
+    setPendingDelete({ kind: "watchtower", row });
   }
 
   function mergeCatalogItems(existing: CatalogRow[], items: CatalogItem[]): CatalogItem[] {
@@ -495,6 +508,33 @@ export function MeetingsManager({
           </DialogContent>
         </Dialog>
       )}
+
+      <Dialog
+        open={pendingDelete !== null}
+        onOpenChange={(open) => !open && setPendingDelete(null)}
+      >
+        <DialogContent showCloseButton={false}>
+          <DialogHeader>
+            <DialogTitle>
+              Excluir {pendingDelete?.kind === "workbook" ? "a apostila" : "a Sentinela"} "
+              {pendingDelete?.row.name}"?
+            </DialogTitle>
+            <DialogDescription>
+              {pendingDelete?.kind === "workbook"
+                ? "A apostila será removida e não poderá mais ser usada nas programações existentes. Esta ação não pode ser desfeita."
+                : "A Sentinela será removida e não poderá mais ser usada nas programações existentes. Esta ação não pode ser desfeita."}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+            <Button variant="outline" onClick={() => setPendingDelete(null)}>
+              Cancelar
+            </Button>
+            <Button variant="destructive" disabled={!pendingDelete} onClick={performDelete}>
+              Excluir
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
