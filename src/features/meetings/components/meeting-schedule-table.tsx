@@ -42,7 +42,7 @@ function ScheduleRow({
                   {personName ? (
                     <span className="font-medium">{personName}</span>
                   ) : (
-                    <span className="text-muted-foreground">—</span>
+                    <span className="text-warning font-medium">—</span>
                   )}
                 </p>
               );

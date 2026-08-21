@@ -1,4 +1,4 @@
-import { CalendarCog } from "lucide-react";
+import { CalendarCog, Check, TriangleAlert } from "lucide-react";
 import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -67,9 +67,17 @@ export function MeetingScheduleContent({
       <div className="flex flex-wrap items-center gap-2">
         <Badge variant="secondary">Semana de {weekEntry.week.week}</Badge>
         {(!scheduleRow?.midweekTime || !scheduleRow?.weekendTime) && (
-          <Badge variant="outline">Horário padrão em uso</Badge>
+          <Badge className="border-warning/30 bg-warning/10 text-warning">
+            <TriangleAlert aria-hidden="true" />
+            Horário padrão em uso
+          </Badge>
         )}
-        {savedCount > 0 && <Badge variant="outline">Programação salva</Badge>}
+        {savedCount > 0 && (
+          <Badge className="border-success/30 bg-success/10 text-success">
+            <Check aria-hidden="true" />
+            Programação salva
+          </Badge>
+        )}
         {canEdit && (
           <Button variant="outline" size="sm" className="ml-auto" asChild>
             <Link href="/dashboard/designacoes/reunioes/programar">

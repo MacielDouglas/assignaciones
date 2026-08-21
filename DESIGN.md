@@ -10,6 +10,8 @@ colors:
   muted-foreground: "oklch(0.556 0 0)"
   border: "oklch(0.922 0 0)"
   destructive: "oklch(0.577 0.245 27.325)"
+  success: "#15803d"
+  warning: "#b45309"
 typography:
   display:
     fontFamily: "Inter, system-ui, sans-serif"
@@ -106,10 +108,12 @@ Paleta acromática com uma única exceção funcional — a cor só existe quand
 - **Linha Hairline** (oklch(0.922 0 0)): bordas e anéis de contorno de superfícies.
 
 ### Tertiary
-- **Vermelho de Alerta** (oklch(0.577 0.245 27.325)): apenas para erro e destruição (ex.: excluir designação). A única cor cromática do sistema.
+- **Vermelho de Alerta** (oklch(0.577 0.245 27.325)): apenas para erro e destruição (ex.: excluir designação).
+- **Verde de Confirmação** (`--success`; claro `#15803d`, escuro `#4ade80`): apenas estado confirmado/salvo (ex.: badge "Programação salva"), sempre acompanhado de ícone.
+- **Âmbar de Atenção** (`--warning`; claro `#b45309`, escuro `#fbbf24`): apenas aviso pendente ou lacuna a resolver (ex.: "Horário padrão em uso", vaga não preenchida), sempre acompanhado de ícone ou marcador textual.
 
 ### Named Rules
-**A Regra do Silêncio Cromático.** Nenhuma cor decorativa em qualquer tela. Uma cor cromática só pode aparecer carregando significado — e hoje isso é exclusivamente o vermelho de erro.
+**A Regra do Silêncio Cromático.** Nenhuma cor decorativa em qualquer tela. Uma cor cromática só pode aparecer carregando significado — e somente estas três: vermelho para erro, verde para confirmação, âmbar para pendência. Ação, seleção e navegação permanecem acromáticos. Informação nunca depende só de cor: ícone, texto ou posição acompanham todo uso cromático.
 
 ## Typography
 
