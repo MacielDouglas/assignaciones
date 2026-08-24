@@ -583,7 +583,7 @@ export function MeetingScheduleManager({
         <TabsContent value="midweek" className="space-y-4">
           {coVisit && specialEvent && <SpecialEventBanner event={specialEvent} />}
           {midweekWorkbooks.length === 0 && (
-            <Card>
+            <Card className="shadow-xs">
               <CardContent className="flex flex-col items-center gap-3 py-10 text-center">
                 <div className="bg-primary/10 text-primary flex size-14 items-center justify-center rounded-2xl">
                   <BookOpen className="size-6" aria-hidden="true" />

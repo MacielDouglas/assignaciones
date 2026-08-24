@@ -149,7 +149,7 @@ export function CatalogList({
 
   if (rows.length === 0) {
     return (
-      <Card className="overflow-hidden rounded-2xl border">
+      <Card className="overflow-hidden rounded-2xl border shadow-xs">
         <CardContent className="flex flex-col items-center gap-4 px-5 py-10 text-center sm:px-6 sm:py-20">
           <div className="bg-primary/10 flex size-14 items-center justify-center rounded-2xl">
             <CalendarDays className="size-6" aria-hidden="true" />

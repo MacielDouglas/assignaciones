@@ -281,6 +281,14 @@ export function MeetingPartDialog({
                   aria-label="Horário de início"
                 />
               </Field>
+
+              <Field label="Subtítulo">
+                <Input
+                  value={subtitle}
+                  onChange={(event) => setSubtitle(event.target.value)}
+                  aria-label="Subtítulo da parte"
+                />
+              </Field>
             </div>
 
             <details className="group rounded-xl border">
@@ -294,14 +302,6 @@ export function MeetingPartDialog({
               </summary>
 
               <div className="space-y-4 border-t px-4 py-4">
-                <Field label="Subtítulo">
-                  <Input
-                    value={subtitle}
-                    onChange={(event) => setSubtitle(event.target.value)}
-                    aria-label="Subtítulo da parte"
-                  />
-                </Field>
-
                 <div className="grid grid-cols-3 gap-3">
                   <Field label="Duração (min)">
                     <Input
