@@ -61,8 +61,6 @@ export default async function MeetingsPage({
     role = membership.role;
   }
 
-  // Autorização resolvida exclusivamente no servidor; o cliente só recebe o
-  // resultado (render ou não dos botões de programar).
   const canEdit = subUser || canManagePeople(role);
   const params = await searchParams;
   const tab = parseTab(params.tab);
@@ -70,7 +68,6 @@ export default async function MeetingsPage({
     params.week && /^\d{4}-\d{2}-\d{2}$/.test(params.week) ? params.week : undefined;
   const data = await getMeetingSchedulePageData(organizationId, weekParam);
   const { scheduleRow, savedCount, weekEntry } = data;
-  // Roster apenas para quem pode editar (modal de edição rápida por parte).
   const roster = canEdit ? await getScheduleRoster(organizationId) : [];
   const basePath = "/dashboard/reunioes";
   const weekHref = (weekIso: string) => `${basePath}?tab=${tab}&week=${weekIso}`;
@@ -78,28 +75,39 @@ export default async function MeetingsPage({
   const programHref = `/dashboard/designacoes/reunioes/programar?week=${data.weekStartIso}`;
   const importHref = "/dashboard/designacoes/reunioes/conteudo";
 
-  const scheduleContent =
-    data.specialEvent?.behavior === "hideMeetings" && data.specialEvent ? (
-      <SpecialEventCard event={data.specialEvent} />
+  const hasDefaultSchedule = scheduleRow?.midweekTime && scheduleRow?.weekendTime;
+  const scheduleIndicators = !hasDefaultSchedule && (
+    <div className="flex flex-wrap items-center gap-2">
+      {(!scheduleRow?.midweekTime || !scheduleRow?.weekendTime) && (
+        <Badge
+          className="border-warning/30 bg-warning/10 text-warning"
+          aria-label="Horário padrão em uso"
+        >
+          <TriangleAlert aria-hidden="true" />
+          Horário padrão em uso
+        </Badge>
+      )}
+      {savedCount > 0 && (
+        <Badge
+          className="border-success/30 bg-success/10 text-success"
+          aria-label="Programação salva"
+        >
+          <Check aria-hidden="true" />
+          Programação salva
+        </Badge>
+      )}
+    </div>
+  );
+
+  const specialEvent = data.specialEvent;
+  const isHideMeetings = specialEvent?.behavior === "hideMeetings";
+
+  const midweekContent =
+    isHideMeetings && specialEvent ? (
+      <SpecialEventCard event={specialEvent} />
     ) : (
       <>
-        {(savedCount > 0 || !scheduleRow?.midweekTime || !scheduleRow?.weekendTime) && (
-          <div className="flex flex-wrap items-center gap-2">
-            {(!scheduleRow?.midweekTime || !scheduleRow?.weekendTime) && (
-              <Badge className="border-warning/30 bg-warning/10 text-warning">
-                <TriangleAlert aria-hidden="true" />
-                Horário padrão em uso
-              </Badge>
-            )}
-            {savedCount > 0 && (
-              <Badge className="border-success/30 bg-success/10 text-success">
-                <Check aria-hidden="true" />
-                Programação salva
-              </Badge>
-            )}
-          </div>
-        )}
-        {data.specialEvent && <SpecialEventBanner event={data.specialEvent} />}
+        {specialEvent && <SpecialEventBanner event={specialEvent} />}
         <MeetingScheduleCard
           title="Reunião do Meio de Semana"
           day={data.effectiveDays.midweekDay}
@@ -120,8 +128,8 @@ export default async function MeetingsPage({
     );
 
   const weekendContent =
-    data.specialEvent?.behavior === "hideMeetings" && data.specialEvent ? (
-      <div className="bg-card flex flex-col items-center gap-3 rounded-2xl border px-5 py-10 text-center">
+    isHideMeetings && specialEvent ? (
+      <div className="bg-card flex flex-col items-center gap-3 rounded-2xl border px-5 py-10 text-center shadow-xs">
         <div
           className="flex size-12 items-center justify-center rounded-2xl text-white shadow-xs"
           style={{ backgroundColor: SECTION_NEUTRAL_COLOR }}
@@ -132,13 +140,13 @@ export default async function MeetingsPage({
           <p className="text-sm font-semibold">Sem reunião nesta semana</p>
           <p className="text-muted-foreground text-sm">
             A semana está ocupada pelo{" "}
-            {data.specialEvent.title || SPECIAL_EVENT_TITLES[data.specialEvent.kind]}.
+            {specialEvent.title || SPECIAL_EVENT_TITLES[specialEvent.kind]}.
           </p>
         </div>
       </div>
     ) : (
       <>
-        {data.specialEvent && <SpecialEventBanner event={data.specialEvent} />}
+        {specialEvent && <SpecialEventBanner event={specialEvent} />}
         <MeetingScheduleCard
           title="Reunião do Fim de Semana"
           day={data.effectiveDays.weekendDay}
@@ -195,11 +203,14 @@ export default async function MeetingsPage({
           </Card>
         ) : (
           <section aria-label="Programação da semana">
+            {!isHideMeetings && scheduleIndicators && (
+              <div className="mb-4">{scheduleIndicators}</div>
+            )}
             <MeetingTabs
               defaultValue={tab}
               basePath={basePath}
               week={data.weekStartIso}
-              midweek={scheduleContent}
+              midweek={midweekContent}
               weekend={weekendContent}
             />
           </section>
