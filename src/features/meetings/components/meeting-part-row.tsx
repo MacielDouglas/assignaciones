@@ -1,4 +1,4 @@
-import { ChevronRight } from "lucide-react";
+import type { ReactNode } from "react";
 import {
   type MeetingSectionTheme,
   sectionDividerVar,
@@ -29,10 +29,13 @@ export function MeetingPartRow({
   part,
   assignments,
   theme,
+  action,
 }: {
   part: MeetingPart;
   assignments?: Record<string, string>;
   theme: MeetingSectionTheme;
+  /** Ação à direita da linha (ex.: botão de edição rápida para owner/admin). */
+  action?: ReactNode;
 }) {
   const songNumber = part.song?.number && part.song.number > 0 ? part.song.number : null;
   const subtitle = part.subtitle ?? part.song?.theme ?? null;
@@ -81,10 +84,11 @@ export function MeetingPartRow({
         </div>
       )}
 
-      <ChevronRight
-        className="text-muted-foreground/60 col-start-3 row-start-1 size-5 shrink-0 self-center sm:col-start-4"
-        aria-hidden="true"
-      />
+      {action && (
+        <div className="col-start-3 row-start-1 flex shrink-0 items-center self-center sm:col-start-4">
+          {action}
+        </div>
+      )}
     </li>
   );
 }

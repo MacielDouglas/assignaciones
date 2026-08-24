@@ -1,16 +1,19 @@
 ﻿import { CalendarCog, ChevronRight, FilePlus2 } from "lucide-react";
 import Link from "next/link";
+import type { ReactNode } from "react";
 import { Button } from "@/components/ui/button";
+import { MeetingPartDialog } from "@/features/meetings/components/meeting-part-dialog";
 import { MeetingSectionBlock } from "@/features/meetings/components/meeting-section";
-import type { MeetingSection } from "@/features/meetings/lib/meeting-builder";
+import type { CandidatePerson } from "@/features/meetings/lib/candidates";
+import type { MeetingPart, MeetingSection } from "@/features/meetings/lib/meeting-builder";
 import { weekdayLabel } from "@/features/meetings/lib/meeting-builder";
 import type { WeekDay } from "@/generated/prisma/enums";
 
 const PRESIDENT_SLOT_KINDS = new Set(["presidente", "presidenteReuniaoPublica"]);
 
 interface PresidentInfo {
+  part: MeetingPart | null;
   name: string | undefined;
-  found: boolean;
 }
 
 function findPresident(
@@ -21,12 +24,12 @@ function findPresident(
     for (const part of section.parts) {
       for (const slot of part.slots) {
         if (PRESIDENT_SLOT_KINDS.has(slot.kind)) {
-          return { name: assignments?.[slot.id], found: true };
+          return { part, name: assignments?.[slot.id] };
         }
       }
     }
   }
-  return { name: undefined, found: false };
+  return { part: null, name: undefined };
 }
 
 function ProgressDots({ assigned, total }: { assigned: number; total: number }) {
@@ -64,9 +67,14 @@ export function MeetingScheduleCard({
   fallbackTime,
   sections,
   assignments,
+  assignedPersonIds,
   canEdit = false,
   programHref,
   importHref,
+  organizationId,
+  weekStartIso,
+  meetingType = "MIDWEEK",
+  roster,
 }: {
   title: string;
   day: WeekDay | null;
@@ -74,9 +82,15 @@ export function MeetingScheduleCard({
   fallbackTime: string;
   sections: MeetingSection[];
   assignments?: Record<string, string>;
+  /** IDs das pessoas designadas por slot (edição rápida). */
+  assignedPersonIds?: Record<string, string>;
   canEdit?: boolean;
   programHref?: string;
   importHref?: string;
+  organizationId?: string;
+  weekStartIso?: string;
+  meetingType?: "MIDWEEK" | "WEEKEND";
+  roster?: CandidatePerson[];
 }) {
   const totalMinutes = sections.reduce(
     (sum, section) => sum + section.parts.reduce((acc, part) => acc + part.duration, 0),
@@ -98,6 +112,21 @@ export function MeetingScheduleCard({
   const president = findPresident(sections, assignments);
   const dayLabel = weekdayLabel(day);
   const timeLabel = time ?? fallbackTime;
+
+  /** Edição rápida por parte — somente owner/admin com contexto completo. */
+  const renderPartAction =
+    canEdit && organizationId && weekStartIso && roster
+      ? (part: MeetingPart): ReactNode => (
+          <MeetingPartDialog
+            organizationId={organizationId}
+            weekStartIso={weekStartIso}
+            meetingType={meetingType}
+            part={part}
+            roster={roster}
+            assignedPersonIds={assignedPersonIds ?? {}}
+          />
+        )
+      : undefined;
 
   return (
     <div className="space-y-2.5">
@@ -157,7 +186,7 @@ export function MeetingScheduleCard({
           )}
         </div>
 
-        {president.found && (
+        {president.part && (
           <div className="border-border flex items-center justify-between gap-3 border-t px-3 py-2 sm:px-4">
             <span className="text-muted-foreground shrink-0 text-xs font-semibold tracking-wide uppercase">
               Presidente
@@ -171,10 +200,14 @@ export function MeetingScheduleCard({
                   <span className="sr-only">Presidente ainda não designado</span>
                 </>
               )}
-              <ChevronRight
-                className="text-muted-foreground/60 size-4 shrink-0"
-                aria-hidden="true"
-              />
+              {renderPartAction ? (
+                renderPartAction(president.part)
+              ) : (
+                <ChevronRight
+                  className="text-muted-foreground/60 size-4 shrink-0"
+                  aria-hidden="true"
+                />
+              )}
             </span>
           </div>
         )}
@@ -182,7 +215,12 @@ export function MeetingScheduleCard({
 
       <ol className="space-y-2.5">
         {sections.map((section) => (
-          <MeetingSectionBlock key={section.id} section={section} assignments={assignments} />
+          <MeetingSectionBlock
+            key={section.id}
+            section={section}
+            assignments={assignments}
+            renderAction={renderPartAction}
+          />
         ))}
       </ol>
     </div>

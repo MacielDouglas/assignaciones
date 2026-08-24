@@ -8,11 +8,13 @@ import {
   listWorkbookWeeks,
   type MeetingSection,
   parseIsoDay,
+  parseSongNumber,
   type SongItem,
   type TalkItem,
   type WatchtowerArticleItem,
   weekStartUtc,
 } from "@/features/meetings/lib/meeting-builder";
+import { applyOverridesAndRecalc } from "@/features/meetings/lib/part-overrides";
 import { listScheduledMeetingsWithNames } from "@/features/meetings/lib/scheduled-meetings";
 import {
   effectiveScheduleDays,
@@ -41,6 +43,8 @@ export interface MeetingSchedulePageData {
   midweekSections: MeetingSection[];
   weekendSections: MeetingSection[];
   assignedNames: Record<string, string>;
+  /** IDs das pessoas designadas por slot (para o modal de edição rápida). */
+  assignedPersonIds: Record<string, string>;
   savedCount: number;
   articleId: string | null;
   weekStartIso: string;
@@ -130,20 +134,21 @@ export async function getMeetingSchedulePageData(
   const songItems = songs as SongItem[];
   const talkItems = talks as TalkItem[];
 
-  const midweekSections =
+  const rawMidweekSections =
     weekEntry && !hideMeetings
       ? buildMidweekMeeting(
           {
             week: weekEntry.week,
             startTime: scheduleRow?.midweekTime ?? "19:30",
             songs: songItems,
-            middleSong: null,
+            // Cântico do meio importado da seção Nossa Vida Cristã da apostila.
+            middleSong: parseSongNumber(weekEntry.week.meeting.middleSong ?? null),
           },
           { specialEvent },
         )
       : [];
 
-  const weekendSections = hideMeetings
+  const rawWeekendSections = hideMeetings
     ? []
     : buildWeekendMeeting(
         {
@@ -162,11 +167,18 @@ export async function getMeetingSchedulePageData(
         { specialEvent },
       );
 
+  // Ajustes rápidos (owner/admin) persistidos no JSON da apostila.
+  const partOverrides = weekEntry?.workbook.content.partOverrides;
+  const midweekSections = applyOverridesAndRecalc(rawMidweekSections, partOverrides, songItems);
+  const weekendSections = applyOverridesAndRecalc(rawWeekendSections, partOverrides, songItems);
+
   const savedWeek = savedMeetings.filter((meeting) => meeting.weekStart === weekIso);
   const assignedNames = new Map<string, string>();
+  const assignedPersonIds = new Map<string, string>();
   for (const meeting of savedWeek) {
     for (const assignment of meeting.assignments) {
       assignedNames.set(assignment.partId, assignment.personName);
+      assignedPersonIds.set(assignment.partId, assignment.personId);
     }
   }
 
@@ -183,6 +195,7 @@ export async function getMeetingSchedulePageData(
     midweekSections,
     weekendSections,
     assignedNames: Object.fromEntries(assignedNames),
+    assignedPersonIds: Object.fromEntries(assignedPersonIds),
     savedCount: savedWeek.length,
     articleId,
     weekStartIso: weekIso,

@@ -157,11 +157,9 @@ export function MeetingsManager({
                   meetingType: data.meetingType as "MIDWEEK" | "WEEKEND",
                   symbol: data.workbook.symbol,
                   name: data.workbook.name,
-                  shortTitle: data.workbook.shortTitle,
                   displayTitle: data.workbook.displayTitle,
-                  referenceTitle: data.workbook.referenceTitle,
                   languageCode: data.workbook.languageCode,
-                  coverImageUrl: data.workbook.coverImageUrl,
+                  coverImageUrl: data.workbook.coverImageUrl ?? undefined,
                   content: data.workbook.content,
                 } satisfies EditorDraft,
               };

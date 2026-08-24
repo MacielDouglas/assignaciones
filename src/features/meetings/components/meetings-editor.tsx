@@ -76,22 +76,10 @@ export function MeetingsEditor({
                     onChange={(event) => onChange({ ...draft, name: event.target.value })}
                   />
                 </Field>
-                <Field label="Título curto">
-                  <Input
-                    value={draft.shortTitle ?? ""}
-                    onChange={(event) => onChange({ ...draft, shortTitle: event.target.value })}
-                  />
-                </Field>
                 <Field label="Título de exibição">
                   <Input
                     value={draft.displayTitle ?? ""}
                     onChange={(event) => onChange({ ...draft, displayTitle: event.target.value })}
-                  />
-                </Field>
-                <Field label="Título de referência">
-                  <Input
-                    value={draft.referenceTitle ?? ""}
-                    onChange={(event) => onChange({ ...draft, referenceTitle: event.target.value })}
                   />
                 </Field>
                 <Field label="Código de idioma">
@@ -372,6 +360,20 @@ function WeekCard({
               <p className="text-muted-foreground text-xs font-medium tracking-widest uppercase">
                 {SECTION_LABELS[sectionKey] ?? sectionKey}
               </p>
+              {sectionKey === "LIVING AS CHRISTIANS" && (
+                <Field label="Cântico do meio">
+                  <Input
+                    value={week.meeting.middleSong ?? ""}
+                    onChange={(event) =>
+                      onChange({
+                        ...week,
+                        meeting: { ...week.meeting, middleSong: event.target.value },
+                      })
+                    }
+                    placeholder="Ex.: Canción 12"
+                  />
+                </Field>
+              )}
               {parts.map((part, partIndex) => (
                 <PartEditor
                   // biome-ignore lint/suspicious/noArrayIndexKey: editable list, items never reorder

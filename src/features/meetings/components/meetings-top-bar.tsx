@@ -1,4 +1,4 @@
-import { CalendarDays, Check, ChevronLeft, ChevronRight, Cloud } from "lucide-react";
+import { CalendarDays, ChevronLeft, ChevronRight } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import {
@@ -86,27 +86,13 @@ export function MeetingsTopBar({
           </Button>
         </div>
 
-        {bibleReading ? (
-          <div className="mt-2 flex items-center justify-between gap-3">
-            <p
-              className="min-w-0 truncate text-base font-extrabold tracking-[0.12em] uppercase sm:text-lg"
-              title={bibleReading}
-            >
-              {bibleReading}
-            </p>
-            <span
-              role="img"
-              aria-label="Conteúdo carregado da apostila da semana"
-              className="relative flex size-8 shrink-0 items-center justify-center rounded-full bg-white/15"
-            >
-              <Cloud className="size-5" aria-hidden="true" />
-              <span className="absolute -right-0.5 -bottom-0.5 flex size-3.5 items-center justify-center rounded-full bg-primary">
-                <Check className="size-2.5 text-primary-foreground" aria-hidden="true" />
-              </span>
-            </span>
-          </div>
-        ) : (
-          <div className="mt-2 h-6 sm:h-7" aria-hidden="true" />
+        {bibleReading && (
+          <p
+            className="mt-2 truncate text-base font-extrabold tracking-[0.12em] uppercase sm:text-lg"
+            title={bibleReading}
+          >
+            {bibleReading}
+          </p>
         )}
 
         {!isCurrentWeek && currentWeekIso && (

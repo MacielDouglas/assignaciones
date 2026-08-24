@@ -28,6 +28,7 @@ import {
   buildWeekendMeeting,
   findWorkbookWeek,
   isoDay,
+  parseSongNumber,
   type SongItem,
   type TalkItem,
   type WatchtowerArticleItem,
@@ -157,7 +158,10 @@ export function MeetingScheduleManager({
   useEffect(() => {
     const midweek = savedFor(savedMeetings, weekStartIso, "MIDWEEK");
     const weekend = savedFor(savedMeetings, weekStartIso, "WEEKEND");
-    setMiddleSong(midweek?.middleSong ?? null);
+    // Sem programação salva, usa o cântico do meio importado da apostila.
+    setMiddleSong(
+      midweek?.middleSong ?? parseSongNumber(midweekMatch?.week.meeting.middleSong ?? null),
+    );
     setWeekendSelections({
       openingSong: weekend?.openingSong ?? null,
       middleSong: weekend?.middleSong ?? null,
@@ -173,7 +177,7 @@ export function MeetingScheduleManager({
         ]),
       ),
     );
-  }, [weekStartIso, savedMeetings, talks, defaultArticleId]);
+  }, [weekStartIso, savedMeetings, talks, defaultArticleId, midweekMatch]);
 
   // Avisos do backend ficam obsoletos ao trocar de semana ou aba.
   const issueContextKey = `${weekStartIso}-${tab}`;

@@ -147,10 +147,11 @@ export default async function MeetingContentPage() {
           </Button>
           <div className="space-y-2">
             <h1 className="text-3xl font-bold tracking-tight text-balance sm:text-4xl">
-              Conteúdo das reuniões
+              Importar apostila
             </h1>
             <p className="text-muted-foreground max-w-md text-base">
-              Apostilas importadas dos arquivos .jwpub, prontas para montar a escala da congregação.
+              Importe os arquivos .jwpub da apostila, Sentinela, cânticos e discursos para montar a
+              programação da congregação.
             </p>
           </div>
         </header>

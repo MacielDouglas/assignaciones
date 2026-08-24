@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import { MeetingPartRow } from "@/features/meetings/components/meeting-part-row";
 import {
   getMeetingSectionTheme,
@@ -16,9 +17,12 @@ import type { MeetingSection } from "@/features/meetings/lib/meeting-builder";
 export function MeetingSectionBlock({
   section,
   assignments,
+  renderAction,
 }: {
   section: MeetingSection;
   assignments?: Record<string, string>;
+  /** Ação opcional por parte (ex.: edição rápida para owner/admin). */
+  renderAction?: (part: MeetingSection["parts"][number]) => ReactNode;
 }) {
   const theme = getMeetingSectionTheme(section);
   const { Icon } = theme;
@@ -57,7 +61,13 @@ export function MeetingSectionBlock({
 
         <ol className="divide-y divide-[color:var(--section-divider)] bg-card">
           {section.parts.map((part) => (
-            <MeetingPartRow key={part.id} part={part} assignments={assignments} theme={theme} />
+            <MeetingPartRow
+              key={part.id}
+              part={part}
+              assignments={assignments}
+              theme={theme}
+              action={renderAction?.(part)}
+            />
           ))}
         </ol>
       </section>

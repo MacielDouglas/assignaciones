@@ -21,6 +21,7 @@ const workbookWeekSchema = z.object({
   meeting: z
     .object({
       openingSong: z.string().optional(),
+      middleSong: z.string().optional(),
       openingPrayer: z.boolean().optional(),
       openingComments: z.string().optional(),
       "TREASURES FROM GODS WORD": z.array(workbookPartSchema).optional(),
@@ -31,6 +32,19 @@ const workbookWeekSchema = z.object({
       closingPrayer: z.boolean().optional(),
     })
     .passthrough(),
+});
+
+/** Ajuste rápido de uma parte da programação (página de reuniões, owner/admin). */
+export const meetingPartOverrideSchema = z.object({
+  title: z.string().trim().min(1, "Informe o título da parte.").max(300).optional(),
+  subtitle: z.string().trim().max(500).optional(),
+  startTime: z
+    .string()
+    .regex(/^([01]\d|2[0-3]):[0-5]\d$/, "Horário inválido.")
+    .nullable()
+    .optional(),
+  durationMinutes: z.number().int().min(0).max(600).nullable().optional(),
+  songNumber: z.number().int().min(1).max(300).nullable().optional(),
 });
 
 export const workbookContentSchema = z.object({
@@ -52,6 +66,24 @@ export const workbookContentSchema = z.object({
       video: z.string().optional(),
     })
     .optional(),
+  partOverrides: z.record(z.string(), meetingPartOverrideSchema).optional(),
+});
+
+export const programPartSchema = z.object({
+  weekStart: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Semana inválida."),
+  meetingType: z.enum(["MIDWEEK", "WEEKEND"]),
+  partId: z.string().trim().min(1, "Parte inválida."),
+  overrides: meetingPartOverrideSchema.default({}),
+  slots: z
+    .array(
+      z.object({
+        slotId: z.string().min(1),
+        label: z.string().trim().min(1),
+        kind: z.enum(ASSIGNMENT_KINDS as unknown as [string, ...string[]]),
+        personId: z.string().nullable(),
+      }),
+    )
+    .default([]),
 });
 
 export const meetingSaveSchema = z.object({
@@ -62,7 +94,7 @@ export const meetingSaveSchema = z.object({
   displayTitle: z.string().optional(),
   referenceTitle: z.string().optional(),
   languageCode: z.string().optional(),
-  coverImageUrl: z.string().optional(),
+  coverImageUrl: z.string().nullable().optional(),
   content: workbookContentSchema,
 });
 
@@ -121,7 +153,8 @@ export const scheduledAssignmentSchema = z.object({
   partId: z.string().min(1, "Identificador da parte é obrigatório."),
   label: z.string().min(1, "Rótulo da designação é obrigatório."),
   personId: z.string().min(1, "Pessoa designada é obrigatória."),
-  kind: z.enum(ASSIGNMENT_KINDS as unknown as [string, ...string[]]),
+  /** Metadado de UI; não é persistido, mas mantido para compatibilidade. */
+  kind: z.enum(ASSIGNMENT_KINDS as unknown as [string, ...string[]]).optional(),
 });
 
 export const scheduledMeetingSchema = z.object({
@@ -138,6 +171,8 @@ export const scheduledMeetingSchema = z.object({
 export type WorkbookContentInput = z.infer<typeof workbookContentSchema>;
 export type MeetingSaveInput = z.infer<typeof meetingSaveSchema>;
 export type MeetingUpdateInput = z.infer<typeof meetingUpdateSchema>;
+export type MeetingPartOverrideInput = z.infer<typeof meetingPartOverrideSchema>;
+export type ProgramPartInput = z.infer<typeof programPartSchema>;
 export type WatchtowerSaveInput = z.infer<typeof watchtowerSaveSchema>;
 export type SongsSaveInput = z.infer<typeof songsSaveSchema>;
 export type TalksSaveInput = z.infer<typeof talksSaveSchema>;

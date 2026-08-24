@@ -10,6 +10,7 @@ import { type MeetingTabKey, MeetingTabs } from "@/features/meetings/components/
 import { MeetingsTopBar } from "@/features/meetings/components/meetings-top-bar";
 import { SpecialEventBanner } from "@/features/meetings/components/special-event-banner";
 import { SpecialEventCard } from "@/features/meetings/components/special-event-card";
+import { getScheduleRoster } from "@/features/meetings/lib/candidates";
 import { isoDay, weekStartUtc } from "@/features/meetings/lib/meeting-builder";
 import { getMeetingSchedulePageData } from "@/features/meetings/lib/meeting-page";
 import type { MemberRole } from "@/generated/prisma/enums";
@@ -67,6 +68,8 @@ export default async function MeetingsPage({
     params.week && /^\d{4}-\d{2}-\d{2}$/.test(params.week) ? params.week : undefined;
   const data = await getMeetingSchedulePageData(organizationId, weekParam);
   const { scheduleRow, savedCount, weekEntry } = data;
+  // Roster apenas para quem pode editar (modal de edição rápida por parte).
+  const roster = canEdit ? await getScheduleRoster(organizationId) : [];
   const basePath = "/dashboard/reunioes";
   const weekHref = (weekIso: string) => `${basePath}?tab=${tab}&week=${weekIso}`;
   const currentWeekIso = isoDay(weekStartUtc(new Date()));
@@ -102,9 +105,14 @@ export default async function MeetingsPage({
           fallbackTime="19:30"
           sections={data.midweekSections}
           assignments={data.assignedNames}
+          assignedPersonIds={data.assignedPersonIds}
           canEdit={canEdit}
           programHref={programHref}
           importHref={importHref}
+          organizationId={organizationId}
+          weekStartIso={data.weekStartIso}
+          meetingType="MIDWEEK"
+          roster={roster}
         />
       </>
     );
@@ -120,9 +128,14 @@ export default async function MeetingsPage({
           fallbackTime="09:30"
           sections={data.weekendSections}
           assignments={data.assignedNames}
+          assignedPersonIds={data.assignedPersonIds}
           canEdit={canEdit}
           programHref={programHref}
           importHref={importHref}
+          organizationId={organizationId}
+          weekStartIso={data.weekStartIso}
+          meetingType="WEEKEND"
+          roster={roster}
         />
       </>
     );

@@ -1,8 +1,8 @@
 import {
   CalendarClock,
-  Church,
   Home,
   type LucideIcon,
+  NotebookPen,
   Settings,
   UserRound,
   Users,
@@ -17,7 +17,7 @@ export interface NavItem {
 
 export const PRIMARY_NAV_ITEMS: NavItem[] = [
   { href: "/dashboard", label: "Home", icon: Home },
-  { href: "/dashboard/reunioes", label: "Reuniões", icon: Church },
+  { href: "/dashboard/reunioes", label: "Reuniões", icon: NotebookPen },
   { href: "/dashboard/designacoes", label: "Designações", icon: CalendarClock },
   { href: "/dashboard/perfil", label: "Perfil", icon: UserRound },
 ];

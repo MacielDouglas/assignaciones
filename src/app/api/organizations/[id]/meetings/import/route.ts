@@ -107,9 +107,7 @@ export async function POST(
       workbook: {
         symbol: parsed.symbol,
         name: parsed.name,
-        shortTitle: parsed.shortTitle,
         displayTitle: parsed.displayTitle,
-        referenceTitle: parsed.referenceTitle,
         languageCode: parsed.languageCode,
         coverImageUrl: null,
         content: parsed.content,

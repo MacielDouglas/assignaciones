@@ -113,11 +113,24 @@ export interface WorkbookPart {
   format?: string;
 }
 
+/**
+ * Ajustes pontuais de uma parte da programação, persistidos no JSON da
+ * apostila (`content.partOverrides`), chaveados por `${semana}::${partId}`.
+ */
+export interface MeetingPartOverrideData {
+  title?: string;
+  subtitle?: string;
+  startTime?: string | null;
+  durationMinutes?: number | null;
+  songNumber?: number | null;
+}
+
 export interface WorkbookWeek {
   week: string;
   BibleReading: string;
   meeting: {
     openingSong?: string;
+    middleSong?: string;
     openingPrayer?: boolean;
     openingComments?: string;
     "TREASURES FROM GODS WORD"?: WorkbookPart[];
@@ -144,6 +157,8 @@ export interface WorkbookContent {
     content?: string;
     video?: string;
   };
+  /** Overrides de partes da programação por semana (edição rápida na página de reuniões). */
+  partOverrides?: Record<string, MeetingPartOverrideData>;
 }
 
 export interface WatchtowerArticle {
@@ -261,9 +276,7 @@ export interface ParsedWorkbook {
   kind: "workbook";
   symbol: string;
   name: string;
-  shortTitle: string;
   displayTitle: string;
-  referenceTitle: string;
   languageCode: string;
   fileName: string;
   content: WorkbookContent;
@@ -503,7 +516,9 @@ function parseWeek(html: string, title: string, subtitle: string | null): Parsed
 
   let currentSection: PartSection | undefined;
   const partsBySection: Partial<Record<PartSection, WorkbookPart[]>> = {};
+  let openingCaptured = false;
   let openingSong: string | undefined;
+  let middleSong: string | undefined;
   let openingPrayer = false;
   let openingComments: string | undefined;
   let concludingComments: string | undefined;
@@ -519,8 +534,10 @@ function parseWeek(html: string, title: string, subtitle: string | null): Parsed
       : html.slice(event.pos + event.html.length);
 
     if (event.type === "music") {
-      if (i === 0) {
-        const text = stripTags(event.html);
+      const text = stripTags(event.html);
+      if (!openingCaptured) {
+        // Primeiro evento de música: cântico inicial (com oração e comentários).
+        openingCaptured = true;
         openingSong = extractSong(text);
         openingPrayer = /y oración/.test(text);
         const commentsPart = text
@@ -528,6 +545,9 @@ function parseWeek(html: string, title: string, subtitle: string | null): Parsed
           .map((p) => p.trim())
           .find((p) => p.startsWith("Palabras de introducción"));
         openingComments = commentsPart?.trim();
+      } else if (!middleSong) {
+        // Cântico do meio: evento de música antes de Nossa Vida Cristã.
+        middleSong = extractSong(text);
       }
       continue;
     }
@@ -617,6 +637,7 @@ function parseWeek(html: string, title: string, subtitle: string | null): Parsed
 
   const meeting = week.meeting;
   if (openingSong) meeting.openingSong = openingSong;
+  if (middleSong) meeting.middleSong = middleSong;
   if (openingPrayer) meeting.openingPrayer = true;
   if (openingComments) meeting.openingComments = openingComments;
   if (partsBySection["TREASURES FROM GODS WORD"])
@@ -927,9 +948,7 @@ export function parsePublication(buffer: Uint8Array): ParsedPublication {
         kind: "workbook",
         symbol,
         name,
-        shortTitle: manifest.publication?.shortTitle ?? "",
         displayTitle: manifest.publication?.displayTitle ?? "",
-        referenceTitle: manifest.publication?.referenceTitle ?? "",
         languageCode,
         fileName: manifest.publication?.fileName ?? dbFile,
         content,

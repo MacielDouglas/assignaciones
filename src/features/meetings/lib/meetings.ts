@@ -14,7 +14,7 @@ export interface MeetingSaveInput {
   displayTitle?: string;
   referenceTitle?: string;
   languageCode?: string;
-  coverImageUrl?: string;
+  coverImageUrl?: string | null;
   content: WorkbookContent;
 }
 
