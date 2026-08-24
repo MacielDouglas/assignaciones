@@ -20,6 +20,7 @@ import { PeoplePicker } from "@/features/meetings/components/people-picker";
 import type { CandidatePerson } from "@/features/meetings/lib/candidates";
 import type { MeetingPart } from "@/features/meetings/lib/meeting-builder";
 import { apiFetch, getErrorMessage } from "@/lib/api-client";
+import { cn } from "@/lib/utils";
 
 /**
  * Edição rápida de uma parte da programação (owner/admin).
@@ -113,6 +114,15 @@ export function MeetingPartDialog({
       : null,
   ].filter(Boolean) as string[];
 
+  // Validação inline: falhas bloqueiam o Salvar antes de chegarem ao servidor.
+  const durationValue = Number(duration);
+  const durationInvalid =
+    duration === "" || !Number.isFinite(durationValue) || durationValue < 0 || durationValue > 600;
+  const songInvalid =
+    songNumber !== "" &&
+    (!/^\d+$/.test(songNumber) || Number(songNumber) < 1 || Number(songNumber) > 300);
+  const detailsInvalid = durationInvalid || songInvalid;
+
   async function savePart(
     overrides: Record<string, unknown>,
     slots: { slotId: string; label: string; kind: string; personId: string | null }[],
@@ -130,6 +140,7 @@ export function MeetingPartDialog({
   }
 
   async function handleSave() {
+    if (detailsInvalid) return;
     setSaving(true);
     previousPersonsRef.current = Object.fromEntries(
       part.slots.map((slot) => [slot.id, assignedPersonIds[slot.id] ?? ""]),
@@ -296,7 +307,8 @@ export function MeetingPartDialog({
                       value={duration}
                       onChange={(event) => setDuration(event.target.value)}
                       aria-label="Duração em minutos"
-                      className="tabular-nums"
+                      aria-invalid={durationInvalid}
+                      className={cn("tabular-nums", durationInvalid && "border-destructive")}
                     />
                   </Field>
                   <Field label="Cântico">
@@ -308,10 +320,17 @@ export function MeetingPartDialog({
                       onChange={(event) => setSongNumber(event.target.value)}
                       placeholder="—"
                       aria-label="Número do cântico"
-                      className="tabular-nums"
+                      aria-invalid={songInvalid}
+                      className={cn("tabular-nums", songInvalid && "border-destructive")}
                     />
                   </Field>
                 </div>
+                {(durationInvalid || songInvalid) && (
+                  <p className="text-destructive text-xs leading-snug" role="alert">
+                    {durationInvalid && <span>Duração deve estar entre 0 e 600 minutos. </span>}
+                    {songInvalid && <span>Cântico deve estar entre 1 e 300, ou vazio.</span>}
+                  </p>
+                )}
 
                 {diffLines.length > 0 && (
                   <div className="bg-muted/50 space-y-1 rounded-lg p-3">
@@ -333,7 +352,7 @@ export function MeetingPartDialog({
             <Button variant="outline" onClick={() => setOpen(false)} disabled={saving}>
               Cancelar
             </Button>
-            <Button onClick={handleSave} disabled={saving}>
+            <Button onClick={handleSave} disabled={saving || detailsInvalid}>
               {saving && <Loader2 className="animate-spin" aria-hidden="true" />}
               Salvar
             </Button>

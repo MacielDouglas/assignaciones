@@ -123,7 +123,7 @@ export default async function MeetingsPage({
     data.specialEvent?.behavior === "hideMeetings" && data.specialEvent ? (
       <div className="bg-card flex flex-col items-center gap-3 rounded-2xl border px-5 py-10 text-center">
         <div
-          className="flex size-12 items-center justify-center rounded-2xl text-white"
+          className="flex size-12 items-center justify-center rounded-2xl text-white shadow-xs"
           style={{ backgroundColor: SECTION_NEUTRAL_COLOR }}
         >
           <CalendarOff className="size-6" aria-hidden="true" />

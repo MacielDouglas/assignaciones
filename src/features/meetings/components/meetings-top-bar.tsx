@@ -49,7 +49,7 @@ export function MeetingsTopBar({
   const nextHref = makeHref(isoDay(addDaysUtc(parseIsoDay(weekStartIso), 7)));
 
   return (
-    <header className="bg-linear-to-b from-primary to-primary/85 text-primary-foreground">
+    <header className="bg-primary text-primary-foreground">
       <div className="mx-auto w-full max-w-4xl px-4 pb-4 pt-3 sm:px-6">
         <div className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-1.5">
           <Button

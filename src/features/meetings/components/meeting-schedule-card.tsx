@@ -147,7 +147,7 @@ export function MeetingScheduleCard({
             {slotsAssigned} de {slotsTotal} designações preenchidas
           </span>
 
-          <h2 className="min-w-0 flex-1 truncate text-sm font-bold tracking-wide uppercase">
+          <h2 className="min-w-0 flex-1 text-sm font-bold leading-tight tracking-wide uppercase line-clamp-2">
             {dayLabel && <span className="text-primary">{dayLabel}</span>}
             {dayLabel && <span className="text-muted-foreground font-medium"> · </span>}
             {title}
@@ -170,7 +170,7 @@ export function MeetingScheduleCard({
               </span>
             )}
             {totalMinutes > 0 && (
-              <span className="text-muted-foreground"> · {totalMinutes} min</span>
+              <span className="text-muted-foreground hidden sm:inline"> · {totalMinutes} min</span>
             )}
           </span>
 
@@ -179,26 +179,24 @@ export function MeetingScheduleCard({
               {programHref && (
                 <Button
                   variant="ghost"
-                  size="icon"
-                  className="sm:w-auto sm:px-3 [&_svg:not([class*='size-'])]:size-[18px]"
+                  className="h-11 shrink-0 gap-1.5 rounded-full px-3 [&_svg:not([class*='size-'])]:size-[18px]"
                   asChild
                 >
-                  <Link href={programHref} aria-label={`Programar ${title.toLowerCase()}`}>
+                  <Link href={programHref} aria-label={`Programar ${title}`}>
                     <CalendarCog aria-hidden="true" />
-                    <span className="hidden sm:inline">Programar</span>
+                    <span className="text-xs sm:text-sm">Programar</span>
                   </Link>
                 </Button>
               )}
               {importHref && (
                 <Button
                   variant="ghost"
-                  size="icon"
-                  className="sm:w-auto sm:px-3 [&_svg:not([class*='size-'])]:size-[18px]"
+                  className="h-11 shrink-0 gap-1.5 rounded-full px-3 [&_svg:not([class*='size-'])]:size-[18px]"
                   asChild
                 >
                   <Link href={importHref} aria-label="Importar conteúdo da apostila">
                     <FilePlus2 aria-hidden="true" />
-                    <span className="hidden sm:inline">Importar</span>
+                    <span className="text-xs sm:text-sm">Importar</span>
                   </Link>
                 </Button>
               )}
