@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { MeetingScheduleCard } from "@/features/meetings/components/meeting-schedule-card";
+import { SECTION_NEUTRAL_COLOR } from "@/features/meetings/components/meeting-section-theme";
 import { type MeetingTabKey, MeetingTabs } from "@/features/meetings/components/meeting-tabs";
 import { MeetingsTopBar } from "@/features/meetings/components/meetings-top-bar";
 import { SpecialEventBanner } from "@/features/meetings/components/special-event-banner";
@@ -121,17 +122,17 @@ export default async function MeetingsPage({
   const weekendContent =
     data.specialEvent?.behavior === "hideMeetings" && data.specialEvent ? (
       <div className="bg-card flex flex-col items-center gap-3 rounded-2xl border px-5 py-10 text-center">
-        <div className="bg-primary/10 text-primary flex size-12 items-center justify-center rounded-2xl">
+        <div
+          className="flex size-12 items-center justify-center rounded-2xl text-white"
+          style={{ backgroundColor: SECTION_NEUTRAL_COLOR }}
+        >
           <CalendarOff className="size-6" aria-hidden="true" />
         </div>
         <div className="space-y-1">
           <p className="text-sm font-semibold">Sem reunião nesta semana</p>
           <p className="text-muted-foreground text-sm">
             A semana está ocupada pelo{" "}
-            {(
-              data.specialEvent.title || SPECIAL_EVENT_TITLES[data.specialEvent.kind]
-            ).toLowerCase()}
-            .
+            {data.specialEvent.title || SPECIAL_EVENT_TITLES[data.specialEvent.kind]}.
           </p>
         </div>
       </div>

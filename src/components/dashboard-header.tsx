@@ -101,7 +101,11 @@ export function DashboardHeader({ role, displayName }: { role: MemberRole; displ
               <DropdownMenuLabel className="flex flex-col gap-0.5">
                 <span className="truncate text-sm font-medium">{displayName}</span>
                 <span className="text-muted-foreground text-xs">
-                  {role === "OWNER" ? "Owner" : role === "ADMIN" ? "Admin" : "Member"}
+                  {role === "OWNER"
+                    ? "Proprietário"
+                    : role === "ADMIN"
+                      ? "Administrador"
+                      : "Membro"}
                 </span>
               </DropdownMenuLabel>
               <DropdownMenuSeparator />

@@ -1,4 +1,5 @@
 import { Landmark, Luggage, Mic, UserStar } from "lucide-react";
+import { SECTION_NEUTRAL_COLOR } from "@/features/meetings/components/meeting-section-theme";
 import type { MeetingSpecialEvent } from "@/features/meetings/lib/special-events";
 import {
   SPECIAL_EVENT_TITLES,
@@ -16,22 +17,28 @@ export const SPECIAL_EVENT_ICONS: Record<SpecialEventKind, typeof Landmark> = {
 };
 
 /**
- * Banner premium exibido no topo das reuniões durante a visita do
- * superintendente de circuito.
+ * Banner exibido no topo das reuniões durante eventos especiais
+ * (ex.: visita do superintendente de circuito).
+ *
+ * Visual dentro do design system: cartão hairline com tile ardósia sólida,
+ * sem gradientes nem halos — a cor azul fica reservada para ação.
  */
 export function SpecialEventBanner({ event }: { event: MeetingSpecialEvent }) {
   const Icon = SPECIAL_EVENT_ICONS[event.kind];
   return (
     <aside
       aria-label={SPECIAL_EVENT_TITLES[event.kind]}
-      className="from-primary/12 via-primary/5 relative overflow-hidden rounded-2xl border border-primary/30 bg-gradient-to-r to-transparent p-4"
+      className="bg-card relative overflow-hidden rounded-2xl border p-4"
     >
       <div className="flex items-center gap-3">
-        <span className="from-primary text-primary-foreground flex size-11 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br to-primary/70 shadow-sm">
+        <span
+          className="flex size-11 shrink-0 items-center justify-center rounded-xl text-white shadow-xs"
+          style={{ backgroundColor: SECTION_NEUTRAL_COLOR }}
+        >
           <Icon className="size-5" aria-hidden="true" />
         </span>
         <div className="min-w-0">
-          <p className="text-primary text-sm font-semibold tracking-tight">{event.title}</p>
+          <p className="text-sm font-semibold tracking-tight">{event.title}</p>
           <p className="text-muted-foreground truncate text-xs">
             {event.travelerName ? `${event.travelerName} · ` : ""}
             {specialEventPeriodLabel(event)}

@@ -146,7 +146,9 @@ export function MeetingPartDialog({
       setOpen(false);
       router.refresh();
       if (!detailsDirty) {
+        // Janela generosa: o undo só é útil se o dedo distraído alcançá-lo.
         toast.success("Designações salvas!", {
+          duration: 10000,
           action: {
             label: "Desfazer",
             onClick: () => {
@@ -185,7 +187,7 @@ export function MeetingPartDialog({
       <Button
         variant="ghost"
         size="icon"
-        className="text-muted-foreground/60 hover:text-foreground size-10 rounded-full"
+        className="text-muted-foreground hover:text-foreground size-11 rounded-full"
         onClick={openDialog}
         aria-label={`Editar ${part.title}`}
       >
@@ -215,11 +217,12 @@ export function MeetingPartDialog({
                 Designados
               </p>
               {part.slots.length > 0 ? (
-                part.slots.map((slot) => {
+                (() => {
+                  // Aluno da regra ajudante×aluno, resolvido uma única vez.
                   const studentSlot = part.slots.find(
                     (candidate) => candidate.id === `${part.id}-student`,
                   );
-                  return (
+                  return part.slots.map((slot) => (
                     <div key={slot.id} className="space-y-1">
                       <p className="text-muted-foreground text-xs">{slot.label}</p>
                       <PeoplePicker
@@ -239,8 +242,8 @@ export function MeetingPartDialog({
                         }
                       />
                     </div>
-                  );
-                })
+                  ));
+                })()
               ) : (
                 <p className="text-muted-foreground text-sm">
                   Esta parte não tem designação individual.

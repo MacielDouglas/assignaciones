@@ -16,6 +16,9 @@ export interface MeetingSectionTheme {
   Icon: SectionIcon;
 }
 
+/** Ardósia neutra compartilhada (seções neutras e tiles informativos). */
+export const SECTION_NEUTRAL_COLOR = "#64748b";
+
 /**
  * Identidade visual (modo claro) das seções da programação:
  * - Tesouros da Palavra de Deus: azul/ciano (#3c7f8b, diamante)
@@ -28,7 +31,7 @@ export interface MeetingSectionTheme {
  * com o modo escuro global.
  */
 const ACCENT_THEMES: Record<SectionAccent, MeetingSectionTheme> = {
-  neutral: { color: "#64748b", Icon: Music },
+  neutral: { color: SECTION_NEUTRAL_COLOR, Icon: Music },
   treasures: { color: "#3c7f8b", Icon: Gem },
   ministry: { color: "#d68f00", Icon: Wheat },
   living: { color: "#bf2f13", Icon: SheepIcon },

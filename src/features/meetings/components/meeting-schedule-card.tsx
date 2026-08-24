@@ -33,7 +33,8 @@ function findPresident(
 }
 
 function ProgressDots({ assigned, total }: { assigned: number; total: number }) {
-  const filled = total > 0 ? Math.round((assigned / total) * 3) : 0;
+  // Teto em vez de arredondamento: qualquer designação feita acende ao menos um dot.
+  const filled = total > 0 ? Math.min(3, Math.ceil((assigned / total) * 3)) : 0;
   const dots = [0, 1, 2];
 
   return (
@@ -113,20 +114,21 @@ export function MeetingScheduleCard({
   const dayLabel = weekdayLabel(day);
   const timeLabel = time ?? fallbackTime;
 
-  /** Edição rápida por parte — somente owner/admin com contexto completo. */
+  /** Edição rápida por parte — somente owner/admin com contexto completo e designação aberta. */
   const renderPartAction =
     canEdit && organizationId && weekStartIso && roster
-      ? (part: MeetingPart, sectionTitle: string): ReactNode => (
-          <MeetingPartDialog
-            organizationId={organizationId}
-            weekStartIso={weekStartIso}
-            meetingType={meetingType}
-            part={part}
-            sectionTitle={sectionTitle}
-            roster={roster}
-            assignedPersonIds={assignedPersonIds ?? {}}
-          />
-        )
+      ? (part: MeetingPart, sectionTitle: string): ReactNode =>
+          part.slots.length === 0 ? null : (
+            <MeetingPartDialog
+              organizationId={organizationId}
+              weekStartIso={weekStartIso}
+              meetingType={meetingType}
+              part={part}
+              sectionTitle={sectionTitle}
+              roster={roster}
+              assignedPersonIds={assignedPersonIds ?? {}}
+            />
+          )
       : undefined;
   const pendingCount = slotsTotal - slotsAssigned;
   const usesFallbackTime = !time;
@@ -159,7 +161,14 @@ export function MeetingScheduleCard({
             }
             title={usesFallbackTime ? "Horário padrão da congregação" : "Horário da reunião"}
           >
+            {usesFallbackTime && <span className="sr-only">Horário provisório — </span>}
             {timeLabel}
+            {usesFallbackTime && (
+              <span className="font-medium" aria-hidden="true">
+                {" "}
+                · provisório
+              </span>
+            )}
             {totalMinutes > 0 && (
               <span className="text-muted-foreground"> · {totalMinutes} min</span>
             )}
@@ -170,26 +179,26 @@ export function MeetingScheduleCard({
               {programHref && (
                 <Button
                   variant="ghost"
-                  size="icon-sm"
-                  className="size-10 [&_svg:not([class*='size-'])]:size-[18px]"
+                  size="icon"
+                  className="sm:w-auto sm:px-3 [&_svg:not([class*='size-'])]:size-[18px]"
                   asChild
                 >
                   <Link href={programHref} aria-label={`Programar ${title.toLowerCase()}`}>
                     <CalendarCog aria-hidden="true" />
-                    <span className="hidden md:inline">Programar</span>
+                    <span className="hidden sm:inline">Programar</span>
                   </Link>
                 </Button>
               )}
               {importHref && (
                 <Button
                   variant="ghost"
-                  size="icon-sm"
-                  className="size-10 [&_svg:not([class*='size-'])]:size-[18px]"
+                  size="icon"
+                  className="sm:w-auto sm:px-3 [&_svg:not([class*='size-'])]:size-[18px]"
                   asChild
                 >
                   <Link href={importHref} aria-label="Importar conteúdo da apostila">
                     <FilePlus2 aria-hidden="true" />
-                    <span className="hidden md:inline">Importar</span>
+                    <span className="hidden sm:inline">Importar</span>
                   </Link>
                 </Button>
               )}
