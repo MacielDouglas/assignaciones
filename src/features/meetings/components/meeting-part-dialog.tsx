@@ -262,6 +262,27 @@ export function MeetingPartDialog({
               )}
             </div>
 
+            {/* Always-visible basic fields */}
+            <div className="space-y-3">
+              <Field label="Tema / título">
+                <Input
+                  value={title}
+                  onChange={(event) => setTitle(event.target.value)}
+                  aria-label="Tema ou título da parte"
+                />
+              </Field>
+
+              <Field label="Início">
+                <Input
+                  type="time"
+                  step={60}
+                  value={startTime}
+                  onChange={(event) => setStartTime(event.target.value)}
+                  aria-label="Horário de início"
+                />
+              </Field>
+            </div>
+
             <details className="group rounded-xl border">
               <summary className="text-muted-foreground hover:text-foreground flex cursor-pointer list-none items-center gap-2 px-4 py-3 text-xs font-semibold tracking-wide uppercase [&::-webkit-details-marker]:hidden">
                 Editar detalhes da parte (avançado)
@@ -273,14 +294,6 @@ export function MeetingPartDialog({
               </summary>
 
               <div className="space-y-4 border-t px-4 py-4">
-                <Field label="Tema / título">
-                  <Input
-                    value={title}
-                    onChange={(event) => setTitle(event.target.value)}
-                    aria-label="Tema ou título da parte"
-                  />
-                </Field>
-
                 <Field label="Subtítulo">
                   <Input
                     value={subtitle}
@@ -290,15 +303,6 @@ export function MeetingPartDialog({
                 </Field>
 
                 <div className="grid grid-cols-3 gap-3">
-                  <Field label="Início">
-                    <Input
-                      type="time"
-                      step={60}
-                      value={startTime}
-                      onChange={(event) => setStartTime(event.target.value)}
-                      aria-label="Horário de início"
-                    />
-                  </Field>
                   <Field label="Duração (min)">
                     <Input
                       type="number"

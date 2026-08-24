@@ -64,7 +64,7 @@ export function MeetingsTopBar({
           </Button>
 
           <div className="min-w-0 text-center" aria-live="polite">
-            <h1 className="truncate text-lg font-bold tracking-tight sm:text-xl">
+            <h1 className="line-clamp-2 text-lg font-bold tracking-tight sm:text-xl">
               Semana de {shortWeekDate(weekStartIso)}
               <span className="sr-only">
                 {" "}

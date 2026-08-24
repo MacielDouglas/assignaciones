@@ -54,7 +54,7 @@ export function BottomBar({ role }: { role: MemberRole }) {
               href={item.href}
               aria-current={active ? "page" : undefined}
               className={cn(
-                "flex flex-1 flex-col items-center justify-center gap-1 text-xs font-medium transition-colors",
+                "flex flex-1 flex-col items-center justify-center gap-1 text-xs sm:text-sm font-medium transition-colors",
                 active ? "text-primary" : "text-muted-foreground hover:text-foreground",
               )}
             >
