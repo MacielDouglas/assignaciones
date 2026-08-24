@@ -139,7 +139,7 @@ export function EventList({
                     <Button
                       variant="ghost"
                       size="icon"
-                      aria-label={`Editar ${EVENT_KIND_LABELS[kind].toLowerCase()}`}
+                      aria-label={`Editar ${EVENT_KIND_LABELS[kind]}`}
                       onClick={() => onEdit(event)}
                     >
                       <Pencil />
@@ -147,7 +147,7 @@ export function EventList({
                     <Button
                       variant="ghost"
                       size="icon"
-                      aria-label={`Excluir ${EVENT_KIND_LABELS[kind].toLowerCase()}`}
+                      aria-label={`Excluir ${EVENT_KIND_LABELS[kind]}`}
                       disabled={deletingId === event.id}
                       onClick={() => onDelete(event)}
                     >
