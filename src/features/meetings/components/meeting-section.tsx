@@ -22,7 +22,7 @@ export function MeetingSectionBlock({
   section: MeetingSection;
   assignments?: Record<string, string>;
   /** Ação opcional por parte (ex.: edição rápida para owner/admin). */
-  renderAction?: (part: MeetingSection["parts"][number]) => ReactNode;
+  renderAction?: (part: MeetingSection["parts"][number], sectionTitle: string) => ReactNode;
 }) {
   const theme = getMeetingSectionTheme(section);
   const { Icon } = theme;
@@ -66,7 +66,7 @@ export function MeetingSectionBlock({
               part={part}
               assignments={assignments}
               theme={theme}
-              action={renderAction?.(part)}
+              action={renderAction?.(part, section.title)}
             />
           ))}
         </ol>

@@ -1,8 +1,8 @@
 "use client";
 
-import { ChevronRight, Loader2 } from "lucide-react";
+import { Loader2, Pencil } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
@@ -22,18 +22,20 @@ import type { MeetingPart } from "@/features/meetings/lib/meeting-builder";
 import { apiFetch, getErrorMessage } from "@/lib/api-client";
 
 /**
- * Edição rápida de uma parte da programação (owner/admin): título,
- * subtítulo, horário de início, duração, cântico e designados.
+ * Edição rápida de uma parte da programação (owner/admin).
  *
- * O chevron ">" da linha é o gatilho; a persistência acontece no servidor
- * (`/meetings/program-part`), que grava overrides no JSON da apostila e
- * mescla as designações na programação salva.
+ * Tarefa comum (designar pessoas) fica sempre visível; ajustes estruturais
+ * da parte (título, subtítulo, horário, duração, cântico) ficam atrás de um
+ * disclosure avançado, com prévia do antes → depois antes de salvar.
+ * Persistência no servidor (`/meetings/program-part`), que grava overrides
+ * no JSON da apostila e mescla as designações na programação salva.
  */
 export function MeetingPartDialog({
   organizationId,
   weekStartIso,
   meetingType,
   part,
+  sectionTitle,
   roster,
   assignedPersonIds,
 }: {
@@ -41,6 +43,8 @@ export function MeetingPartDialog({
   weekStartIso: string;
   meetingType: "MIDWEEK" | "WEEKEND";
   part: MeetingPart;
+  /** Nome da seção para dar contexto ao diálogo. */
+  sectionTitle: string;
   roster: CandidatePerson[];
   assignedPersonIds: Record<string, string>;
 }) {
@@ -58,6 +62,7 @@ export function MeetingPartDialog({
   const [slotPersons, setSlotPersons] = useState<Record<string, string>>(() =>
     Object.fromEntries(part.slots.map((slot) => [slot.id, assignedPersonIds[slot.id] ?? ""])),
   );
+  const previousPersonsRef = useRef<Record<string, string>>({});
 
   function resetForm() {
     setTitle(part.title);
@@ -70,34 +75,104 @@ export function MeetingPartDialog({
     );
   }
 
+  function openDialog() {
+    resetForm();
+    setOpen(true);
+  }
+
+  function currentOverrides() {
+    return {
+      ...(title.trim() && title.trim() !== part.title ? { title: title.trim() } : {}),
+      ...(subtitle !== (part.subtitle ?? "") ? { subtitle } : {}),
+      startTime: startTime === "" ? null : startTime,
+      durationMinutes: Number(duration) || 0,
+      songNumber: songNumber === "" ? null : Number(songNumber),
+    };
+  }
+
+  const detailsDirty =
+    title.trim() !== part.title ||
+    subtitle !== (part.subtitle ?? "") ||
+    startTime !== (part.time ?? "") ||
+    Number(duration) !== part.duration ||
+    (songNumber === "" ? null : Number(songNumber)) !==
+      (part.song?.number && part.song.number > 0 ? part.song.number : null);
+
+  const diffLines = [
+    title.trim() !== part.title ? `Título: ${part.title} → ${title.trim()}` : null,
+    subtitle !== (part.subtitle ?? "")
+      ? `Subtítulo: ${part.subtitle ?? "—"} → ${subtitle || "—"}`
+      : null,
+    startTime !== (part.time ?? "") ? `Início: ${part.time ?? "—"} → ${startTime || "—"}` : null,
+    Number(duration) !== part.duration
+      ? `Duração: ${part.duration} → ${Number(duration)} min`
+      : null,
+    (songNumber === "" ? null : Number(songNumber)) !==
+    (part.song?.number && part.song.number > 0 ? part.song.number : null)
+      ? `Cântico: ${part.song?.number || "—"} → ${songNumber || "—"}`
+      : null,
+  ].filter(Boolean) as string[];
+
+  async function savePart(
+    overrides: Record<string, unknown>,
+    slots: { slotId: string; label: string; kind: string; personId: string | null }[],
+  ) {
+    await apiFetch(`/api/organizations/${organizationId}/meetings/program-part`, {
+      method: "POST",
+      body: JSON.stringify({
+        weekStart: weekStartIso,
+        meetingType,
+        partId: part.id,
+        overrides,
+        slots,
+      }),
+    });
+  }
+
   async function handleSave() {
     setSaving(true);
+    previousPersonsRef.current = Object.fromEntries(
+      part.slots.map((slot) => [slot.id, assignedPersonIds[slot.id] ?? ""]),
+    );
     try {
-      const trimmedTitle = title.trim();
-      await apiFetch(`/api/organizations/${organizationId}/meetings/program-part`, {
-        method: "POST",
-        body: JSON.stringify({
-          weekStart: weekStartIso,
-          meetingType,
-          partId: part.id,
-          overrides: {
-            ...(trimmedTitle ? { title: trimmedTitle } : {}),
-            subtitle,
-            startTime: startTime === "" ? null : startTime,
-            durationMinutes: Number(duration) || 0,
-            songNumber: songNumber === "" ? null : Number(songNumber),
-          },
-          slots: part.slots.map((slot) => ({
-            slotId: slot.id,
-            label: slot.label,
-            kind: slot.kind,
-            personId: slotPersons[slot.id] || null,
-          })),
-        }),
-      });
+      const slotsPayload = part.slots.map((slot) => ({
+        slotId: slot.id,
+        label: slot.label,
+        kind: slot.kind,
+        personId: slotPersons[slot.id] || null,
+      }));
+      const overridesPayload = detailsDirty ? currentOverrides() : {};
+      await savePart(overridesPayload, slotsPayload);
       setOpen(false);
       router.refresh();
-      toast.success("Parte atualizada!");
+      if (!detailsDirty) {
+        toast.success("Designações salvas!", {
+          action: {
+            label: "Desfazer",
+            onClick: () => {
+              void (async () => {
+                try {
+                  await savePart(
+                    {},
+                    part.slots.map((slot) => ({
+                      slotId: slot.id,
+                      label: slot.label,
+                      kind: slot.kind,
+                      personId: previousPersonsRef.current[slot.id] || null,
+                    })),
+                  );
+                  router.refresh();
+                  toast.success("Designações revertidas.");
+                } catch (error) {
+                  toast.error(getErrorMessage(error));
+                }
+              })();
+            },
+          },
+        });
+      } else {
+        toast.success("Parte atualizada!");
+      }
     } catch (error) {
       toast.error(getErrorMessage(error));
     } finally {
@@ -110,14 +185,11 @@ export function MeetingPartDialog({
       <Button
         variant="ghost"
         size="icon"
-        className="text-muted-foreground/60 hover:text-foreground size-8 rounded-full"
-        onClick={() => {
-          resetForm();
-          setOpen(true);
-        }}
+        className="text-muted-foreground/60 hover:text-foreground size-10 rounded-full"
+        onClick={openDialog}
         aria-label={`Editar ${part.title}`}
       >
-        <ChevronRight className="size-5" aria-hidden="true" />
+        <Pencil className="size-4" aria-hidden="true" />
       </Button>
 
       <Dialog
@@ -129,72 +201,21 @@ export function MeetingPartDialog({
         <DialogContent className="flex max-h-dvh flex-col gap-0 overflow-hidden p-0 sm:max-w-lg">
           <DialogHeader className="border-b px-5 py-4">
             <DialogTitle className="text-base font-semibold tracking-tight">
-              Editar parte
+              {part.title}
             </DialogTitle>
             <DialogDescription className="truncate text-sm">
-              {part.time ? `${part.time} · ` : ""}
-              {part.duration} min
+              {sectionTitle}
+              {part.time ? ` · ${part.time}` : ""} · {part.duration} min
             </DialogDescription>
           </DialogHeader>
 
           <div className="min-h-0 flex-1 space-y-4 overflow-y-auto px-5 py-4">
-            <Field label="Tema / título">
-              <Input
-                value={title}
-                onChange={(event) => setTitle(event.target.value)}
-                aria-label="Tema ou título da parte"
-              />
-            </Field>
-
-            <Field label="Subtítulo">
-              <Input
-                value={subtitle}
-                onChange={(event) => setSubtitle(event.target.value)}
-                aria-label="Subtítulo da parte"
-              />
-            </Field>
-
-            <div className="grid grid-cols-3 gap-3">
-              <Field label="Início">
-                <Input
-                  type="time"
-                  step={60}
-                  value={startTime}
-                  onChange={(event) => setStartTime(event.target.value)}
-                  aria-label="Horário de início"
-                />
-              </Field>
-              <Field label="Duração (min)">
-                <Input
-                  type="number"
-                  min={0}
-                  max={600}
-                  value={duration}
-                  onChange={(event) => setDuration(event.target.value)}
-                  aria-label="Duração em minutos"
-                  className="tabular-nums"
-                />
-              </Field>
-              <Field label="Cântico">
-                <Input
-                  type="number"
-                  min={1}
-                  max={300}
-                  value={songNumber}
-                  onChange={(event) => setSongNumber(event.target.value)}
-                  placeholder="—"
-                  aria-label="Número do cântico"
-                  className="tabular-nums"
-                />
-              </Field>
-            </div>
-
-            {part.slots.length > 0 && (
-              <div className="space-y-3">
-                <p className="text-muted-foreground text-xs font-medium tracking-wide uppercase">
-                  Designados
-                </p>
-                {part.slots.map((slot) => {
+            <div className="space-y-3">
+              <p className="text-muted-foreground text-xs font-medium tracking-wide uppercase">
+                Designados
+              </p>
+              {part.slots.length > 0 ? (
+                part.slots.map((slot) => {
                   const studentSlot = part.slots.find(
                     (candidate) => candidate.id === `${part.id}-student`,
                   );
@@ -219,9 +240,90 @@ export function MeetingPartDialog({
                       />
                     </div>
                   );
-                })}
+                })
+              ) : (
+                <p className="text-muted-foreground text-sm">
+                  Esta parte não tem designação individual.
+                </p>
+              )}
+            </div>
+
+            <details className="group rounded-xl border">
+              <summary className="text-muted-foreground hover:text-foreground flex cursor-pointer list-none items-center gap-2 px-4 py-3 text-xs font-semibold tracking-wide uppercase [&::-webkit-details-marker]:hidden">
+                Editar detalhes da parte (avançado)
+                {detailsDirty && (
+                  <span className="bg-warning/10 text-warning rounded-full px-2 py-0.5 text-xs font-semibold normal-case">
+                    alterado
+                  </span>
+                )}
+              </summary>
+
+              <div className="space-y-4 border-t px-4 py-4">
+                <Field label="Tema / título">
+                  <Input
+                    value={title}
+                    onChange={(event) => setTitle(event.target.value)}
+                    aria-label="Tema ou título da parte"
+                  />
+                </Field>
+
+                <Field label="Subtítulo">
+                  <Input
+                    value={subtitle}
+                    onChange={(event) => setSubtitle(event.target.value)}
+                    aria-label="Subtítulo da parte"
+                  />
+                </Field>
+
+                <div className="grid grid-cols-3 gap-3">
+                  <Field label="Início">
+                    <Input
+                      type="time"
+                      step={60}
+                      value={startTime}
+                      onChange={(event) => setStartTime(event.target.value)}
+                      aria-label="Horário de início"
+                    />
+                  </Field>
+                  <Field label="Duração (min)">
+                    <Input
+                      type="number"
+                      min={0}
+                      max={600}
+                      value={duration}
+                      onChange={(event) => setDuration(event.target.value)}
+                      aria-label="Duração em minutos"
+                      className="tabular-nums"
+                    />
+                  </Field>
+                  <Field label="Cântico">
+                    <Input
+                      type="number"
+                      min={1}
+                      max={300}
+                      value={songNumber}
+                      onChange={(event) => setSongNumber(event.target.value)}
+                      placeholder="—"
+                      aria-label="Número do cântico"
+                      className="tabular-nums"
+                    />
+                  </Field>
+                </div>
+
+                {diffLines.length > 0 && (
+                  <div className="bg-muted/50 space-y-1 rounded-lg p-3">
+                    <p className="text-muted-foreground text-xs font-semibold tracking-wide uppercase">
+                      Antes → depois
+                    </p>
+                    {diffLines.map((line) => (
+                      <p key={line} className="text-xs leading-snug">
+                        {line}
+                      </p>
+                    ))}
+                  </div>
+                )}
               </div>
-            )}
+            </details>
           </div>
 
           <DialogFooter className="border-t px-5 py-4">

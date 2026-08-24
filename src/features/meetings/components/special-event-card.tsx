@@ -31,11 +31,11 @@ export function SpecialEventCard({ event }: { event: MeetingSpecialEvent }) {
   return (
     <section
       aria-labelledby={headingId}
-      className="from-primary/12 via-primary/5 anim-rise-in relative overflow-hidden rounded-3xl border bg-gradient-to-b to-transparent px-6 py-10 sm:px-10 sm:py-14"
+      className="from-primary/12 via-primary/5 anim-rise-in relative overflow-hidden rounded-3xl border bg-linear-to-b to-transparent px-6 py-10 sm:px-10 sm:py-14"
     >
       <div
         aria-hidden="true"
-        className="from-primary/20 pointer-events-none absolute inset-x-0 -top-24 mx-auto h-48 w-72 rounded-full bg-gradient-to-b to-transparent blur-3xl"
+        className="from-primary/20 pointer-events-none absolute inset-x-0 -top-24 mx-auto h-48 w-72 rounded-full bg-linear-to-b to-transparent blur-3xl"
       />
       <div className="relative mx-auto flex max-w-xl flex-col items-center text-center">
         <span className="from-primary text-primary-foreground flex size-16 items-center justify-center rounded-2xl bg-gradient-to-br to-primary/60 shadow-lg shadow-primary/20">
@@ -59,9 +59,8 @@ export function SpecialEventCard({ event }: { event: MeetingSpecialEvent }) {
         <dl className="mt-8 grid w-full grid-cols-1 gap-2 min-[420px]:grid-cols-2">
           <Detail label="Evento" value={event.title || SPECIAL_EVENT_TITLES[event.kind]} />
           <Detail label="Local" value={event.location ?? "A confirmar"} />
-          <Detail label="Data" value={specialEventPeriodLabel(event)} />
           <Detail
-            label="Período"
+            label="Data e horário"
             value={
               event.time
                 ? `${specialEventPeriodLabel(event)} · ${event.time}`

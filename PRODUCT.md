@@ -34,6 +34,10 @@ Escala de designações construída para o fluxo real da congregação: quem des
 - Integração com o banco PostgreSQL atual (Neon) via Prisma 7.
 - O domínio herdado do app anterior (organizações, tokens de convite, sub-user global) será redefinido durante a evolução do produto; nada foi descartado nem confirmado formalmente.
 - Dados antigos (organizações, pessoas, membros, tokens) foram removidos do banco em 18/08/2026, conforme decisão de recomeço.
+- Importação de publicações oficiais em .jwpub como fonte da programação: apostila (mwb), A Sentinela, cânticos (sjj) e discursos públicos (S-34), por organização.
+- Programação semanal gerada automaticamente a partir da apostila (Tesouros, Ministério, Nossa Vida Cristã; discurso público + estudo de A Sentinela no fim de semana), com designações salvas por semana e edição rápida inline por parte para quem designa.
+- Eventos especiais (congresso, assembleia, visita do superintendente de circuito) ocultam as reuniões da semana ou movem o meio de semana conforme o tipo.
+- Escala de limpeza do salão (programação semanal, setores e limpeza geral) nas configurações.
 
 ## Brand Commitments
 

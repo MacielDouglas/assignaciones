@@ -1,4 +1,4 @@
-import { Check, TriangleAlert } from "lucide-react";
+import { CalendarOff, Check, TriangleAlert } from "lucide-react";
 import { headers } from "next/headers";
 import Link from "next/link";
 import { redirect } from "next/navigation";
@@ -13,6 +13,7 @@ import { SpecialEventCard } from "@/features/meetings/components/special-event-c
 import { getScheduleRoster } from "@/features/meetings/lib/candidates";
 import { isoDay, weekStartUtc } from "@/features/meetings/lib/meeting-builder";
 import { getMeetingSchedulePageData } from "@/features/meetings/lib/meeting-page";
+import { SPECIAL_EVENT_TITLES } from "@/features/meetings/lib/special-events";
 import type { MemberRole } from "@/generated/prisma/enums";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
@@ -118,7 +119,23 @@ export default async function MeetingsPage({
     );
 
   const weekendContent =
-    data.specialEvent?.behavior === "hideMeetings" && data.specialEvent ? null : (
+    data.specialEvent?.behavior === "hideMeetings" && data.specialEvent ? (
+      <div className="bg-card flex flex-col items-center gap-3 rounded-2xl border px-5 py-10 text-center">
+        <div className="bg-primary/10 text-primary flex size-12 items-center justify-center rounded-2xl">
+          <CalendarOff className="size-6" aria-hidden="true" />
+        </div>
+        <div className="space-y-1">
+          <p className="text-sm font-semibold">Sem reunião nesta semana</p>
+          <p className="text-muted-foreground text-sm">
+            A semana está ocupada pelo{" "}
+            {(
+              data.specialEvent.title || SPECIAL_EVENT_TITLES[data.specialEvent.kind]
+            ).toLowerCase()}
+            .
+          </p>
+        </div>
+      </div>
+    ) : (
       <>
         {data.specialEvent && <SpecialEventBanner event={data.specialEvent} />}
         <MeetingScheduleCard
@@ -180,6 +197,7 @@ export default async function MeetingsPage({
             <MeetingTabs
               defaultValue={tab}
               basePath={basePath}
+              week={data.weekStartIso}
               midweek={scheduleContent}
               weekend={weekendContent}
             />

@@ -1,4 +1,4 @@
-import { CalendarCog, ChevronRight, FilePlus2 } from "lucide-react";
+import { CalendarCog, FilePlus2 } from "lucide-react";
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { Button } from "@/components/ui/button";
@@ -116,23 +116,31 @@ export function MeetingScheduleCard({
   /** Edição rápida por parte — somente owner/admin com contexto completo. */
   const renderPartAction =
     canEdit && organizationId && weekStartIso && roster
-      ? (part: MeetingPart): ReactNode => (
+      ? (part: MeetingPart, sectionTitle: string): ReactNode => (
           <MeetingPartDialog
             organizationId={organizationId}
             weekStartIso={weekStartIso}
             meetingType={meetingType}
             part={part}
+            sectionTitle={sectionTitle}
             roster={roster}
             assignedPersonIds={assignedPersonIds ?? {}}
           />
         )
       : undefined;
+  const pendingCount = slotsTotal - slotsAssigned;
+  const usesFallbackTime = !time;
 
   return (
     <div className="space-y-2.5">
       <section aria-label={title} className="bg-card overflow-hidden rounded-2xl border shadow-xs">
         <div className="flex items-center gap-2 px-3 py-2 sm:gap-2.5 sm:px-4 sm:py-2.5">
           <ProgressDots assigned={slotsAssigned} total={slotsTotal} />
+          {slotsTotal > 0 && (
+            <span className="text-muted-foreground shrink-0 text-xs font-medium tabular-nums">
+              {pendingCount > 0 ? `faltam ${pendingCount}` : "completa"}
+            </span>
+          )}
           <span className="sr-only">
             {slotsAssigned} de {slotsTotal} designações preenchidas
           </span>
@@ -144,17 +152,18 @@ export function MeetingScheduleCard({
           </h2>
 
           <span
-            className="bg-secondary text-secondary-foreground shrink-0 rounded-full px-2.5 py-1 text-xs font-semibold tabular-nums"
-            title="Horário da reunião"
+            className={
+              usesFallbackTime
+                ? "border-warning/30 bg-warning/10 text-warning shrink-0 rounded-full border px-2.5 py-1 text-xs font-semibold tabular-nums"
+                : "bg-secondary text-secondary-foreground shrink-0 rounded-full px-2.5 py-1 text-xs font-semibold tabular-nums"
+            }
+            title={usesFallbackTime ? "Horário padrão da congregação" : "Horário da reunião"}
           >
             {timeLabel}
+            {totalMinutes > 0 && (
+              <span className="text-muted-foreground"> · {totalMinutes} min</span>
+            )}
           </span>
-
-          {totalMinutes > 0 && (
-            <span className="text-muted-foreground hidden shrink-0 text-xs tabular-nums lg:inline">
-              Total: {totalMinutes} min
-            </span>
-          )}
 
           {canEdit && (
             <>
@@ -167,6 +176,7 @@ export function MeetingScheduleCard({
                 >
                   <Link href={programHref} aria-label={`Programar ${title.toLowerCase()}`}>
                     <CalendarCog aria-hidden="true" />
+                    <span className="hidden md:inline">Programar</span>
                   </Link>
                 </Button>
               )}
@@ -179,6 +189,7 @@ export function MeetingScheduleCard({
                 >
                   <Link href={importHref} aria-label="Importar conteúdo da apostila">
                     <FilePlus2 aria-hidden="true" />
+                    <span className="hidden md:inline">Importar</span>
                   </Link>
                 </Button>
               )}
@@ -200,14 +211,7 @@ export function MeetingScheduleCard({
                   <span className="sr-only">Presidente ainda não designado</span>
                 </>
               )}
-              {renderPartAction ? (
-                renderPartAction(president.part)
-              ) : (
-                <ChevronRight
-                  className="text-muted-foreground/60 size-4 shrink-0"
-                  aria-hidden="true"
-                />
-              )}
+              {renderPartAction?.(president.part, title)}
             </span>
           </div>
         )}

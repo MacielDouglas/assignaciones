@@ -9,22 +9,27 @@ export type MeetingTabKey = "midweek" | "weekend";
 /**
  * Abas da área de reuniões (Meio de Semana / Fim de Semana).
  * A aba ativa fica na URL (?tab=), mantendo o conteúdo server-rendered.
+ * A semana selecionada (?week=) é preservada ao trocar de aba.
  */
 export function MeetingTabs({
   defaultValue,
   basePath,
+  week,
   midweek,
   weekend,
 }: {
   defaultValue: MeetingTabKey;
   basePath: string;
+  /** Semana atual da URL, preservada na troca de aba. */
+  week?: string;
   midweek: ReactNode;
   weekend: ReactNode;
 }) {
   const router = useRouter();
 
   function selectTab(tab: string) {
-    router.replace(`${basePath}?tab=${tab}`, { scroll: false });
+    const query = week ? `?tab=${tab}&week=${week}` : `?tab=${tab}`;
+    router.replace(`${basePath}${query}`, { scroll: false });
   }
 
   return (
