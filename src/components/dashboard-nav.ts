@@ -1,4 +1,12 @@
-import { CalendarClock, Home, type LucideIcon, Settings, UserRound, Users } from "lucide-react";
+import {
+  CalendarClock,
+  Church,
+  Home,
+  type LucideIcon,
+  Settings,
+  UserRound,
+  Users,
+} from "lucide-react";
 import type { MemberRole } from "@/generated/prisma/enums";
 
 export interface NavItem {
@@ -9,6 +17,7 @@ export interface NavItem {
 
 export const PRIMARY_NAV_ITEMS: NavItem[] = [
   { href: "/dashboard", label: "Home", icon: Home },
+  { href: "/dashboard/reunioes", label: "Reuniões", icon: Church },
   { href: "/dashboard/designacoes", label: "Designações", icon: CalendarClock },
   { href: "/dashboard/perfil", label: "Perfil", icon: UserRound },
 ];

@@ -1,4 +1,4 @@
-import { Award, Star } from "lucide-react";
+import { Award, ChevronDown, Star } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { PRIVILEGE_LABEL } from "../lib/person-labels";
@@ -36,18 +36,29 @@ const PRIVILEGE_ORDER: (keyof PersonPrivileges)[] = [
   "leituraBiblia",
 ];
 
-/** Cargos ministeriais e privilégios congregacionais da pessoa. */
+/**
+ * Cargos ministeriais e privilégios congregacionais da pessoa.
+ * Recolhido por padrão para manter o card compacto; o resumo mostra
+ * a quantidade de privilégios ativos.
+ */
 export function PrivilegesSection({ person }: { person: PersonPrivileges }) {
   const active = PRIVILEGE_ORDER.filter((key) => person[key]);
   if (active.length === 0) return null;
 
   return (
-    <section aria-label="Privilégios congregacionais" className="space-y-1.5">
-      <p className="text-muted-foreground flex items-center gap-1 text-[11px] font-semibold tracking-wide uppercase">
-        <Award className="size-3.5" aria-hidden="true" />
+    <details className="group/priv">
+      <summary className="text-muted-foreground hover:text-foreground flex cursor-pointer list-none items-center gap-1.5 text-[11px] font-semibold tracking-wide uppercase [&::-webkit-details-marker]:hidden">
+        <Award className="size-3.5 shrink-0" aria-hidden="true" />
         Privilégios
-      </p>
-      <div className="flex flex-wrap gap-1.5">
+        <Badge variant="secondary" className="px-1.5 py-0 text-[10px] tabular-nums">
+          {active.length}
+        </Badge>
+        <ChevronDown
+          className="ml-auto size-3.5 transition-transform duration-200 group-open/priv:rotate-180"
+          aria-hidden="true"
+        />
+      </summary>
+      <div className="mt-2 flex flex-wrap gap-1.5">
         {active.map((key) => (
           <Badge
             key={key}
@@ -63,6 +74,6 @@ export function PrivilegesSection({ person }: { person: PersonPrivileges }) {
           </Badge>
         ))}
       </div>
-    </section>
+    </details>
   );
 }

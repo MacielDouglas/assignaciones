@@ -127,7 +127,7 @@ export default async function ProgramMeetingPage({
             className="rounded-full text-muted-foreground hover:text-foreground"
             asChild
           >
-            <Link href="/dashboard/designacoes?tab=reunioes" aria-label="Voltar às reuniões">
+            <Link href={`/dashboard/reunioes?week=${weekStartIso}`} aria-label="Voltar às reuniões">
               <ArrowLeft />
               Reuniões
             </Link>

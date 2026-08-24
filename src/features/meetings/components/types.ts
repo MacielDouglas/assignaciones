@@ -38,8 +38,6 @@ export interface CatalogItem {
 
 export type TabKey = "workbook" | "watchtower" | "songs" | "talks";
 
-export type DesignacoesArea = "reunioes" | "designacoes";
-
 export interface EditorDraft {
   meetingType: "MIDWEEK" | "WEEKEND";
   symbol: string;
