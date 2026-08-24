@@ -77,7 +77,7 @@ export function PersonAvatar({
     <Avatar className={cn("size-7", className)}>
       <AvatarFallback
         style={{ backgroundColor: `hsl(${hueFromId(person.id)} 42% 46%)` }}
-        className="text-[11px] font-semibold text-white"
+        className="text-xs font-semibold text-white"
       >
         {initials(person.nome)}
       </AvatarFallback>
@@ -235,7 +235,7 @@ export function PeoplePicker({
                     <Badge
                       key={badge}
                       variant="outline"
-                      className="text-muted-foreground px-1.5 py-0 text-[10px]"
+                      className="text-muted-foreground px-1.5 py-0 text-xs"
                     >
                       {badge}
                     </Badge>
@@ -248,7 +248,7 @@ export function PeoplePicker({
 
           {filteredOthers.length > 0 && (
             <>
-              <p className="text-muted-foreground mt-1 px-2 py-1 text-[11px] font-semibold tracking-wide uppercase">
+              <p className="text-muted-foreground mt-1 px-2 py-1 text-xs font-semibold tracking-wide uppercase">
                 Sem habilitação para esta parte
               </p>
               {filteredOthers.slice(0, 6).map(({ person, reason }) => (
@@ -276,7 +276,7 @@ export function PeoplePicker({
         </div>
 
         <div className="border-t px-3 py-2">
-          <Badge variant="secondary" className="text-[11px]">
+          <Badge variant="secondary" className="text-xs">
             Ordem por prioridade de designação
           </Badge>
         </div>

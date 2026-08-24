@@ -51,7 +51,7 @@ export function MeetingSectionBlock({
           </h3>
           {section.subtitle && (
             <span
-              className="shrink-0 rounded-full px-2.5 py-1 text-[11px] font-semibold tabular-nums"
+              className="shrink-0 rounded-full px-2.5 py-1 text-xs font-semibold tabular-nums"
               style={sectionChipStyle(theme)}
             >
               {section.subtitle}

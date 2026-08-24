@@ -38,8 +38,8 @@ export function AssignmentItem({
             variant="outline"
             className={
               assignment.meetingType === "MIDWEEK"
-                ? "border-primary/30 bg-primary/5 px-1.5 py-0 text-[10px] text-primary"
-                : "border-amber-500/40 bg-amber-500/10 px-1.5 py-0 text-[10px] text-amber-700 dark:text-amber-400"
+                ? "border-primary/30 bg-primary/5 px-1.5 py-0 text-xs text-primary"
+                : "border-amber-500/40 bg-amber-500/10 px-1.5 py-0 text-xs text-amber-700 dark:text-amber-400"
             }
           >
             {MEETING_TYPE_LABEL[assignment.meetingType]}

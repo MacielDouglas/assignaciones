@@ -12,6 +12,10 @@ colors:
   destructive: "oklch(0.577 0.245 27.325)"
   success: "#15803d"
   warning: "#b45309"
+  section-treasures: "#3c7f8b"
+  section-ministry: "#d68f00"
+  section-living: "#bf2f13"
+  section-neutral: "#64748b"
 typography:
   display:
     fontFamily: "Inter, system-ui, sans-serif"

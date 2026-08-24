@@ -1,4 +1,4 @@
-﻿import { CalendarCog, ChevronRight, FilePlus2 } from "lucide-react";
+import { CalendarCog, ChevronRight, FilePlus2 } from "lucide-react";
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { Button } from "@/components/ui/button";
@@ -137,7 +137,7 @@ export function MeetingScheduleCard({
             {slotsAssigned} de {slotsTotal} designações preenchidas
           </span>
 
-          <h2 className="min-w-0 flex-1 truncate text-[13px] font-bold tracking-wide uppercase sm:text-sm">
+          <h2 className="min-w-0 flex-1 truncate text-sm font-bold tracking-wide uppercase">
             {dayLabel && <span className="text-primary">{dayLabel}</span>}
             {dayLabel && <span className="text-muted-foreground font-medium"> · </span>}
             {title}

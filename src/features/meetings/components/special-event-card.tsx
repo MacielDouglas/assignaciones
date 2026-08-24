@@ -12,7 +12,7 @@ const INSPIRING_MESSAGE =
 function Detail({ label, value }: { label: string; value: string }) {
   return (
     <div className="bg-card/70 rounded-xl border px-4 py-3 text-left">
-      <dt className="text-muted-foreground text-[11px] font-semibold tracking-wide uppercase">
+      <dt className="text-muted-foreground text-xs font-semibold tracking-wide uppercase">
         {label}
       </dt>
       <dd className="mt-0.5 text-sm leading-snug font-medium">{value}</dd>

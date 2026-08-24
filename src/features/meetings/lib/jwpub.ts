@@ -657,6 +657,7 @@ function parseWeek(html: string, title: string, subtitle: string | null): Parsed
 function parseCover(html: string): { coverImage?: string } {
   const caption = html.match(/Imagen de la portada:\s*([^<]*)/)?.[1];
   if (caption?.trim()) return { coverImage: caption.trim() };
+  // impeccable-disable-next-line broken-image: regex do parser, não markup
   const img = html.match(/<img[^>]*alt="([^"]*)"/)?.[1];
   return { coverImage: img?.trim() || undefined };
 }

@@ -78,7 +78,7 @@ export function AssignmentsList({
                       {assignedSlots.map((slot) => (
                         <span
                           key={slot.id}
-                          className="bg-muted/60 rounded-md border px-1.5 py-0.5 text-[11px] leading-tight"
+                          className="bg-muted/60 rounded-md border px-1.5 py-0.5 text-xs leading-tight"
                         >
                           <span className="text-muted-foreground">{slot.label}</span>{" "}
                           <span className="font-semibold">{assignedNames[slot.id]}</span>
