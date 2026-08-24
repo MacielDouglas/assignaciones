@@ -5,11 +5,11 @@ import type { WeekDay } from "@/generated/prisma/enums";
 
 const DAY_LABELS: Record<WeekDay, string> = {
   MONDAY: "Segunda",
-  TUESDAY: "Terca",
+  TUESDAY: "Terça",
   WEDNESDAY: "Quarta",
   THURSDAY: "Quinta",
   FRIDAY: "Sexta",
-  SATURDAY: "Sabado",
+  SATURDAY: "Sábado",
   SUNDAY: "Domingo",
 };
 
